@@ -1,0 +1,3878 @@
+{
+  "definitions": {
+    "user_account": {
+      "description": "ข้อมูลตาราง user_account",
+      "required": [
+        "user_id",
+        "username",
+        "password_hash",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "user_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "username": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "password_hash": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "role": {
+      "description": "ข้อมูลตาราง role",
+      "required": [
+        "role_id",
+        "role_name"
+      ],
+      "properties": {
+        "role_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "role_name": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "permission": {
+      "description": "ข้อมูลตาราง permission",
+      "required": [
+        "permission_id",
+        "permisson_key"
+      ],
+      "properties": {
+        "permission_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "permisson_key": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "user_role": {
+      "description": "ข้อมูลตาราง user_role",
+      "required": [
+        "user_id",
+        "role_id"
+      ],
+      "properties": {
+        "user_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "role_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "role_permission": {
+      "description": "ข้อมูลตาราง role_permission",
+      "required": [
+        "role_id",
+        "permission_id"
+      ],
+      "properties": {
+        "role_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "permission_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm": {
+      "description": "ข้อมูลตาราง farm",
+      "required": [
+        "farm_id",
+        "farm_name",
+        "hub_id",
+        "found_date",
+        "address_detail",
+        "subdistrict_id",
+        "district_id",
+        "province_id",
+        "zip_code",
+        "contact_name",
+        "phone_number",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "farm_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farm_name": {
+          "is_from_input": true,
+          "description": "ชื่อฟาร์ม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "hub_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "found_date": {
+          "is_from_input": true,
+          "description": "วันที่ก่อตั้ง (หากจำวันที่แน่ชัดไม่ได้โปรดระบุเป็นวันที่ 1 มกราคมของปีทีท่านจำได้)",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "total_area": {
+          "is_from_input": false,
+          "description": "",
+          "type": "number",
+          "is_required": false,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "address_detail": {
+          "is_from_input": false,
+          "description": "ที่ตั้ง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_id": {
+          "is_from_input": true,
+          "description": "จังหวัด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_id": {
+          "is_from_input": true,
+          "description": "อำเภอ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "subdistrict_id": {
+          "is_from_input": true,
+          "description": "ตำบล",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "zip_code": {
+          "is_from_input": true,
+          "description": "รหัสไปรษณี",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "contact_name": {
+          "is_from_input": true,
+          "description": "ชื่อผู้ติดต่อ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "phone_number": {
+          "is_from_input": true,
+          "description": "เบอร์โทรผู้ติดต่อ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "line": {
+          "is_from_input": true,
+          "description": "Line ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "facebook": {
+          "is_from_input": true,
+          "description": "Facebook (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farmer": {
+      "description": "ข้อมูลตาราง farmer",
+      "required": [
+        "user_id",
+        "first_name",
+        "last_name",
+        "nickname",
+        "birth_date",
+        "id_card_number",
+        "address_detail",
+        "subdistrict_id",
+        "district_id",
+        "province_id",
+        "zip_code",
+        "phone_number",
+        "salary_income",
+        "family_member_count",
+        "agri_worker_count",
+        "agri_experience",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "user_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "first_name": {
+          "is_from_input": true,
+          "description": "ชื่อจริง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "last_name": {
+          "is_from_input": true,
+          "description": "นามสกุล",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "nickname": {
+          "is_from_input": true,
+          "description": "ชื่อเล่น",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "birth_date": {
+          "is_from_input": true,
+          "description": "วัน/เดือน/ปีเกิด",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "nationality": {
+          "is_from_input": true,
+          "description": "สัญชาติ",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "ethnicity": {
+          "is_from_input": true,
+          "description": "เชื้อชาติ",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "religion": {
+          "is_from_input": true,
+          "description": "ศาสนา",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "id_card_number": {
+          "is_from_input": true,
+          "description": "เลขประจำตัวประชาชน",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "address_detail": {
+          "is_from_input": true,
+          "description": "ที่อยู่",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_id": {
+          "is_from_input": true,
+          "description": "จังหวัด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_id": {
+          "is_from_input": true,
+          "description": "อำเภอ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "subdistrict_id": {
+          "is_from_input": true,
+          "description": "ตำบล",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "zip_code": {
+          "is_from_input": true,
+          "description": "รหัสไปรษณีย์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "phone_number": {
+          "is_from_input": true,
+          "description": "เบอร์โทรศัพท์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "line": {
+          "is_from_input": true,
+          "description": "Line ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "facebook": {
+          "is_from_input": true,
+          "description": "Facebook ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "salary_income": {
+          "is_from_input": true,
+          "description": "รายได้เฉลี่ยต่อเดือน (บาท)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "family_member_count": {
+          "is_from_input": true,
+          "description": "จำนวนสมาชิกครอบครัว",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "agri_worker_count": {
+          "is_from_input": true,
+          "description": "จำนวนแรงงานเกษตร",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "agri_experience": {
+          "is_from_input": true,
+          "description": "วันที่เริ่มประกอบอาชีพเกษตรกร (หากจำวันที่แน่ชัดไม่ได้โปรดระบุเป็นวันที่ 1 มกราคมของปีทีท่านจำได้)",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farmer_farm": {
+      "description": "ข้อมูลตาราง farmer_farm",
+      "required": [
+        "farmer_farm_id",
+        "farmer_id",
+        "farm_id"
+      ],
+      "properties": {
+        "farmer_farm_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farmer_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "farm_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "plot": {
+      "description": "ข้อมูลตาราง plot",
+      "required": [
+        "plot_id",
+        "farm_id",
+        "plot_name",
+        "total_area",
+        "land_ownership",
+        "cocoa_planted_area",
+        "has_chemical_use",
+        "found_date",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "plot_id": {
+          "is_from_input": false,
+          "description": "รหัสแปลง",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farm_id": {
+          "is_from_input": true,
+          "description": "เป็นแปลงของฟาร์มใด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "plot_name": {
+          "is_from_input": true,
+          "description": "ชื่อแปลง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "total_area": {
+          "is_from_input": false,
+          "description": "พื้นที่ทั้งหมดของแปลง (ไร่)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "land_ownership": {
+          "is_from_input": true,
+          "description": "ชื่อเจ้าของกรรมสิทธิ์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "cocoa_planted_area": {
+          "is_from_input": true,
+          "description": "พื้นที่ปลูกโกโก้จริงโดยคร่าว (ไร่)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "has_chemical_use": {
+          "is_from_input": true,
+          "description": "มีการใช้สารเคมีหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "land_type_id": {
+          "is_from_input": true,
+          "description": "ลักษณะพื้นที่ (หากระบุไม่ได้ไม่ต้องเลือก)",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "soil_type_id": {
+          "is_from_input": true,
+          "description": "ลักษณะดิน (หากระบุไม่ได้ไม่ต้องเลือก)",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "water_source_id": {
+          "is_from_input": true,
+          "description": "แหล่งน้ำภายในแปลง  (หากระบุไม่ได้ไม่ต้องเลือก)",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "watering_system_id": {
+          "is_from_input": true,
+          "description": "ระบบน้ำที่ใช้ภายในแปลง (หากระบุไม่ได้ให้เลือกระบุไม่ได้)",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "found_date": {
+          "is_from_input": true,
+          "description": "วันที่เริ่มปลูก (หากระบุไม่ได้ให้กรอกเป็นวันที่ 1 มกราคมของปีที่ท่านปลูก)",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm_activity": {
+      "description": "ข้อมูลตาราง farm_activity",
+      "required": [
+        "farm_activity_id",
+        "farm_id",
+        "farm_activity_type_id",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "farm_activity_id": {
+          "is_from_input": false,
+          "description": "รหัสกิจกรรม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farm_id": {
+          "is_from_input": false,
+          "description": "ฟาร์มที่ทำกิจกรรม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "plot_id": {
+          "is_from_input": false,
+          "description": "แปลงที่ดำเนินการ หากทำทั้งฟาร์มไม่ต้องระบุ",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "farm_activity_type_id": {
+          "is_from_input": true,
+          "description": "กิจกรรมที่ทำ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": true,
+          "description": "อธิบายรายละเอียดหรือหมายเหตุเพิ่มเติม (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm_activity_chemical": {
+      "description": "ข้อมูลตาราง farm_activity_chemical",
+      "required": [
+        "farm_activity_id",
+        "chem_bio_id",
+        "amount"
+      ],
+      "properties": {
+        "farm_activity_id": {
+          "is_from_input": false,
+          "description": "รหัสกิจกรรม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "plot_id": {
+          "is_from_input": true,
+          "description": "แปลงที่ดำเนินการ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "chem_bio_id": {
+          "is_from_input": true,
+          "description": "สารเคมี/ชีวภัณฑ์ที่ใช้",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "amount": {
+          "is_from_input": true,
+          "description": "ปริมาณสารเคมีที่ใช้โดยคร่าว",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "notes": {
+          "is_from_input": true,
+          "description": "หมายเหตุ ถ้ามี",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm_activity_fertilizer": {
+      "description": "ข้อมูลตาราง farm_activity_fertilizer",
+      "required": [
+        "farm_activity_id",
+        "fertilizer_id"
+      ],
+      "properties": {
+        "farm_activity_id": {
+          "is_from_input": false,
+          "description": "รหัสกิจกรรม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "plot_id": {
+          "is_from_input": true,
+          "description": "แปลงที่ดำเนินการ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "fertilizer_id": {
+          "is_from_input": true,
+          "description": "ปุ๋ยที่ใช้",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "notes": {
+          "is_from_input": true,
+          "description": "หมายเหตุ ถ้ามี",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "plot_breed": {
+      "description": "ข้อมูลตาราง plot_breed",
+      "required": [
+        "plot_breed_id",
+        "plot_id",
+        "breed_id",
+        "tree_count"
+      ],
+      "properties": {
+        "plot_breed_id": {
+          "is_from_input": false,
+          "description": "รหัสที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "plot_id": {
+          "is_from_input": false,
+          "description": "รหัสแปลง",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "breed_id": {
+          "is_from_input": false,
+          "description": "รหัสพันธุ์โกโก้",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "tree_count": {
+          "is_from_input": true,
+          "description": "จำนวนต้น",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "is_primary_breed": {
+          "is_from_input": true,
+          "description": "เป็นพันธุ์หลักหรือไม่ หากไม่ใช่ถือเป็นพันธุ์รอง",
+          "type": "boolean",
+          "is_required": false,
+          "placeholder": "",
+          "is_key": false
+        }
+      }
+    },
+    "farm_economic_eval": {
+      "description": "ข้อมูลตาราง farm_economic_eval",
+      "required": [
+        "eval_id",
+        "is_naive_planter",
+        "fertilizer_use_times_per_year",
+        "fertilizer_cost",
+        "chem_bio_use_times_per_year",
+        "chem_bio_cost",
+        "weeding_times_per_year",
+        "weeding_by_self",
+        "weeding_labor_cost",
+        "pruning_times_per_year",
+        "pruning_by_self",
+        "pruning_labor_cost",
+        "harvest_times_per_month",
+        "harvest_by_self",
+        "harvest_labor_cost",
+        "harvest_volume_kg_per_time",
+        "cocoa_price",
+        "electricity_cost",
+        "fuel_cost",
+        "other_expenses_cost",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "eval_id": {
+          "is_from_input": false,
+          "description": "รหัสการประเมิน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farm_id": {
+          "is_from_input": false,
+          "description": "ฟาร์มที่กรอกข้อมูลประเมิน",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_naive_planter": {
+          "is_from_input": true,
+          "description": "เป็นเกษตรกรหัวไวใจบางหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "fertilizer_use_times_per_year": {
+          "is_from_input": true,
+          "description": "จำนวนครั้งโดยคร่าวใช้ปุ๋ยต่อปี (หากไม่ได้ใช้ใส่ 0)",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "fertilizer_cost": {
+          "is_from_input": true,
+          "description": "ค่าใช้จ่ายปุ๋ย (บาท) (หากไม่ใช้ให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "chem_bio_use_times_per_year": {
+          "is_from_input": true,
+          "description": "จำนวนครั้งใช้สารเคมีต่อปี (หากไม่ใช้ให้ใส่ 0)",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "chem_bio_cost": {
+          "is_from_input": true,
+          "description": "ค่าใช้จ่ายสารเคมี/ชีวภัณฑ์ (หากไม่ใช้ให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "weeding_times_per_year": {
+          "is_from_input": true,
+          "description": "จำนวนครั้งตัดหญ้าต่อปี (หากไม่ได้ทำให่ใส่ 0)",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "weeding_by_self": {
+          "is_from_input": true,
+          "description": "ตัดหญ้าเองหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "weeding_labor_cost": {
+          "is_from_input": true,
+          "description": "ค่าจ้างตัดหญ้าต่อปีโดยคร่าว (บาท) (หากไม่ได้ทำให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "pruning_times_per_year": {
+          "is_from_input": true,
+          "description": "จำนวนครั้งตัดแต่งกิ่งต่อปีโดยคร่าว",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "pruning_by_self": {
+          "is_from_input": true,
+          "description": "ตัดแต่งกิ่งเองหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "pruning_labor_cost": {
+          "is_from_input": true,
+          "description": "ค่าจ้างตัดแต่งกิ่งต่อปี (หากไม่ได้จ้างให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "harvest_times_per_month": {
+          "is_from_input": true,
+          "description": "จำนวนครั้งเก็บเกี่ยวต่อเดือน  (หากไม่ได้ทำให้ใส่ 0)",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "harvest_by_self": {
+          "is_from_input": true,
+          "description": "เก็บเกี่ยวเองหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "harvest_labor_cost": {
+          "is_from_input": true,
+          "description": "ค่าจ้างแรงงานเก็บเกี่ยวต่อครั้ง (หากไม่ได้จ้างให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "harvest_volume_kg_per_time": {
+          "is_from_input": true,
+          "description": "ปริมาณผลผลิตต่อครั้ง (กิโลกรัม)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "cocoa_price": {
+          "is_from_input": true,
+          "description": "ราคาที่ขายได้ต่อครั้งโดยประมาณ (บาท)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "electricity_cost": {
+          "is_from_input": true,
+          "description": "ค่าไฟฟ้าโดยคร่าวต่อเดือน (บาท) (หากไม่มีให้ระบุ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "fuel_cost": {
+          "is_from_input": true,
+          "description": "ค่าน้ำมันเชื้อเพลิงต่อเดือน (บาท) (หากไม่มีให้ระบุ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "other_expenses_cost": {
+          "is_from_input": true,
+          "description": "จำนวนเงินค่าใช้จ่ายอื่นๆต่อปี (บาท) (หากไม่มีให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm_initial_cost": {
+      "description": "ข้อมูลตาราง farm_initial_cost",
+      "required": [
+        "farm_initial_cost_id",
+        "farm_id",
+        "plant_cost_per_tree",
+        "hole_filler_amount_g",
+        "hole_filler_cost",
+        "prep_area_by_self",
+        "prep_area_labor_cost",
+        "dig_hole_by_self",
+        "dig_hole_labor_cost",
+        "planting_by_self",
+        "planting_labor_cost",
+        "watering_system_cost",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "farm_initial_cost_id": {
+          "is_from_input": false,
+          "description": "รหัสการประเมิน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farm_id": {
+          "is_from_input": false,
+          "description": "ฟาร์มที่ทำการประเมิน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "plant_cost_per_tree": {
+          "is_from_input": true,
+          "description": "ราคาต้นพันธุ์ต่อไม้โดยคร่าว (บาท) (หากไม่แน่ชัดให้ระบุ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "hole_filler_material_id": {
+          "is_from_input": true,
+          "description": "วัสดุรองก้นหลุม (หากไม่ได้ใช้หรือไม่แน่ชัดเลือก ระบุไม่ได้)",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "hole_filler_amount_g": {
+          "is_from_input": true,
+          "description": "ปริมาณวัสดุรองก้นหลุม (กรัม) (หากไม่มีให้ระบุ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "hole_filler_cost": {
+          "is_from_input": true,
+          "description": "ต้นทุนวัสดุรองก้นหลุม (หากไม่มีให้ระบุ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "prep_area_by_self": {
+          "is_from_input": true,
+          "description": "จัดการพื้นที่เองหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "prep_area_labor_cost": {
+          "is_from_input": true,
+          "description": "ค่าจ้างจัดการพื้นที่ต่อครั้ง (บาท) (หากไม่ได้จ้างให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "dig_hole_by_self": {
+          "is_from_input": true,
+          "description": "ขุดหลุมเองหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "dig_hole_labor_cost": {
+          "is_from_input": true,
+          "description": "ค่าจ้างขุดหลุมต่อครั้ง (บาท) (หากไม่มีให้ระบุ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "planting_by_self": {
+          "is_from_input": true,
+          "description": "ปลูกเองหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "planting_labor_cost": {
+          "is_from_input": true,
+          "description": "ค่าจ้างปลูกต่อครั้ง (บาท) (หากไม่ได้จ้างให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "watering_system_cost": {
+          "is_from_input": true,
+          "description": "ค่าระบบน้ำที่ลงทุนไป (บาท) (หากไม่มีให้ใส่ 0)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm_pest_disease_record": {
+      "description": "ข้อมูลตาราง farm_pest_disease_record",
+      "required": [
+        "pest_disease_record_id",
+        "farm_id",
+        "pest_disease_id",
+        "is_quality_damage",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "pest_disease_record_id": {
+          "is_from_input": false,
+          "description": "รหัสบันทึกการตรวจพบศัตรูพืช",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "farm_id": {
+          "is_from_input": false,
+          "description": "ฟาร์มที่ตรวจพบ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "plot_id": {
+          "is_from_input": false,
+          "description": "แปลงที่ตรวจพบ (หากพบทั้งฟาร์มไม่ต้องระบุ)",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "pest_disease_id": {
+          "is_from_input": true,
+          "description": "โรคหรือแมลงที่พบ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "management_method": {
+          "is_from_input": true,
+          "description": "วิธีจัดการ (หากจัดการได้โปรดระบุ)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_quality_damage": {
+          "is_from_input": true,
+          "description": "ทำให้ผลโกโก้เสียคุณภาพหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "file": {
+      "description": "ข้อมูลตาราง file",
+      "required": [
+        "file_id",
+        "file_name",
+        "table_name",
+        "ref_id",
+        "code",
+        "original_name",
+        "file_extension",
+        "mime_type",
+        "file_size",
+        "storage_path",
+        "storage_provider",
+        "checksum",
+        "version",
+        "is_public",
+        "status",
+        "uploaded_by"
+      ],
+      "properties": {
+        "file_id": {
+          "is_from_input": false,
+          "description": "รหัสไฟล์",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "file_name": {
+          "is_from_input": false,
+          "description": "ชื่อไฟล์จริง (เช่น report.pdf)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "table_name": {
+          "is_from_input": false,
+          "description": "ชื่อตารางที่อ้างอิง เช่น ภาพนี้ เป็นภาพ user",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "ref_id": {
+          "is_from_input": false,
+          "description": "id ที่อ้างอิง ของตารางนั้นอีกที เช่น ภาพนี้ เป็นภาพของ user รหัส ABCD",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "code": {
+          "is_from_input": false,
+          "description": "โค้ดกำกับ เช่น USER_PROFILE, FARM_ACTIVITY_CAPTURE เพื่อนำไปแยกประมวลผลภายหลัง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "original_name": {
+          "is_from_input": false,
+          "description": "ชื่อไฟล์ตอนผู้ใช้อัปโหลด",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "file_extension": {
+          "is_from_input": false,
+          "description": "นามสกุลไฟล์ (pdf, jpg, jpeg,png)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "mime_type": {
+          "is_from_input": false,
+          "description": "ประเภทไฟล์ เช่น application/pdf",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "file_size": {
+          "is_from_input": false,
+          "description": "ขนาดไฟล์ (bytes)",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "storage_path": {
+          "is_from_input": false,
+          "description": "path หรือ object key",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "storage_provider": {
+          "is_from_input": false,
+          "description": "local / s3 / gcs",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "checksum": {
+          "is_from_input": false,
+          "description": "hash ของไฟล์ (SHA256)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "version": {
+          "is_from_input": false,
+          "description": "version ของไฟล์",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "is_public": {
+          "is_from_input": false,
+          "description": "ไฟล์ public หรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "status": {
+          "is_from_input": false,
+          "description": "active / deleted",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "uploaded_by": {
+          "is_from_input": false,
+          "description": "ส่งโดยใคร",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "geo": {
+      "description": "ข้อมูลตาราง geo",
+      "required": [
+        "geo_id",
+        "uploaded_by",
+        "geom",
+        "code",
+        "source_type",
+        "created_at"
+      ],
+      "properties": {
+        "geo_id": {
+          "is_from_input": false,
+          "description": "รหัส",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "uploaded_by": {
+          "is_from_input": false,
+          "description": "ผู้ส่ง",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "geom": {
+          "is_from_input": false,
+          "description": "หมุดหรือพื้นที่",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "code": {
+          "is_from_input": false,
+          "description": "โค้ดกำกับ เช่น FARM_LOCATION, PLOT_LOCATION เพื่อนำไปแยกประมวลผลภายหลัง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "source_type": {
+          "is_from_input": false,
+          "description": "point' / 'region'",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "area_sq_m": {
+          "is_from_input": false,
+          "description": "เก็บพื้นที่ถ้าเป็น polygon",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "เวลาบันทึก",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "ip_address": {
+          "is_from_input": false,
+          "description": "ip address ของผู้ส่ง",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "task": {
+      "description": "ข้อมูลตาราง task",
+      "required": [
+        "task_id",
+        "form_id",
+        "title",
+        "description",
+        "task_type",
+        "open_at",
+        "clost_at"
+      ],
+      "properties": {
+        "task_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของงาน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "form_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของฟอร์ม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "title": {
+          "is_from_input": false,
+          "description": "หัวข้อหรือชื่อของงาน",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "รายละเอียดคำอธิบายงาน",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "task_type": {
+          "is_from_input": false,
+          "description": "ประเภทของงาน (ค่าคงที่: READ_ONLY, FORM)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "open_at": {
+          "is_from_input": false,
+          "description": "วันเวลาที่กำหนดให้เริ่มทำ",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "clost_at": {
+          "is_from_input": false,
+          "description": "วันเวลาที่กำหนดส่ง",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "assignment": {
+      "description": "ข้อมูลตาราง assignment",
+      "required": [
+        "assignment_id",
+        "task_id",
+        "user_id",
+        "status",
+        "started_at",
+        "completed_at"
+      ],
+      "properties": {
+        "assignment_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของบันทึกงาน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "task_id": {
+          "is_from_input": false,
+          "description": "เชื่อมกับ TASK.id (งานชิ้นไหน)",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "user_id": {
+          "is_from_input": false,
+          "description": "เชื่อมกับ USER.id (ผู้ที่ต้องทำงานนี้)",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "status": {
+          "is_from_input": false,
+          "description": "สถานะงาน (NOT_STARTED, IN_PROGRESS, COMPLETED)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "started_at": {
+          "is_from_input": false,
+          "description": "เวลาที่ผู้ใช้กดเริ่มงาน",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "completed_at": {
+          "is_from_input": false,
+          "description": "เวลาที่ผู้ใช้ทำงานเสร็จสิ้น",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "form": {
+      "description": "ข้อมูลตาราง form",
+      "required": [
+        "form_id",
+        "title",
+        "content",
+        "handler",
+        "is_multiple_submit",
+        "created_at"
+      ],
+      "properties": {
+        "form_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของฟอร์ม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "title": {
+          "is_from_input": false,
+          "description": "ชื่อของแบบฟอร์ม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "content": {
+          "is_from_input": false,
+          "description": "คำอธิบายฟอร์มในรูปแบบ HTML รองรับ CMS อาจจะใช้เป็น instruction หรือคำอธิบายบางอย่างของฟอร์ม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "handler": {
+          "is_from_input": false,
+          "description": "เป็นชื่อ api หรือชื่อ method handler เพื่อให้หลังบ้านนำ response ที่ได้รับไปประมวลผลต่อ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_multiple_submit": {
+          "is_from_input": false,
+          "description": "อนุญาตให้ตอบอีกได้หรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "วันที่สร้างฟอร์ม",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "section": {
+      "description": "ข้อมูลตาราง section",
+      "required": [
+        "section_id",
+        "form_id"
+      ],
+      "properties": {
+        "section_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของ section",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "form_id": {
+          "is_from_input": false,
+          "description": "เชื่อมกับ form",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "question": {
+      "description": "ข้อมูลตาราง question",
+      "required": [
+        "question_id",
+        "form_id",
+        "section_id",
+        "label",
+        "input_type",
+        "is_mandatory",
+        "is_default",
+        "sort_order"
+      ],
+      "properties": {
+        "question_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของคำถาม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "form_id": {
+          "is_from_input": false,
+          "description": "เชื่อมกับ form",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "section_id": {
+          "is_from_input": false,
+          "description": "อยู่ภายใต้ section ใด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "label": {
+          "is_from_input": false,
+          "description": "ข้อความคำถามที่แสดงบนหน้าจอ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "input_type": {
+          "is_from_input": false,
+          "description": "ประเภทคำตอบ (BOOLEAN, INT, FLOAT, OPTION, varchar, GEODATA)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_mandatory": {
+          "is_from_input": false,
+          "description": "บังคับตอบหรือไม่ (True/False)",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "is_default": {
+          "is_from_input": false,
+          "description": "มีค่าเริ่มต้นให้หรือไม่ กรณีเป็น boolean จะเลือก false, เป็นตัวเลขจะเป็น 0",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "sort_order": {
+          "is_from_input": false,
+          "description": "ลำดับการแสดงผลของข้อคำถาม",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        }
+      }
+    },
+    "response": {
+      "description": "ข้อมูลตาราง response",
+      "required": [
+        "response_id",
+        "task_log_id",
+        "user_id",
+        "submitted_at",
+        "answer",
+        "status"
+      ],
+      "properties": {
+        "response_id": {
+          "is_from_input": false,
+          "description": "ไอดีหลักของการส่งฟอร์ม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "task_log_id": {
+          "is_from_input": false,
+          "description": "เชื่อมกับ TASK_LOG.id (ส่งภายใต้ภารกิจไหน)",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "user_id": {
+          "is_from_input": false,
+          "description": "เชื่อมกับ USER.id (ใครเป็นคนส่ง)",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "submitted_at": {
+          "is_from_input": false,
+          "description": "วันเวลาที่กดส่งข้อมูล",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "answer": {
+          "is_from_input": false,
+          "description": "คำตอบของฟอร์มที่อยู่ในรูปของ JOSN",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "status": {
+          "is_from_input": false,
+          "description": "สถานะของฟอร์ม (PENDING, PROCESSING, FAIL, FINISH)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "air_exposure_type_constant": {
+      "description": "ข้อมูลตาราง air_exposure_type_constant",
+      "required": [
+        "air_exposure_type_id",
+        "air_exposure_type_name"
+      ],
+      "properties": {
+        "air_exposure_type_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "air_exposure_type_name": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "breed_constant": {
+      "description": "ข้อมูลตาราง breed_constant",
+      "required": [
+        "breed_id",
+        "breed_name"
+      ],
+      "properties": {
+        "breed_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "breed_name": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "chem_bio_constant": {
+      "description": "ข้อมูลตาราง chem_bio_constant",
+      "required": [
+        "chem_bio_id",
+        "chem_bio_name",
+        "description"
+      ],
+      "properties": {
+        "chem_bio_id": {
+          "is_from_input": false,
+          "description": "รหัสสารเคมี/ชีวภัณฑ์",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "chem_bio_name": {
+          "is_from_input": false,
+          "description": "ชื่อสารเคมี/ชีวภัณฑ์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "รายละเอียดสารเคมี/ชีวภัณฑ์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "cocoa_bean_grade_constant": {
+      "description": "ข้อมูลตาราง cocoa_bean_grade_constant",
+      "required": [
+        "cocoa_bean_grade_id",
+        "cocoa_bean_grade_name"
+      ],
+      "properties": {
+        "cocoa_bean_grade_id": {
+          "is_from_input": false,
+          "description": "รหัสเกรดเมล็ดโกโก้ที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "cocoa_bean_grade_name": {
+          "is_from_input": false,
+          "description": "ชื่อเกรดเมล็ดโกโก้ (ชั้นพิเศษ, ชั้นหนึ่ง, ชั้นสอง) ตามมาตรฐาน มกอช.",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "drying_facility_constant": {
+      "description": "ข้อมูลตาราง drying_facility_constant",
+      "required": [
+        "drying_facility_type_id",
+        "drying_facility_type_name"
+      ],
+      "properties": {
+        "drying_facility_type_id": {
+          "is_from_input": false,
+          "description": "รหัสประเภทสิ่งอำนวยความสะดวกการอบแห้งที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "drying_facility_type_name": {
+          "is_from_input": false,
+          "description": "ชื่อประเภทสิ่งอำนวยความสะดวกการอบแห้ง (เรือนกระจก, ตากกลางแจ้ง, ตากในร่ม)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "fertilizer_application_stage_constant": {
+      "description": "ข้อมูลตาราง fertilizer_application_stage_constant",
+      "required": [
+        "fertilizer_application_stage_id",
+        "fertilizer_application_stage_name_th",
+        "fertilizer_application_stage_name_en",
+        "fertilizer_application_stage_description"
+      ],
+      "properties": {
+        "fertilizer_application_stage_id": {
+          "is_from_input": false,
+          "description": "รหัสระยะการใส่ปุ๋ย",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "fertilizer_application_stage_name_th": {
+          "is_from_input": false,
+          "description": "ชื่อระยะการใส่ปุ๋ย (ภาษาไทย)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "fertilizer_application_stage_name_en": {
+          "is_from_input": false,
+          "description": "ชื่อระยะการใส่ปุ๋ย (ภาษาอังกฤษ)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "fertilizer_application_stage_description": {
+          "is_from_input": false,
+          "description": "รายละเอียดเพิ่มเติมเกี่ยวกับการใส่ปุ๋ย",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "fertilizer_constant": {
+      "description": "ข้อมูลตาราง fertilizer_constant",
+      "required": [
+        "fertilizer_id",
+        "fertilizer_name",
+        "description",
+        "is_organic"
+      ],
+      "properties": {
+        "fertilizer_id": {
+          "is_from_input": false,
+          "description": "รหัสชนิดปุ๋ย",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "fertilizer_name": {
+          "is_from_input": false,
+          "description": "ชื่อชนิดปุ๋ย",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "รายละเอียดปุ๋ย",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_organic": {
+          "is_from_input": false,
+          "description": "เป็นปุ๋ยหมักหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        }
+      }
+    },
+    "grade_constant": {
+      "description": "ข้อมูลตาราง grade_constant",
+      "required": [
+        "grade_id",
+        "grade_name",
+        "is_fail"
+      ],
+      "properties": {
+        "grade_id": {
+          "is_from_input": false,
+          "description": "รหัสเกรดผลสด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "grade_name": {
+          "is_from_input": false,
+          "description": "ชื่อเกรดผลสด (เช่น เกรด A, เกรดตก)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_fail": {
+          "is_from_input": false,
+          "description": "ตกเกรดหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        }
+      }
+    },
+    "land_type_constant": {
+      "description": "ข้อมูลตาราง land_type_constant",
+      "required": [
+        "land_type_id",
+        "land_type_name"
+      ],
+      "properties": {
+        "land_type_id": {
+          "is_from_input": false,
+          "description": "รหัสลักษณะพื้นที่",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "land_type_name": {
+          "is_from_input": false,
+          "description": "ชื่อประเภทพื้นที่",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "pest_disease_constant": {
+      "description": "ข้อมูลตาราง pest_disease_constant",
+      "required": [
+        "pest_disease_id",
+        "name",
+        "type",
+        "description"
+      ],
+      "properties": {
+        "pest_disease_id": {
+          "is_from_input": false,
+          "description": "รหัสโรค/แมลง",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "name": {
+          "is_from_input": false,
+          "description": "ชื่อโรค/แมลง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "type": {
+          "is_from_input": false,
+          "description": "ประเภท: Pest / Disease",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "รายละเอียดเพิ่มเติม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "location_type_constant": {
+      "description": "ข้อมูลตาราง location_type_constant",
+      "required": [
+        "location_type_id",
+        "location_type_name"
+      ],
+      "properties": {
+        "location_type_id": {
+          "is_from_input": false,
+          "description": "รหัสประเภทสถานที่ที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "location_type_name": {
+          "is_from_input": false,
+          "description": "ชื่อประเภทสถานที่",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "farm_activity_type_constant": {
+      "description": "ข้อมูลตาราง farm_activity_type_constant",
+      "required": [
+        "farm_activity_type_id",
+        "activity_name"
+      ],
+      "properties": {
+        "farm_activity_type_id": {
+          "is_from_input": false,
+          "description": "รหัสประเภทกิจกรรม",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "activity_name": {
+          "is_from_input": false,
+          "description": "ชื่อกิจกรรม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "processing_activity_type_constant": {
+      "description": "ข้อมูลตาราง processing_activity_type_constant",
+      "required": [
+        "processing_activity_type_id",
+        "processing_activity_type_name"
+      ],
+      "properties": {
+        "processing_activity_type_id": {
+          "is_from_input": false,
+          "description": "รหัสประเภทกิจกรรมการแปรรูปที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "processing_activity_type_name": {
+          "is_from_input": false,
+          "description": "ชื่อประเภทกิจกรรมการแปรรูป (หมัก, อบแห้ง, พลิก/คน, ตรวจสอบ)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "processing_defect_constant": {
+      "description": "ข้อมูลตาราง processing_defect_constant",
+      "required": [
+        "processing_defect_id",
+        "processing_defect_name"
+      ],
+      "properties": {
+        "processing_defect_id": {
+          "is_from_input": false,
+          "description": "รหัสตำหนิการแปรรูปที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "processing_defect_name": {
+          "is_from_input": false,
+          "description": "ชื่อตำหนิการแปรรูป (ราดำ, เกิดฟอง, อื่น ๆ)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "province_constant": {
+      "description": "ข้อมูลตาราง province_constant",
+      "required": [
+        "province_id",
+        "province_name_th",
+        "province_name_en",
+        "description"
+      ],
+      "properties": {
+        "province_id": {
+          "is_from_input": false,
+          "description": "รหัสจังหวัด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "province_name_th": {
+          "is_from_input": false,
+          "description": "ชื่อจังหวัด (ภาษาไทย)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_name_en": {
+          "is_from_input": false,
+          "description": "ชื่อจังหวัด (ภาษาอังกฤษ)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "รายละเอียดเพิ่มเติม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "district_constant": {
+      "description": "ข้อมูลตาราง district_constant",
+      "required": [
+        "district_id",
+        "district_name_th",
+        "district_name_en",
+        "province_id",
+        "description"
+      ],
+      "properties": {
+        "district_id": {
+          "is_from_input": false,
+          "description": "รหัสอำเภอ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "district_name_th": {
+          "is_from_input": false,
+          "description": "ชื่ออำเภอ (ภาษาไทย)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_name_en": {
+          "is_from_input": false,
+          "description": "ชื่ออำเภอ (ภาษาอังกฤษ)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_id": {
+          "is_from_input": false,
+          "description": "รหัสจังหวัดที่อำเภอนี้อยู่",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "subdistrict_constant": {
+      "description": "ข้อมูลตาราง subdistrict_constant",
+      "required": [
+        "subdistrict_id",
+        "subdistrict_name_th",
+        "subdistrict_name_en",
+        "district_id",
+        "description"
+      ],
+      "properties": {
+        "subdistrict_id": {
+          "is_from_input": false,
+          "description": "รหัสตำบล",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "subdistrict_name_th": {
+          "is_from_input": false,
+          "description": "ชื่อตำบล (ภาษาไทย)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "subdistrict_name_en": {
+          "is_from_input": false,
+          "description": "ชื่อตำบล (ภาษาอังกฤษ)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_id": {
+          "is_from_input": false,
+          "description": "รหัสอำเภอที่ตำบลนี้อยู่",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "soil_type_constant": {
+      "description": "ข้อมูลตาราง soil_type_constant",
+      "required": [
+        "soil_type_id",
+        "soil_type_name"
+      ],
+      "properties": {
+        "soil_type_id": {
+          "is_from_input": false,
+          "description": "รหัสลักษณะดิน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "soil_type_name": {
+          "is_from_input": false,
+          "description": "ชื่อประเภทดิน",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "tank_material_constant": {
+      "description": "ข้อมูลตาราง tank_material_constant",
+      "required": [
+        "tank_material_id",
+        "tank_material_name"
+      ],
+      "properties": {
+        "tank_material_id": {
+          "is_from_input": false,
+          "description": "รหัสวัสดุถังที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "tank_material_name": {
+          "is_from_input": false,
+          "description": "ชื่อวัสดุถัง (พลาสติก, ไม้, คอนกรีต, เหล็ก)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "water_source_constant": {
+      "description": "ข้อมูลตาราง water_source_constant",
+      "required": [
+        "water_source_id",
+        "water_source_name"
+      ],
+      "properties": {
+        "water_source_id": {
+          "is_from_input": false,
+          "description": "รหัสแหล่งน้ำ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "water_source_name": {
+          "is_from_input": false,
+          "description": "ชื่อแหล่งน้ำ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "watering_system_constant": {
+      "description": "ข้อมูลตาราง watering_system_constant",
+      "required": [
+        "watering_system_id",
+        "watering_system_name"
+      ],
+      "properties": {
+        "watering_system_id": {
+          "is_from_input": false,
+          "description": "รหัสระบบน้ำ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "watering_system_name": {
+          "is_from_input": false,
+          "description": "ชื่อระบบน้ำ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "weather_condition_constant": {
+      "description": "ข้อมูลตาราง weather_condition_constant",
+      "required": [
+        "weather_condition_id",
+        "weather_condition_name"
+      ],
+      "properties": {
+        "weather_condition_id": {
+          "is_from_input": false,
+          "description": "รหัสสภาพอากาศที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "weather_condition_name": {
+          "is_from_input": false,
+          "description": "ชื่อสภาพอากาศ (แดดออก, มีเมฆครึ้ม, ฝนตก, มีเมฆบางส่วน)",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "hole_filler_material_constant": {
+      "description": "ข้อมูลตาราง hole_filler_material_constant",
+      "required": [
+        "hole_filler_material_id",
+        "hole_filler_material_name"
+      ],
+      "properties": {
+        "hole_filler_material_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "hole_filler_material_name": {
+          "is_from_input": false,
+          "description": "",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "hub": {
+      "description": "ข้อมูลหน่วยรวบรวม",
+      "required": [
+        "hub_id",
+        "hub_name",
+        "found_date",
+        "address_detail",
+        "subdistrict_id",
+        "district_id",
+        "province_id",
+        "zip_code",
+        "contact_name",
+        "phone_number",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "hub_id": {
+          "is_from_input": false,
+          "description": "รหัสฮับ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "hub_name": {
+          "is_from_input": true,
+          "description": "ชื่อหน่วยรวบรวม",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "found_date": {
+          "is_from_input": true,
+          "description": "วันที่ก่อตั้ง",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "address_detail": {
+          "is_from_input": true,
+          "description": "ที่ัตั้ง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_id": {
+          "is_from_input": true,
+          "description": "จังหวัด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_id": {
+          "is_from_input": true,
+          "description": "อำเภอ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "subdistrict_id": {
+          "is_from_input": true,
+          "description": "ตำบล",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "zip_code": {
+          "is_from_input": true,
+          "description": "รหัสไปรษณีย์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "contact_name": {
+          "is_from_input": true,
+          "description": "ชื่อผู้ติดต่อ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "phone_number": {
+          "is_from_input": true,
+          "description": "เบอร์โทรศัพท์",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "line": {
+          "is_from_input": true,
+          "description": "Line ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "facebook": {
+          "is_from_input": true,
+          "description": "Facebook ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "hub_collector": {
+      "description": "ข้อมูลตาราง hub_collector",
+      "required": [
+        "user_Id",
+        "hub_id",
+        "first_name",
+        "last_name",
+        "nickname",
+        "birthdate",
+        "id_card_number",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "user_Id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "hub_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "first_name": {
+          "is_from_input": true,
+          "description": "ชื่อจริง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "last_name": {
+          "is_from_input": true,
+          "description": "นามสกุล",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "nickname": {
+          "is_from_input": true,
+          "description": "ชื่อเล่น",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "birthdate": {
+          "is_from_input": true,
+          "description": "วัน/เดือน/ปีเกิด",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "id_card_number": {
+          "is_from_input": true,
+          "description": "เลขประจำตัวประชาชน",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "phone_number": {
+          "is_from_input": true,
+          "description": "เบอร์โทรศัพท์",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "line": {
+          "is_from_input": true,
+          "description": "Line ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "facebook": {
+          "is_from_input": true,
+          "description": "Facebook ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "processor": {
+      "description": "ข้อมูลตาราง processor",
+      "required": [
+        "user_id",
+        "first_name",
+        "last_name",
+        "nickname",
+        "birth_date",
+        "id_card_number",
+        "address_detail",
+        "subdistrict_id",
+        "district_id",
+        "province_id",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "user_id": {
+          "is_from_input": false,
+          "description": "รหัสผู้แปรรูปใช้ user_id ไปเลย",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "first_name": {
+          "is_from_input": true,
+          "description": "ชื่อจริง",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "last_name": {
+          "is_from_input": true,
+          "description": "นามสกุล",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "nickname": {
+          "is_from_input": true,
+          "description": "ชื่อเล่น",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "birth_date": {
+          "is_from_input": true,
+          "description": "วัน/เดือน/ปีเกิด",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "id_card_number": {
+          "is_from_input": true,
+          "description": "เลขประจำตัวประชาชน",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "address_detail": {
+          "is_from_input": true,
+          "description": "ที่อยู่",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_id": {
+          "is_from_input": true,
+          "description": "จังหวัด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_id": {
+          "is_from_input": true,
+          "description": "อำเภอ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "subdistrict_id": {
+          "is_from_input": true,
+          "description": "ตำบล",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "zip_code": {
+          "is_from_input": true,
+          "description": "รหัสไปรษณีย์",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "phone_number": {
+          "is_from_input": true,
+          "description": "เบอร์โทรศัพท์",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "line": {
+          "is_from_input": true,
+          "description": "Line ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "facebook": {
+          "is_from_input": true,
+          "description": "Facebook ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "processing_station": {
+      "description": "ข้อมูลตาราง processing_station",
+      "required": [
+        "processing_station_id",
+        "hub_id",
+        "subdistrict_id",
+        "district_id",
+        "province_id",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "processing_station_id": {
+          "is_from_input": false,
+          "description": "รหัสสถานีแปรรูปที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "processing_station_name": {
+          "is_from_input": true,
+          "description": "ชื่อสถานีแปรรูป",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "hub_id": {
+          "is_from_input": false,
+          "description": "อ้างอิง hub ที่สังกัต",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "found_date": {
+          "is_from_input": true,
+          "description": "วันที่ก่อตั้ง",
+          "type": "date",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "processing_station_area": {
+          "is_from_input": false,
+          "description": "พื้นที่ทั้งหมด",
+          "type": "number",
+          "is_required": false,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "address_detail": {
+          "is_from_input": true,
+          "description": "ที่ัตั้ง",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "province_id": {
+          "is_from_input": true,
+          "description": "จังหวัด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        
+        "district_id": {
+          "is_from_input": true,
+          "description": "อำเภอ",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "subdistrict_id": {
+          "is_from_input": true,
+          "description": "ตำบล",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "zip_code": {
+          "is_from_input": true,
+          "description": "รหัสไปรษณีย์",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "contact_name": {
+          "is_from_input": true,
+          "description": "ชื่อผู้ติดต่อ",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "phone_number": {
+          "is_from_input": true,
+          "description": "เบอร์โทรศัพท์",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "line": {
+          "is_from_input": true,
+          "description": "Line ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "facebook": {
+          "is_from_input": true,
+          "description": "Facebook ID (ถ้ามี)",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "processor_processing_station": {
+      "description": "ข้อมูลตาราง processor_processing_station",
+      "required": [
+        "processor_processing_station_id",
+        "processor_id",
+        "processing_station_id"
+      ],
+      "properties": {
+        "processor_processing_station_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "processor_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "processing_station_id": {
+          "is_from_input": false,
+          "description": "",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "batch": {
+      "description": "ข้อมูลตาราง batch",
+      "required": [
+        "batch_id",
+        "processing_station_id",
+        "origin",
+        "notes",
+        "quantity_kg",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "batch_id": {
+          "is_from_input": false,
+          "description": "รหัสล็อตที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "processing_station_id": {
+          "is_from_input": false,
+          "description": "รหัสอ้างอิงถึงสถานที่แปรรูป",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "district_id": {
+          "is_from_input": true,
+          "description": "แหล่งที่มาที่นำมาทำล๊อตเพื่อแปรรูป",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "quantity_kg": {
+          "is_from_input": true,
+          "description": "ปริมาณ (กิโลกรัม)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "notes": {
+          "is_from_input": true,
+          "description": "หมายเหตุ ถ้ามี",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "drying_batch": {
+      "description": "ข้อมูลตาราง drying_batch",
+      "required": [
+        "batch_id",
+        "drying_facility_type_code",
+        "has_air_flow",
+        "fan_count",
+        "fan_power"
+      ],
+      "properties": {
+        "batch_id": {
+          "is_from_input": false,
+          "description": "อ้างอิงถึงล็อตหลัก",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "drying_facility_type_code": {
+          "is_from_input": true,
+          "description": "ประเภทสิ่งอำนวยความสะดวกการอบแห้งที่ใช้",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "has_air_flow": {
+          "is_from_input": true,
+          "description": "มีระบบระบายอากาศกลหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "fan_count": {
+          "is_from_input": true,
+          "description": "จำนวนพัดลมในสิ่งอำนวยความสะดวกการอบแห้ง",
+          "type": "integer",
+          "is_required": true,
+          "placeholder": "กรอกตัวเลข...",
+          "is_key": false
+        },
+        "fan_power": {
+          "is_from_input": true,
+          "description": "กำลังไฟฟ้าของพัดลมเป็นวัตต์",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "notes": {
+          "is_from_input": true,
+          "description": "หมายเหตุ ถ้ามี",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "started_at": {
+          "is_from_input": true,
+          "description": "เวลาที่เริ่มการอบแห้ง",
+          "type": "datetime",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "ends_at": {
+          "is_from_input": true,
+          "description": "เวลาที่สิ้นสุดการอบแห้ง",
+          "type": "datetime",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "fermentation_batch": {
+      "description": "ข้อมูลตาราง fermentation_batch",
+      "required": [
+        "batch_id",
+        "air_exposure_type_code",
+        "tank_material_code",
+        "tank_volume_liter",
+        "started_at",
+        "ends_at"
+      ],
+      "properties": {
+        "batch_id": {
+          "is_from_input": false,
+          "description": "รหัสล็อตที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "air_exposure_type_id": {
+          "is_from_input": true,
+          "description": "ประเภทการระบายอากาศระหว่างการหมัก",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "tank_material_id": {
+          "is_from_input": true,
+          "description": "วัสดุของถังหมัก",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "tank_volume_liter": {
+          "is_from_input": true,
+          "description": "ขนาด/ความจุของถังหมัก (ลิตร)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        
+        "started_at": {
+          "is_from_input": true,
+          "description": "เวลาที่เริ่มการหมัก",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "ends_at": {
+          "is_from_input": true,
+          "description": "เวลาที่สิ้นสุดการหมัก (เชื่อมโยงกับข้อมูลสภาพอากาศ)",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "notes": {
+          "is_from_input": true,
+          "description": "หมายเหตุ ถ้ามี",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "processing_record": {
+      "description": "ข้อมูลตาราง processing_record",
+      "required": [
+        "processing_record_id"
+      ],
+      "properties": {
+        "processing_record_id": {
+          "is_from_input": false,
+          "description": "รหัสบันทึกการแปรรูปที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "batch_id": {
+          "is_from_input": false,
+          "description": "ล็อตที่กำลังแปรรูปใด",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "processing_activity_type_id": {
+          "is_from_input": true,
+          "description": "ประเภทกิจกรรมการแปรรูปที่ดำเนินการ",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "temp_outside": {
+          "is_from_input": true,
+          "description": "อุณหภูมินอกถัง/สิ่งอำนวยความสะดวก (องศาเซลเซียส)",
+          "type": "number",
+          "is_required": false,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "temp_inside": {
+          "is_from_input": true,
+          "description": "อุณหภูมิในถัง (องศาเซลเซียส) - กรอกเฉพาะหากเป็นการหมัก",
+          "type": "number",
+          "is_required": false,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "humi": {
+          "is_from_input": true,
+          "description": "ความชิ้น (RH %) - กรอกเฉพาะหากเป็นการทำแห้ง ",
+          "type": "number",
+          "is_required": false,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "weather_condition_code": {
+          "is_from_input": true,
+          "description": "อธิบายสภาพอากาศระหว่างการแปรรูป",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "bean_color_outside": {
+          "is_from_input": true,
+          "description": "อธิบายสีเปลือกนอกของเมล็ด",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "bean_color_inside": {
+          "is_from_input": true,
+          "description": "อธิบายสีเนื้อในของเมล็ด - เฉพาะการหมัก",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "smell": {
+          "is_from_input": true,
+          "description": "อธิบายกลิ่นที่เกิดขึ้น",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "gis" : {
+          "is_from_input": true,
+          "description": "ตำแหน่งปัจจุบัน",
+          "type": "gis",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "upload": {
+          "is_from_input": true,
+          "description": "แนบภาพประกอบ",
+          "type": "file",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "recorded_at": {
+          "is_from_input": false,
+          "description": "เวลาที่สร้างบันทึกในระบบ",
+          "type": "datetime",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "harvest": {
+      "description": "ข้อมูลตาราง harvest",
+      "required": [
+        "harvest_id",
+        "hub_id",
+        "farm_id",
+        "harvest_date"
+      ],
+      "properties": {
+        "harvest_id": {
+          "is_from_input": false,
+          "description": "รหัสการเก็บเกี่ยวที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "hub_id": {
+          "is_from_input": false,
+          "description": "รหัสอ้างอิง hub ที่ไปส่งล็อต",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "farm_id": {
+          "is_from_input": true,
+          "description": "เลือกฟาร์มที่จัดส่ง",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "plot_id": {
+          "is_from_input": false,
+          "description": "รหัสอ้างอิงแปลงที่จัดส่ง",
+          "type": "option",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "logistic_result": {
+          "is_from_input": true,
+          "description": "อธิบายการขนส่งมายังหน่วยรวบรวม",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "harvest_date": {
+          "is_from_input": true,
+          "description": "วันที่ส่งมา",
+          "type": "date",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "harvest_grade_detail": {
+      "description": "ข้อมูลตาราง harvest_grade_detail",
+      "required": [
+        "harvest_id",
+        "grade_code",
+        "quantity_kg",
+        "description",
+        "is_clean",
+        "is_appropriate_size",
+        "weight_gram_per_pod",
+        "is_sprout",
+        "is_dry",
+        "is_shriveled",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "farm_id": {
+          "is_from_input": true,
+          "description": "กรอกผลจากฟาร์มใด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        
+        "quantity_kg": {
+          "is_from_input": true,
+          "description": "ปริมาณ (กิโลกรัม)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "description": {
+          "is_from_input": true,
+          "description": "กรอกรายละเอียด หรือ หมายเหตุ",
+          "type": "string",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "is_clean": {
+          "is_from_input": true,
+          "description": "สะอาดหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "is_appropriate_size": {
+          "is_from_input": true,
+          "description": "ขนาดเหมาะสมหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "weight_gram_per_pod": {
+          "is_from_input": true,
+          "description": "น้ำหนักต่อฝัก (กรัม)",
+          "type": "number",
+          "is_required": true,
+          "placeholder": "100.00",
+          "is_key": false
+        },
+        "is_sprout": {
+          "is_from_input": true,
+          "description": "มีการงอกหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "is_dry": {
+          "is_from_input": true,
+          "description": "แห้งหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "is_shriveled": {
+          "is_from_input": true,
+          "description": "เมล็ดฟีบหรือไม่",
+          "type": "boolean",
+          "is_required": true,
+          "placeholder": "",
+          "is_key": false
+        },
+        "cut_test_result": {
+          "is_from_input": true,
+          "description": "อธิบายผลการผ่า/ดูคุณภาพเมล็ด",
+          "type": "string",
+          "is_required": false,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "grade_id": {
+          "is_from_input": true,
+          "description": "ผลการเกรด",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "created_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "updated_at": {
+          "is_from_input": false,
+          "description": "",
+          "type": "datetime",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    },
+    "harvest_collection": {
+      "description": "ข้อมูลตาราง harvest_collection",
+      "required": [
+        "collection_id",
+        "harvest_id",
+        "batch_id"
+      ],
+      "properties": {
+        "collection_id": {
+          "is_from_input": false,
+          "description": "รหัสคอลเลคชั่นที่เกิดจากการรวม harvest และ batch",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": true
+        },
+        "harvest_id": {
+          "is_from_input": false,
+          "description": "รหัสการเก็บเกี่ยว",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        },
+        "batch_id": {
+          "is_from_input": false,
+          "description": "รหัสล็อตที่ไม่ซ้ำกัน",
+          "type": "option",
+          "is_required": true,
+          "placeholder": "กรอกข้อมูล...",
+          "is_key": false
+        }
+      }
+    }
+  }
+}
