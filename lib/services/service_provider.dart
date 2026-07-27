@@ -7,7 +7,8 @@ class ServiceProvider<T> {
   final String endpoint;
   final bool isRealApi;
   final bool useCookie;
-  final String baseUrl = 'http://192.168.10.188:8080';
+  // final String baseUrl = 'http://192.168.10.188:8080';
+  final String baseUrl = 'http://localhost:8080';
 
   static const String _cookieKey = 'auth_cookie';
 
