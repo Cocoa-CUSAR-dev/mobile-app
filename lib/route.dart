@@ -1,14 +1,11 @@
-import 'package:cocoa_supply/widgets/pages/batch_detail_page.dart';
 import 'package:cocoa_supply/widgets/pages/farm_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/hub_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/plot_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/processing_station_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/register_role_page.dart';
-import 'package:cocoa_supply/widgets/pages/transaction_detail_page.dart';
 import 'package:cocoa_supply/widgets/pages/user_register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/widgets/pages/home_page.dart';
-import 'package:cocoa_supply/widgets/pages/plot_detail_page.dart';
 import 'package:cocoa_supply/widgets/pages/login_page.dart';
 
 // Import หน้า Dynamic Register ที่เราสร้างใหม่

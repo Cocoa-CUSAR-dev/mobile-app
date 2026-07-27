@@ -15,10 +15,7 @@ class AuthService {
       // เรียก fetchData ซึ่งจะได้ List กลับมา
       final Map<String, dynamic> result = await _provider.fetchOne('');
       print(result);
-      if(result != null){
-        return Profile.fromJson(result);
-      }
-      return null;
+      return Profile.fromJson(result);
     } catch (e) {
       print('Error in getProfile: $e');
       rethrow;

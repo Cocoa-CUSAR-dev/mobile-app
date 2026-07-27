@@ -26,7 +26,6 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   int _currentStep = 0;
-  final int _fieldsPerPage = 1;
 
   final Map<String, List<Map<String, dynamic>>> _dropdownOptions = {};
   late Map<String, dynamic> _currentFormData;
