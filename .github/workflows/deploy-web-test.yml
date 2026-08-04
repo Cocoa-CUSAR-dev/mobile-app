@@ -29,10 +29,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Note: pubspec.yaml's `sdk: ^3.9.2` is the DART SDK constraint, not a
+      # Flutter release number -- Flutter and Dart version independently.
+      # Using the stable channel avoids having to track the matching Flutter
+      # version by hand.
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.9.2'
+          channel: stable
 
       - name: Install dependencies
         run: flutter pub get
