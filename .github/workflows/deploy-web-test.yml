@@ -45,11 +45,14 @@ jobs:
       # (served at https://<org>.github.io/mobile-app/). Change if that changes.
       # --dart-define overrides service_provider.dart's baseUrl for this build
       # only -- the native app's default (LAN IP) is untouched.
+      # Points at mobile-backend's TEST deployment (its own Render service,
+      # tracking the `test` branch) -- NOT the main/production one. Update
+      # this if the test backend's URL ever changes.
       - name: Build web
         run: |
           flutter build web \
             --base-href /mobile-app/ \
-            --dart-define=API_BASE_URL=https://mobile-backend-1-iht2.onrender.com
+            --dart-define=API_BASE_URL=https://mobile-backend-2-t8h6.onrender.com
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
