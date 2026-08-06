@@ -1,0 +1,64 @@
+// Widget tests for lib/widgets/pages/registration_station_page.dart
+// (RegistrationSelectionPage).
+//
+// Notable bug pinned by the second test below: both selection buttons
+// navigate to AppRoute.dynamicRegister with a `tableName` argument, but
+// route.dart's onGenerateRoute only builds DynamicRegisterPage when the
+// args map contains a `handler` key — `tableName` isn't read at all. So
+// tapping either button currently always lands on that route case's own
+// error page ("กรุณาระบุ tableName สำหรับหน้า Dynamic Register") instead
+// of a real registration form.
+
+import 'package:cocoa_supply/widgets/pages/registration_station_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'page_test_helpers.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('shows both role selection buttons', (tester) async {
+    await tester.pumpWidget(wrapPage(const RegistrationSelectionPage()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('สมัครเป็นเกษตรกร'), findsOneWidget);
+    expect(find.text('สมัครเป็นผู้แปรรูป'), findsOneWidget);
+  });
+
+  testWidgets('selecting เกษตรกร hits the route\'s error page rather than the dynamic form (documented bug)', (tester) async {
+    await tester.pumpWidget(wrapPage(const RegistrationSelectionPage()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('สมัครเป็นเกษตรกร'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('สมัครเป็นเกษตรกร'), findsNothing);
+    expect(find.text('กรุณาระบุ tableName สำหรับหน้า Dynamic Register'), findsOneWidget);
+  });
+
+  testWidgets('back link pops the page', (tester) async {
+    await tester.pumpWidget(wrapPage(
+      Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const RegistrationSelectionPage()),
+          ),
+          child: const Text('open'),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ย้อนกลับไปหน้าล็อกอิน'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('สมัครเป็นเกษตรกร'), findsNothing);
+  });
+}

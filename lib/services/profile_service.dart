@@ -1,13 +1,18 @@
 import 'package:cocoa_supply/models/profile_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 class AuthService {
+  AuthService({http.Client? client})
+    : _provider = ServiceProvider<Profile>(
+        storageKey: 'user_profile_data',
+        endpoint: '/auth/me',
+        isRealApi: true,
+        client: client,
+      );
+
   // ใช้ ServiceProvider พื้นฐานเหมือนเดิม
-  final ServiceProvider<Profile> _provider = ServiceProvider<Profile>(
-    storageKey: 'user_profile_data',
-    endpoint: '/auth/me',
-    isRealApi: true
-  );
+  final ServiceProvider<Profile> _provider;
 
   /// ฟังก์ชันสำหรับดึงข้อมูลโปรไฟล์ทั้งหมด (ใช้ในหน้า Profile)
   Future<Profile?> getProfile() async {

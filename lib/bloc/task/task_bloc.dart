@@ -6,7 +6,7 @@ import 'package:cocoa_supply/services/task_service.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
-  final TaskService _taskService = TaskService();
+  final TaskService _taskService;
 
   // คิวในเครื่อง (SharedPreferences)
   final ServiceProvider<Map<String, dynamic>> _queueService = ServiceProvider(
@@ -15,7 +15,9 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     isRealApi: false,
   );
 
-  TaskBloc() : super(TaskState()) {
+  TaskBloc({TaskService? taskService})
+    : _taskService = taskService ?? TaskService(),
+      super(TaskState()) {
     // 1. Sync รายการงาน
     on<SyncTasksWithQueue>((event, emit) async {
       emit(state.copyWith(isLoading: true));

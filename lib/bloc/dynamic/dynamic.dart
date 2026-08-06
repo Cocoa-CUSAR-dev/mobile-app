@@ -59,8 +59,10 @@ class DynamicError extends DynamicState {
 // Bloc Implementation
 class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
   final TaskBloc taskBloc;
-  final api = DynamicApiService();
-  DynamicBloc({required this.taskBloc}) : super(DynamicInitial()) {
+  final DynamicApiService api;
+  DynamicBloc({required this.taskBloc, DynamicApiService? api})
+    : api = api ?? DynamicApiService(),
+      super(DynamicInitial()) {
     on<LoadSchemaAndData>((event, emit) async {
       emit(DynamicLoading());
       try {

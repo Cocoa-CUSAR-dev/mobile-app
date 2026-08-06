@@ -9,6 +9,7 @@ class ServiceProvider<T> {
   final bool useCookie;
   // final String baseUrl = 'http://192.168.10.188:8080';
   final String baseUrl = 'http://localhost:8080';
+  final http.Client _client;
 
   static const String _cookieKey = 'auth_cookie';
 
@@ -17,7 +18,8 @@ class ServiceProvider<T> {
     required this.endpoint,
     this.isRealApi = false,
     this.useCookie = true,
-  });
+    http.Client? client,
+  }) : _client = client ?? http.Client();
 
   // --- PRIVATE HELPERS ---
 
@@ -31,7 +33,7 @@ class ServiceProvider<T> {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
       final prefs = await SharedPreferences.getInstance();
       final String? cookie = prefs.getString(_cookieKey);
-      final response = await http
+      final response = await _client
           .get(
             uri,
             headers: {
@@ -129,7 +131,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint').replace(queryParameters: queryParams);
       try {
-        final response = await http
+        final response = await _client
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 10));
 
@@ -161,7 +163,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint');
       try {
-        final response = await http.post(
+        final response = await _client.post(
           uri,
           headers: await _getHeaders(),
           body: jsonEncode(payload),
@@ -214,7 +216,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$id');
       try {
-        final response = await http.get(uri, headers: await _getHeaders());
+        final response = await _client.get(uri, headers: await _getHeaders());
         await _updateCookie(response);
 
         if (response.statusCode == 200) {
@@ -238,7 +240,7 @@ class ServiceProvider<T> {
       // ปรับให้ยิงไปที่ endpoint หลัก (เช่น /tasks) ไม่ต้องต่อท้ายด้วย /id
       final uri = Uri.parse('$baseUrl$endpoint');
       try {
-        final response = await http.put(
+        final response = await _client.put(
           uri,
           headers: await _getHeaders(),
           body: jsonEncode(payload),
@@ -264,7 +266,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$identifierValue');
       try {
-        final response = await http.delete(uri, headers: await _getHeaders());
+        final response = await _client.delete(uri, headers: await _getHeaders());
         await _updateCookie(response);
         return (response.statusCode == 200 || response.statusCode == 204);
       } catch (e) {

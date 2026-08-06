@@ -2,17 +2,22 @@
 
 import 'package:cocoa_supply/models/hub_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 class HubService {
   static const String _storageKey = 'hub_data';
   static const String _endpoint = '/hubs'; // ปรับ Endpoint เป็น /hub
-  
+
+  HubService({http.Client? client})
+    : _provider = ServiceProvider<Hub>(
+        storageKey: _storageKey,
+        endpoint: _endpoint,
+        isRealApi: true,
+        client: client,
+      );
+
   // ใช้ ServiceProvider จัดการ Generic Data
-  final ServiceProvider<Hub> _provider = ServiceProvider<Hub>(
-    storageKey: _storageKey,
-    endpoint: _endpoint,
-    isRealApi: true,
-  );
+  final ServiceProvider<Hub> _provider;
 
   /// ดึงข้อมูลทั้งหมดจาก Hub
   Future<List<Hub>> fetchAll() async {

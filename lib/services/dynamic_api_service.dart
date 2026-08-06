@@ -1,12 +1,18 @@
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 class DynamicApiService {
+  DynamicApiService({http.Client? client}) : _client = client;
+
+  final http.Client? _client;
+
   /// ดึงข้อมูลตาม table
   Future<List<Map<String, dynamic>>> fetchData(String tableName,
       {Map<String, dynamic>? queryParams}) async {
     final provider = ServiceProvider<Map<String, dynamic>>(
       storageKey: '${tableName}_data',
       endpoint: '/$tableName',
+      client: _client,
     );
 
     return provider.fetchData(
@@ -24,6 +30,7 @@ class DynamicApiService {
     final provider = ServiceProvider<Map<String, dynamic>>(
       storageKey: '${tableName}_data',
       endpoint: '/$tableName',
+      client: _client,
     );
 
     try {
@@ -43,8 +50,9 @@ class DynamicApiService {
     // ปรับ endpoint ให้เป็นแบบ dynamic ตาม key ที่ส่งมา
     final service = ServiceProvider<Map<String, dynamic>>(
       storageKey: 'constants_$key', // เก็บลง storage แยกตามประเภท
-      endpoint: '/constants/$key', 
+      endpoint: '/constants/$key',
       isRealApi: true, // เปิดใช้งาน API จริง
+      client: _client,
     );
 
     try {
