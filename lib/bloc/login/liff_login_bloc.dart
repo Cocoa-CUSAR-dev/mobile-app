@@ -28,20 +28,14 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
     Emitter<LiffLoginState> emit,
   ) async {
     emit(LiffInitializing());
-    // TEMP DEBUG — print ไล่สเตจ (โผล่ใน overlay ผ่าน console.log hook) ลบพร้อม overlay
-    print('[LiffBloc] init requested, liffId="${liffId.isEmpty ? "(ว่าง!)" : liffId}"');
     try {
       if (liffId.isEmpty) {
         throw Exception('ยังไม่ได้ตั้งค่า LIFF_ID (--dart-define=LIFF_ID=...)');
       }
 
-      print('[LiffBloc] calling liff.init()...');
       await liffInit(liffId);
-      print('[LiffBloc] liff.init() done');
 
-      final loggedIn = liffIsLoggedIn();
-      print('[LiffBloc] liff.isLoggedIn() = $loggedIn');
-      if (!loggedIn) {
+      if (!liffIsLoggedIn()) {
         // liffLogin() จะ redirect ทั้งหน้าไปหน้า login ของ LINE เอง
         // (หน้านี้จะถูกทำลายไป ไม่ต้อง emit อะไรต่อ)
         liffLogin();
@@ -49,7 +43,6 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
       }
 
       final idToken = liffGetIDToken();
-      print('[LiffBloc] idToken ${idToken == null ? "= null!" : "ได้แล้ว (${idToken.length} chars)"}');
       if (idToken == null) {
         throw Exception(
           'liff.getIDToken() คืนค่า null — เช็คว่า LIFF app เปิด scope "openid" ไว้หรือยัง',
@@ -57,9 +50,7 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
       }
 
       emit(LiffReady(idToken: idToken));
-      print('[LiffBloc] emitted LiffReady — ฟอร์มควรขึ้นแล้ว');
     } catch (e) {
-      print('[LiffBloc] init FAILED: $e');
       emit(LiffLoginFailure(error: e.toString()));
     }
   }

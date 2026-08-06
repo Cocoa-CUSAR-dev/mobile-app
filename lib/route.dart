@@ -36,15 +36,7 @@ class AppRoute {
     // รับ arguments ในรูปแบบ Map
     final args = settings.arguments as Map<String, dynamic>?;
 
-    // ตัด query string ออกก่อน match — จำเป็นเพราะตอนกลับมาจาก LINE login
-    // (usePathUrlStrategy) settings.name จะเป็น "/liff-link?code=...&state=...
-    // &liffClientId=...&liffRedirectUri=..." ไม่ใช่ "/liff-link" เฉยๆ ถ้าไม่ตัด
-    // ทิ้งจะ match เคสไหนไม่ได้เลยแม้แต่ path ที่ถูกต้อง (query params พวกนี้เป็น
-    // ของ LIFF SDK เอง อ่านจาก window.location ตรงๆ ตอน liff.init() ไม่เกี่ยวกับ
-    // Flutter routing เลย ไม่ต้อง parse ออกมาใช้ที่นี่)
-    final path = Uri.parse(settings.name ?? '').path;
-
-    switch (path) {
+    switch (settings.name) {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case liffLink:
