@@ -2,6 +2,44 @@
 <html>
 <head>
   <script type="text/javascript">
+    // TEMP DEBUG OVERLAY — ลบทิ้งทันทีที่หา error เจอแล้ว ไม่ควรค้างไว้ถาวร
+    // โชว์ error/console.error เป็นกล่อง log ติดขอบล่างจอ ไว้ debug บนมือถือ
+    // จริง (ผ่าน LINE in-app webview) โดยไม่ต้องต่อ USB/เปิด DevTools
+    (function () {
+      var box = document.createElement('div');
+      box.id = '__debug_log';
+      box.style.cssText =
+        'position:fixed;bottom:0;left:0;right:0;max-height:45vh;overflow:auto;' +
+        'background:rgba(0,0,0,0.88);color:#7CFC00;font:11px monospace;' +
+        'padding:8px;z-index:999999;white-space:pre-wrap;word-break:break-all;';
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.appendChild(box);
+      });
+      function log(msg) {
+        var line = document.createElement('div');
+        line.textContent = msg;
+        box.appendChild(line);
+      }
+      window.addEventListener('error', function (e) {
+        log('[error] ' + e.message + ' @ ' + e.filename + ':' + e.lineno);
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        log('[unhandledrejection] ' + e.reason);
+      });
+      var origError = console.error;
+      console.error = function () {
+        log('[console.error] ' + Array.prototype.slice.call(arguments).join(' '));
+        origError.apply(console, arguments);
+      };
+      var origWarn = console.warn;
+      console.warn = function () {
+        log('[console.warn] ' + Array.prototype.slice.call(arguments).join(' '));
+        origWarn.apply(console, arguments);
+      };
+      log('[debug overlay] loaded, waiting for errors...');
+    })();
+  </script>
+  <script type="text/javascript">
     // Single Page Apps for GitHub Pages
     // https://github.com/rafgraph/spa-github-pages
     //
