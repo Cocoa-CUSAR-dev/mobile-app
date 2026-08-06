@@ -35,8 +35,9 @@ class AppRoute {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     // รับ arguments ในรูปแบบ Map
     final args = settings.arguments as Map<String, dynamic>?;
-
-    switch (settings.name) {
+    final path = Uri.parse(settings.name ?? '').path;
+    
+    switch (path) {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case liffLink:

@@ -12,7 +12,7 @@ class ServiceProvider<T> {
   // Native builds keep the existing LAN-IP default unchanged.
   final String baseUrl = const String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.10.188:8080',
+    defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
   );
 
   static const String _cookieKey = 'auth_cookie';
