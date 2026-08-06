@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+    /* html/body ไม่มีความสูงมาก่อนหน้านี้ — document.body.clientHeight วัดได้ 0
+       จริง (ยืนยันจาก debug overlay: "body=964x0" ใน LINE in-app webview)
+       ทำให้ Flutter engine คำนวณ physicalSize/viewInsets เริ่มต้นผิดตั้งแต่แรก
+       จน assert "ViewInsets cannot be negative" แล้วล้มการวาดทั้งหมด (จอขาว) */
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
   <script type="text/javascript">
     // TEMP DEBUG OVERLAY — ลบทิ้งทันทีที่หา error เจอแล้ว ไม่ควรค้างไว้ถาวร
     // โชว์ error/console.error เป็นกล่อง log ติดขอบล่างจอ ไว้ debug บนมือถือ
@@ -136,6 +148,13 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <!-- ไฟล์นี้ไม่เคยมี viewport meta tag เลย — ปล่อยให้ browser (โดยเฉพาะ
+       webview ของ LINE) กับ Flutter engine ต่างฝ่ายต่างคำนวณ viewport/inset
+       เอง จนชนกันได้ "ViewInsets cannot be negative" ตอน layout เปลี่ยน
+       (เช่น ฟอร์มที่มี TextField โผล่ขึ้นมา) interactive-widget=resizes-content
+       บอก browser ให้ resize เนื้อหาแทนการ resize visual viewport เอง ให้
+       Flutter เป็นฝ่ายเดียวที่จัดการ inset -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
   <meta name="description" content="A new Flutter project.">
 
   <!-- iOS meta tags & icons -->
