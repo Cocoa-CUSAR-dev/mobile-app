@@ -4,8 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 void main() {
+  // ใช้ path ปกติ (/liff-link) แทน hash (#/liff-link) — จำเป็นสำหรับให้
+  // LIFF Endpoint URL ชี้มาที่ path ตรงๆ ได้ (no-op บน mobile โดยอัตโนมัติ)
+  usePathUrlStrategy();
   runApp(const MyApp());
 }
 
