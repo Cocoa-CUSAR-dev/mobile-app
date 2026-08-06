@@ -75,6 +75,28 @@
           (typeof liff === 'undefined' ? 'liff SDK ยังไม่โหลด' : 'liff SDK โหลดแล้ว') + ')');
         log('[url@8s] ' + window.location.href);
       }, 8000);
+
+      // เช็คขนาดจริงของ element ที่ Flutter ใช้วาด — "first frame rendered" แปลว่า
+      // วาดสำเร็จ "ครั้งหนึ่ง" เท่านั้น ถ้า host element กว้าง/สูง = 0 จะยังเห็นจอ
+      // ขาวได้ทั้งที่ event ยิงแล้วจริง เช็คซ้ำหลายจังหวะ (0.5s เพื่อจับตอน build
+      // เสร็จใหม่ๆ, 3s เพื่อจับตอน LiffReady/ฟอร์มควรขึ้นแล้ว)
+      function dumpFlutterHostSize(tag) {
+        log('[size@' + tag + '] window=' + window.innerWidth + 'x' + window.innerHeight +
+          ', body=' + document.body.clientWidth + 'x' + document.body.clientHeight);
+        var hosts = document.querySelectorAll('flutter-view, flt-glass-pane, canvas, [flt-renderer]');
+        if (hosts.length === 0) {
+          log('[size@' + tag + '] ไม่เจอ flutter host element เลย (flutter-view/flt-glass-pane/canvas)');
+        }
+        hosts.forEach(function (el, i) {
+          var r = el.getBoundingClientRect();
+          log('[size@' + tag + '] <' + el.tagName.toLowerCase() + '>#' + i +
+            ' rect=' + Math.round(r.width) + 'x' + Math.round(r.height) +
+            ' style.display=' + getComputedStyle(el).display +
+            ' style.visibility=' + getComputedStyle(el).visibility);
+        });
+      }
+      setTimeout(function () { dumpFlutterHostSize('0.5s'); }, 500);
+      setTimeout(function () { dumpFlutterHostSize('3s'); }, 3000);
     })();
   </script>
   <script type="text/javascript">
