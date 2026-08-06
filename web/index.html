@@ -36,7 +36,18 @@
         log('[console.warn] ' + Array.prototype.slice.call(arguments).join(' '));
         origWarn.apply(console, arguments);
       };
+      window.__debugLog = log; // ให้สคริปต์อื่นข้างล่างเรียก log เดียวกันได้
       log('[debug overlay] loaded, waiting for errors...');
+      log('[ua] ' + navigator.userAgent);
+
+      // เช็คจุดที่ hang ได้บ่อยที่สุด 2 จุด: LIFF SDK โหลดสำเร็จไหม, Flutter render frame แรกไหม
+      document.addEventListener('flutter-first-frame', function () {
+        log('[flutter] first frame rendered ✅');
+      });
+      setTimeout(function () {
+        log('[flutter] first frame ยังไม่ขึ้นหลัง 8 วินาที (' +
+          (typeof liff === 'undefined' ? 'liff SDK ยังไม่โหลด' : 'liff SDK โหลดแล้ว') + ')');
+      }, 8000);
     })();
   </script>
   <script type="text/javascript">
@@ -91,7 +102,16 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    if (window.__debugLog) window.__debugLog('[boot] flutter_bootstrap.js กำลังจะเริ่มโหลด...');
+  </script>
+  <script src="flutter_bootstrap.js" async
+    onload="window.__debugLog && window.__debugLog('[boot] flutter_bootstrap.js โหลดสำเร็จ (แค่โหลดไฟล์ ยังไม่แปลว่า Flutter render เสร็จ)')"
+    onerror="window.__debugLog && window.__debugLog('[boot] flutter_bootstrap.js โหลด FAIL')"
+  ></script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+    onload="window.__debugLog && window.__debugLog('[liff] LIFF SDK โหลดสำเร็จ')"
+    onerror="window.__debugLog && window.__debugLog('[liff] LIFF SDK โหลด FAIL')"
+  ></script>
 </body>
 </html>
