@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script type="text/javascript">
+    // Single Page Apps for GitHub Pages
+    // https://github.com/rafgraph/spa-github-pages
+    //
+    // คู่กับ web/404.html — ถอดรหัส path ที่ 404.html เข้ารหัสไว้ใน query
+    // string กลับมาเป็น path จริงด้วย history.replaceState ก่อนที่ Flutter
+    // router จะเริ่มอ่าน URL (ต้องอยู่ก่อน flutter_bootstrap.js เสมอ)
+    (function (l) {
+      if (l.search[1] === '/') {
+        var decoded = l.search
+          .slice(1)
+          .split('&')
+          .map(function (s) {
+            return s.replace(/~and~/g, '&');
+          })
+          .join('?');
+        window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+      }
+    })(window.location);
+  </script>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.

@@ -7,8 +7,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 void main() {
-  // ใช้ path ปกติ (/liff-link) แทน hash (#/liff-link) — จำเป็นสำหรับให้
-  // LIFF Endpoint URL ชี้มาที่ path ตรงๆ ได้ (no-op บน mobile โดยอัตโนมัติ)
+  // path-based routing (/liff-link แทน #/liff-link) — จำเป็นสำหรับ LIFF
+  // เพราะ LINE ต่อ query string (?liff.state=...) เข้ากับ Endpoint URL ตอน
+  // redirect กลับจาก login ซึ่งใช้กับ URL ที่มี #fragment ไม่ได้ (query หลัง
+  // fragment จะกลายเป็นส่วนหนึ่งของ fragment ไปเลยตาม URL spec)
+  //
+  // Deploy อยู่บน GitHub Pages ซึ่งไม่รองรับ server-side rewrite ให้
+  // path-based SPA routing ทำงานเองได้ — ต้องพึ่ง web/404.html +
+  // สคริปต์ต้น web/index.html (rafgraph/spa-github-pages pattern) คู่กัน
+  // ถึงจะใช้ path ตรงๆ บน GitHub Pages ได้จริง อย่าลบสองไฟล์นั้นทิ้ง
   usePathUrlStrategy();
   runApp(const MyApp());
 }
