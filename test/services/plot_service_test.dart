@@ -1,10 +1,10 @@
 // Unit tests for lib/services/plot_service.dart.
 //
-// Known bug documented by the getPlotById test below: it filters by
+// KNOWN BUG (getPlotById tests below currently FAIL): it filters by
 // `p.farmId` instead of `p.plotId`, so it actually returns "the plot
-// belonging to this farm" rather than "the plot with this id". The test
-// pins the current (likely unintended) behavior rather than silently
-// rewriting it — flagging for a human to confirm intent and fix.
+// belonging to this farm" rather than "the plot with this id". The tests
+// assert what a correctly implemented getPlotById should do — match on
+// plotId.
 
 import 'package:cocoa_supply/models/plot_model.dart';
 import 'package:cocoa_supply/services/plot_service.dart';
@@ -37,44 +37,61 @@ void main() {
     });
   });
 
-  group('getPlotById (documented current behavior: filters by farmId, not plotId)', () {
-    test('matches on farmId rather than plotId', () async {
+  group('getPlotById', () {
+    test('matches on plotId, not farmId', () async {
       final client = MockClient((request) async {
         return jsonResponse([
           {'plot_id': 1, 'farm_id': 99},
+          {'plot_id': 2, 'farm_id': 99},
         ], 200);
       });
 
-      final plot = await PlotService(client: client).getPlotById('99');
+      final plot = await PlotService(client: client).getPlotById('2');
 
-      expect(plot?.farmId, '99');
+      expect(plot?.plotId, '2');
     });
 
-    test('throws when no plot has a matching farmId', () async {
+    test('two plots on the same farm are distinguishable by plotId', () async {
       final client = MockClient((request) async {
         return jsonResponse([
-          {'plot_id': 1, 'farm_id': 5},
+          {'plot_id': 1, 'farm_id': 99, 'plot_name': 'แปลง 1'},
+          {'plot_id': 2, 'farm_id': 99, 'plot_name': 'แปลง 2'},
         ], 200);
       });
 
-      await expectLater(
-        PlotService(client: client).getPlotById('1'),
-        throwsStateError,
-      );
+      final plot = await PlotService(client: client).getPlotById('1');
+
+      expect(plot?.plotName, 'แปลง 1');
     });
   });
 
   group('savePlot', () {
-    test('rejects a plot whose farmId already exists', () async {
+    test('rejects a plot whose plotId already exists', () async {
       final client = MockClient((request) async {
         return jsonResponse([
-          {'plot_id': 1, 'farm_id': 5},
+          {'plot_id': 2, 'farm_id': 5},
         ], 200);
       });
 
       await expectLater(
-        PlotService(client: client).savePlot(Plot(plotId: '2', farmId: '5')),
+        PlotService(client: client).savePlot(Plot(plotId: '2', farmId: '7')),
         throwsA(isA<Exception>()),
+      );
+    });
+
+    test('allows a second plot on the same farm as long as plotId differs', () async {
+      final client = MockClient((request) async {
+        if (request.method == 'GET') {
+          return jsonResponse([
+            {'plot_id': 1, 'farm_id': 5},
+          ], 200);
+        }
+        return jsonResponse({}, 200);
+      });
+
+      await expectLater(
+        PlotService(client: client).savePlot(Plot(plotId: '2', farmId: '5')),
+        completes,
       );
     });
   });

@@ -1,16 +1,14 @@
 // Unit tests for lib/services/dynamic_api_service.dart.
 //
-// Notable finding pinned by these tests: fetchData() and submitData() build
-// their ServiceProvider without `isRealApi: true` (unlike fetchConstants()
-// and every concrete *Service class, which all set it explicitly), so both
-// methods always run ServiceProvider's local/mock branch — they never call
-// the injected http.Client at all, regardless of environment. In mock mode,
-// fetchData only ever returns whatever is already cached in
-// SharedPreferences (empty on a fresh install), and submitData's `isEdit:
-// true` path (putData) doesn't persist anything either. If DynamicApiService
-// is meant to reach the real backend for dynamic-form submissions, this
-// looks like a missing `isRealApi: true` rather than intended behavior —
-// worth a human confirming intent.
+// KNOWN BUG (tests below currently FAIL): fetchData() and submitData()
+// build their ServiceProvider without `isRealApi: true` (unlike
+// fetchConstants() and every concrete *Service class, which all set it
+// explicitly), so both methods always run ServiceProvider's local/mock
+// branch — they never call the injected http.Client at all. Since
+// DynamicApiService is meant to reach the real backend for dynamic-form
+// submissions (that's the whole point of dynamic_register_page.dart), the
+// tests below assert the real-network behavior a correct implementation
+// should have.
 
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,55 +24,54 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('fetchData (documented current behavior: mock/local mode only)', () {
-    test('never calls the network and returns cached rows when present', () async {
-      SharedPreferences.setMockInitialValues({
-        'farm_data': '[{"farm_id":1}]',
-      });
+  group('fetchData', () {
+    test('GETs /<tableName> from the real backend', () async {
       var networkCalled = false;
       final client = MockClient((request) async {
         networkCalled = true;
-        return jsonResponse([], 200);
+        expect(request.url.toString(), 'http://localhost:8080/farm');
+        return jsonResponse([
+          {'farm_id': 1},
+        ], 200);
       });
 
       final rows = await DynamicApiService(client: client).fetchData('farm');
 
-      expect(networkCalled, isFalse);
+      expect(networkCalled, isTrue);
       expect(rows, [
         {'farm_id': 1},
       ]);
     });
-
-    test('returns an empty list when nothing is cached yet', () async {
-      final rows = await DynamicApiService().fetchData('farm');
-      expect(rows, isEmpty);
-    });
   });
 
-  group('submitData (documented current behavior: mock/local mode only)', () {
-    test('isEdit:false appends the payload to local storage under <tableName>_data', () async {
-      var networkCalled = false;
+  group('submitData', () {
+    test('isEdit:false POSTs the payload to the real backend', () async {
+      var method = '';
       final client = MockClient((request) async {
-        networkCalled = true;
+        method = request.method;
+        expect(request.url.toString(), 'http://localhost:8080/farm');
         return jsonResponse({}, 200);
       });
 
       await DynamicApiService(client: client).submitData('farm', {'farm_id': 1});
 
-      expect(networkCalled, isFalse);
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('farm_data'), '[{"farm_id":1}]');
+      expect(method, 'POST');
     });
 
-    test('isEdit:true does not persist anything locally (putData mock branch is a no-op)', () async {
-      await DynamicApiService().submitData('farm', {'farm_id': 1}, isEdit: true);
+    test('isEdit:true PUTs the payload to the real backend', () async {
+      var method = '';
+      final client = MockClient((request) async {
+        method = request.method;
+        return jsonResponse({}, 200);
+      });
 
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('farm_data'), isNull);
+      await DynamicApiService(client: client).submitData('farm', {'farm_id': 1}, isEdit: true);
+
+      expect(method, 'PUT');
     });
   });
 
-  group('fetchConstants (the one method that does set isRealApi: true)', () {
+  group('fetchConstants (the one method that already sets isRealApi: true)', () {
     test('routes to /constants/<key>', () async {
       final client = MockClient((request) async {
         expect(request.url.toString(), 'http://localhost:8080/constants/province_id');

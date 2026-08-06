@@ -7,11 +7,12 @@
 // dart:io's callback doesn't advance on the fake clock the way a plain
 // MockClient's Future-based response does.
 //
-// Notable bug pinned by the first test below: a profile with zero roles
+// KNOWN BUG (first test below currently FAILS): a profile with zero roles
 // produces a nav item list of length 1 (just "หน้าหลัก"), but
 // BottomNavigationBar requires at least 2 items and asserts otherwise —
 // so RootScaffold currently crashes for any logged-in user with no roles
-// assigned, rather than degrading to a single-tab shell.
+// assigned. The test asserts the graceful single-tab (no crash) rendering
+// a correct implementation should have.
 
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:cocoa_supply/widgets/components/root_scaffold.dart';
@@ -36,7 +37,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('a profile with no roles crashes BottomNavigationBar\'s >=2-items assertion (documented bug)', (tester) async {
+  testWidgets('a profile with no roles renders a single-tab shell without crashing (KNOWN BUG: currently crashes)', (tester) async {
     final client = MockClient((request) async => jsonResponse({
       'first_name': 'สมชาย',
       'last_name': 'โกโก้ดี',
@@ -57,7 +58,8 @@ void main() {
 
     await _pumpUntilSpinnerGone(tester);
 
-    expect(tester.takeException(), isA<AssertionError>());
+    expect(tester.takeException(), isNull);
+    expect(find.text('home body'), findsOneWidget);
   });
 
   testWidgets('a farmer profile adds the ฟาร์ม tab', (tester) async {

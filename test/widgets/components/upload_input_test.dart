@@ -1,14 +1,12 @@
 // Widget/unit tests for lib/widgets/components/upload_input.dart.
 //
-// Notable finding: UploadInput calls `FilePicker.platform.pickFiles()` with
-// no `type`/`allowedExtensions` filter, so nothing in this component
-// actually rejects a non-image file — despite testcase.md rows like
+// KNOWN BUG (test below currently FAILS): UploadInput calls
+// FilePicker.platform.pickFiles() with no type/allowedExtensions filter,
+// so nothing rejects a non-image file — despite testcase.md rows like
 // M-FARM-14/M-PLOT-18/M-STAT-15/M-HUB-15/M-FORM-09/25/39 all asserting
 // "ระบบจะไม่ให้อับโหลดไฟล์ที่ผิด" (the system won't allow uploading the
-// wrong file). The actual OS file-picker tap flow isn't exercised here
-// (it needs a platform-channel mock beyond this component's own seams),
-// but the missing filter is visible directly in the source and is worth a
-// human confirming intent on.
+// wrong file). A `pickFiles` override was added to UploadInput so the
+// real OS file-picker platform channel doesn't need to be mocked here.
 
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:file_picker/file_picker.dart';
@@ -76,5 +74,23 @@ void main() {
       expect(controller.hasFile, isFalse);
       expect(find.text('เลือกไฟล์...'), findsOneWidget);
     });
+
+    testWidgets(
+      'M-FARM-14/M-PLOT-18/etc — picking a non-image file is rejected (KNOWN BUG: currently accepted)',
+      (tester) async {
+        final controller = FileUploadController();
+        await tester.pumpWidget(wrap(UploadInput(
+          label: 'รูปภาพประกอบฟาร์ม',
+          controller: controller,
+          pickFiles: () async => FilePickerResult([PlatformFile(name: 'document.pdf', size: 2048)]),
+        )));
+
+        await tester.tap(find.byType(InkWell));
+        await tester.pumpAndSettle();
+
+        expect(controller.hasFile, isFalse, reason: 'a .pdf should be rejected, not accepted as an image');
+        expect(find.text('เลือกไฟล์...'), findsOneWidget);
+      },
+    );
   });
 }

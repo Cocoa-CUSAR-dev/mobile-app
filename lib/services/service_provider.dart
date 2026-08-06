@@ -7,8 +7,12 @@ class ServiceProvider<T> {
   final String endpoint;
   final bool isRealApi;
   final bool useCookie;
-  // final String baseUrl = 'http://192.168.10.188:8080';
-  final String baseUrl = 'http://localhost:8080';
+  // Override at build/run time, e.g.:
+  //   flutter run --dart-define=API_BASE_URL=http://192.168.10.188:8080
+  final String baseUrl = const String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8080',
+  );
   final http.Client _client;
 
   static const String _cookieKey = 'auth_cookie';

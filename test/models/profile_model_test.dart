@@ -3,10 +3,13 @@
 // Profile has no toJson (it is a read-only view of the logged-in user), so
 // only fromJson is exercised here.
 //
-// Known limitation documented by the second test: fullName is built as
+// KNOWN BUG (last test below currently FAILS): fullName is built as
 // `json['first_name'] + " " + json['last_name']` with no null guard, so a
-// payload missing either name throws instead of degrading gracefully. This
-// test pins that current behavior rather than silently masking it.
+// payload missing either name throws a NoSuchMethodError instead of
+// degrading gracefully (e.g. falling back to whichever name is present).
+// The test asserts the graceful behavior a correct implementation should
+// have — parsing must not crash just because one optional name is absent
+// from the API response.
 
 import 'package:cocoa_supply/models/profile_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,11 +43,9 @@ void main() {
       expect(profile.roles, isNull);
     });
 
-    test('throws when first_name or last_name is missing (documented current behavior)', () {
-      expect(
-        () => Profile.fromJson({'last_name': 'โกโก้ดี'}),
-        throwsA(anything),
-      );
+    test('does not crash when first_name is missing, and fullName falls back to what is present', () {
+      final profile = Profile.fromJson({'last_name': 'โกโก้ดี'});
+      expect(profile.fullName, 'โกโก้ดี');
     });
   });
 }
