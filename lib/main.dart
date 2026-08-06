@@ -44,6 +44,17 @@ class MyApp extends StatelessWidget {
         ),
         initialRoute: AppRoute.login,
         onGenerateRoute: AppRoute.onGenerateRoute,
+        // ค่า default ของ Flutter (Navigator.defaultGenerateInitialRoutes)
+        // จะสร้างหน้า home ('/') ซ้อนอยู่ข้างใต้ก่อนเสมอ แล้วค่อย push หน้าที่
+        // deep-link มาจริงทับ (เพื่อให้ปุ่มย้อนกลับกลับไปหน้าแรกได้) — ผลคือ
+        // LoginPage.initState() ทำงานคู่ขนานไปด้วยทุกครั้งที่เข้าแอปด้วย
+        // deep link (เช่น /liff-link จาก LINE) ทั้งที่ไม่ได้ต้องการ ยิง
+        // isLoggedIn()/LoadLogin โดยไม่จำเป็น — override ให้ build แค่ route
+        // ที่ตรงกับ URL จริงตัวเดียว ไม่ต้องสร้าง home ซ้อนไว้ข้างใต้
+        onGenerateInitialRoutes: (String initialRouteName) {
+          final route = AppRoute.onGenerateRoute(RouteSettings(name: initialRouteName));
+          return route != null ? [route] : [];
+        },
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
