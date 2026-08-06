@@ -36,9 +36,15 @@
         log('[console.warn] ' + Array.prototype.slice.call(arguments).join(' '));
         origWarn.apply(console, arguments);
       };
+      var origLog = console.log;
+      console.log = function () {
+        log('[console.log] ' + Array.prototype.slice.call(arguments).join(' '));
+        origLog.apply(console, arguments);
+      };
       window.__debugLog = log; // ให้สคริปต์อื่นข้างล่างเรียก log เดียวกันได้
       log('[debug overlay] loaded, waiting for errors...');
       log('[ua] ' + navigator.userAgent);
+      log('[url@start] ' + window.location.href);
 
       // เช็คจุดที่ hang ได้บ่อยที่สุด 2 จุด: LIFF SDK โหลดสำเร็จไหม, Flutter render frame แรกไหม
       document.addEventListener('flutter-first-frame', function () {
@@ -47,6 +53,7 @@
       setTimeout(function () {
         log('[flutter] first frame ยังไม่ขึ้นหลัง 8 วินาที (' +
           (typeof liff === 'undefined' ? 'liff SDK ยังไม่โหลด' : 'liff SDK โหลดแล้ว') + ')');
+        log('[url@8s] ' + window.location.href);
       }, 8000);
     })();
   </script>
