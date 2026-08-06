@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +19,21 @@ void main() {
   // สคริปต์ต้น web/index.html (rafgraph/spa-github-pages pattern) คู่กัน
   // ถึงจะใช้ path ตรงๆ บน GitHub Pages ได้จริง อย่าลบสองไฟล์นั้นทิ้ง
   usePathUrlStrategy();
+
+  // TEMP DEBUG — คู่กับ debug overlay ใน web/index.html: release build จะกลืน
+  // exception เงียบๆ (จอขาวเฉยๆ ไม่มี red screen แบบ debug) hook สองตัวนี้
+  // ดัน error ออก print → console.log → โผล่ใน overlay บนมือถือ ลบออกพร้อม overlay
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    // ignore: avoid_print
+    print('[FlutterError] ${details.exceptionAsString()}');
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    // ignore: avoid_print
+    print('[UncaughtError] $error');
+    return true;
+  };
+
   runApp(const MyApp());
 }
 

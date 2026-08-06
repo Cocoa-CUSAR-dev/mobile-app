@@ -26,6 +26,8 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   @override
   void initState() {
     super.initState();
+    // TEMP DEBUG — ลบพร้อม overlay ใน web/index.html
+    print('[LiffLinkPage] initState — เริ่ม LiffInitRequested');
     context.read<LiffLoginBloc>().add(LiffInitRequested());
   }
 

@@ -47,10 +47,30 @@
       log('[url@start] ' + window.location.href);
 
       // เช็คจุดที่ hang ได้บ่อยที่สุด 2 จุด: LIFF SDK โหลดสำเร็จไหม, Flutter render frame แรกไหม
-      document.addEventListener('flutter-first-frame', function () {
+      // สำคัญ: Flutter dispatch event นี้บน window ไม่ใช่ document (event ที่
+      // dispatch บน window ไม่ไหลลงมาถึง document listener) — ฟังทั้งคู่กันพลาด
+      var firstFrameSeen = false;
+      function onFirstFrame() {
+        firstFrameSeen = true;
         log('[flutter] first frame rendered ✅');
-      });
+      }
+      window.addEventListener('flutter-first-frame', onFirstFrame);
+      document.addEventListener('flutter-first-frame', onFirstFrame);
+
+      // probe WebGL — CanvasKit (renderer ของ Flutter web) ต้องมี WebGL ถึงจะวาดได้
+      // in-app webview บางตัวปิด hardware acceleration ทำให้ WebGL หายไปทั้งที่
+      // Chromium เวอร์ชันใหม่ → อาการคือ Dart รันปกติแต่จอขาวเปล่า ตรงกับที่เจอพอดี
+      try {
+        var cv = document.createElement('canvas');
+        var gl2 = cv.getContext('webgl2');
+        var gl1 = gl2 ? null : cv.getContext('webgl');
+        log('[webgl] webgl2=' + (gl2 ? 'OK' : 'ไม่มี') + ', webgl1=' + (gl2 ? '(ไม่ได้เช็ค)' : (gl1 ? 'OK' : 'ไม่มี')));
+      } catch (e) {
+        log('[webgl] probe error: ' + e.message);
+      }
+
       setTimeout(function () {
+        if (firstFrameSeen) return;
         log('[flutter] first frame ยังไม่ขึ้นหลัง 8 วินาที (' +
           (typeof liff === 'undefined' ? 'liff SDK ยังไม่โหลด' : 'liff SDK โหลดแล้ว') + ')');
         log('[url@8s] ' + window.location.href);
