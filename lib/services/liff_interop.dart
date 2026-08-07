@@ -17,6 +17,9 @@ external void liffLogin();
 @JS('liff.getIDToken')
 external JSString? _liffGetIDToken();
 
+@JS('liff.closeWindow')
+external void liffCloseWindow();
+
 Future<void> liffInit(String liffId) =>
     _liffInit(LiffInitOptions(liffId: liffId)).toDart;
 

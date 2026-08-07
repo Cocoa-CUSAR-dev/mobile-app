@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
+import 'package:cocoa_supply/services/liff_service.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 
 /// หน้าเชื่อมบัญชีเดิมกับ LINE ผ่าน LIFF — เข้าถึงได้ทาง route '/liff-link' เท่านั้น
@@ -81,6 +82,13 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
+                  }
+                  if (state is LiffLoginSuccess) {
+                    // โชว์ข้อความสำเร็จค้างไว้ 3 วินาที แล้วปิดหน้าจอ LIFF
+                    // กลับไปที่ช่องแชท LINE ให้เอง — ไม่ต้องรอ user กดปิดเอง
+                    Future.delayed(const Duration(seconds: 3), () {
+                      liffCloseWindow();
+                    });
                   }
                 },
                 builder: (context, state) {
@@ -192,23 +200,26 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   }
 
   Widget _buildSuccess(LiffLoginSuccess state) {
+    // ข้อความสรุปสำหรับ farmer โดยเฉพาะ (ไม่ใช่ debug detail อย่าง user_id/
+    // line_user_id ที่เคยโชว์ไว้ตอนดีบัก) — ค้างไว้ 3 วินาทีก่อนปิดหน้าจอ LIFF
+    // เอง (ดู listener ใน build() ด้านบน)
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.green.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.green.shade200),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '✅ ${state.message}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          Icon(Icons.check_circle, color: Colors.green.shade600, size: 48),
+          const SizedBox(height: 12),
+          const Text(
+            'ทำการผูกบัญชี Line สำเร็จ',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
-          const SizedBox(height: 8),
-          Text('user_id: ${state.userId}'),
-          Text('line_user_id: ${state.lineUserId}'),
         ],
       ),
     );

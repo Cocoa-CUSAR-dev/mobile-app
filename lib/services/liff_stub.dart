@@ -13,3 +13,5 @@ bool liffIsLoggedIn() => false;
 void liffLogin() {}
 
 String? liffGetIDToken() => null;
+
+void liffCloseWindow() {}
