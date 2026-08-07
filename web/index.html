@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+    /* ไม่มี style นี้มาก่อน → document.body.clientHeight วัดได้ 0 จริงในบาง
+       LINE in-app webview (ยืนยันจาก debug log ตอนดีบัก: "body=964x0") ทำให้
+       Flutter engine คำนวณ physicalSize/viewInsets เริ่มต้นผิด จน assert
+       "ViewInsets cannot be negative" แล้วล้มการวาดทั้งหมด (จอขาว/โหลดไม่ขึ้น)
+       เกิดเฉพาะบาง webview engine เท่านั้น จึงอธิบายได้ว่าทำไมบางคนเปิดได้ปกติ
+       บางคนไม่ได้เลย */
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
   <script type="text/javascript">
     // Single Page Apps for GitHub Pages
     // https://github.com/rafgraph/spa-github-pages

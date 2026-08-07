@@ -46,7 +46,14 @@ class LiffLoginSuccess extends LiffLoginState {
 
 class LiffLoginFailure extends LiffLoginState {
   final String error;
-  const LiffLoginFailure({required this.error});
+  /// ถ้าไม่ null แปลว่า error นี้เกิด "หลังจาก" มี idToken ที่ verify กับ LINE
+  /// สำเร็จแล้ว (เช่น submit username/password ไม่ผ่าน) — UI ควรยังโชว์ฟอร์ม
+  /// ให้กรอกใหม่ได้ ต่างจาก error ตอน liff.init() เอง (idToken เป็น null)
+  /// ที่ไม่มี idToken ให้ submit เลย ไม่ควรโชว์ฟอร์ม
+  final String? idToken;
+
+  const LiffLoginFailure({required this.error, this.idToken});
+
   @override
-  List<Object> get props => [error];
+  List<Object?> get props => [error, idToken];
 }

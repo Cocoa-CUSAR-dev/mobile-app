@@ -81,7 +81,10 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
         message: response['message']?.toString() ?? 'เชื่อมบัญชีสำเร็จ',
       ));
     } catch (e) {
-      emit(LiffLoginFailure(error: e.toString()));
+      // แนบ idToken เดิมกลับไปด้วย — error นี้เกิดตอน submit (username/password
+      // ผิด หรือ backend error) ไม่ใช่ idToken หมดอายุ/หาไม่เจอ ให้ UI รู้ว่า
+      // ยังกรอกฟอร์มใหม่ได้เลยไม่ต้องเริ่ม liff.init() ใหม่
+      emit(LiffLoginFailure(error: e.toString(), idToken: idToken));
     }
   }
 }

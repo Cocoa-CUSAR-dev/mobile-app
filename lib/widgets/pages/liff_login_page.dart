@@ -95,7 +95,16 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                     return _buildSuccess(state);
                   }
 
-                  // LiffReady / LiffLoginLoading / LiffLoginFailure (มี idToken แล้ว) — โชว์ฟอร์ม
+                  // LiffLoginFailure ที่ไม่มี idToken เลย = liff.init() ล้มเหลวเอง
+                  // (เช่น scope openid ไม่ครบ, LIFF_ID ผิด) ไม่มี idToken ให้กรอก
+                  // ฟอร์มไปส่งต่อได้เลย ต้องโชว์ error แทนฟอร์ม ไม่ใช่ปล่อยให้
+                  // กรอกแล้วไปพังตอน submit แบบงงๆ
+                  if (state is LiffLoginFailure && state.idToken == null) {
+                    return _buildInitError(state);
+                  }
+
+                  // LiffReady / LiffLoginLoading / LiffLoginFailure ที่มี idToken
+                  // (submit ไม่ผ่านแต่เคยได้ idToken มาแล้ว) — โชว์ฟอร์ม
                   final isLoading = state is LiffLoginLoading;
                   return Form(
                     key: _formKey,
@@ -151,6 +160,33 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInitError(LiffLoginFailure state) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '❌ เชื่อมต่อกับ LINE ไม่สำเร็จ',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red.shade900),
+          ),
+          const SizedBox(height: 8),
+          Text(state.error, style: TextStyle(color: Colors.red.shade900)),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () => context.read<LiffLoginBloc>().add(LiffInitRequested()),
+            child: const Text('ลองใหม่อีกครั้ง'),
+          ),
+        ],
       ),
     );
   }
