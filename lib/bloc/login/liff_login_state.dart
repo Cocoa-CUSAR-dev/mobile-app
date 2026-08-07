@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 abstract class LiffLoginState extends Equatable {
   const LiffLoginState();
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 /// ยังไม่เริ่ม liff.init()
