@@ -11,7 +11,6 @@ import 'package:cocoa_supply/bloc/task/task_state.dart';
 // Components
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
-import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 
 class DynamicRegisterPage extends StatefulWidget {
@@ -33,12 +32,10 @@ class DynamicRegisterPage extends StatefulWidget {
 class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _controllers = {};
-  final Map<String, FileUploadController> _fileControllers = {};
   final Map<String, dynamic> _currentFormData = {};
-  final Map<String, List<Map<String, dynamic>>> _dropdownOptions = {};
 
   int _currentStep = 0;
-  final int _fieldsPerPage = 1; 
+  final int _fieldsPerPage = 1;
   bool _isDataInitialized = false;
   bool _isLoading = false;
 
@@ -54,22 +51,40 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
     super.dispose();
   }
 
+  // ไล่ sections[] -> questions[] ตาม sortOrder ให้เป็น list เดียว
+  // ข้าม section/question ที่ isActive == false (researcher ปิดการมองเห็นไว้)
+  List<Map<String, dynamic>> _flattenQuestions(Map<String, dynamic> form) {
+    final sections = ((form['sections'] as List<dynamic>?) ?? [])
+        .cast<Map<String, dynamic>>()
+        .where((s) => s['isActive'] != false)
+        .toList()
+      ..sort((a, b) => ((a['sortOrder'] ?? 0) as num).compareTo((b['sortOrder'] ?? 0) as num));
+
+    final questions = <Map<String, dynamic>>[];
+    for (final section in sections) {
+      final sectionQuestions = ((section['questions'] as List<dynamic>?) ?? [])
+          .cast<Map<String, dynamic>>()
+          .where((q) => q['isActive'] != false && q['fieldName'] != null)
+          .toList()
+        ..sort((a, b) => ((a['sortOrder'] ?? 0) as num).compareTo((b['sortOrder'] ?? 0) as num));
+      questions.addAll(sectionQuestions);
+    }
+    return questions;
+  }
+
   // --- Logic เช็คความครบถ้วนของข้อมูลเพื่อเปิดปุ่ม 'ถัดไป' ---
-  bool _isCurrentStepValid(List<MapEntry<String, dynamic>> currentFields) {
-    for (var field in currentFields) {
-      final key = field.key;
-      final prop = field.value;
-      final bool isRequired = prop['is_required'] ?? false;
+  bool _isCurrentStepValid(List<Map<String, dynamic>> currentQuestions) {
+    for (var question in currentQuestions) {
+      final key = question['fieldName'] as String;
+      final bool isRequired = question['isMandatory'] == true;
+      if (!isRequired) continue;
 
-      final String type = prop['type'] ?? '';
-      if (!isRequired || type != 'string') continue;
-
-      
+      final String inputType = (question['inputType'] as String?) ?? 'VARCHAR';
 
       // กลุ่มที่ใช้ Controller
-      if (['string', 'integer', 'number', 'numeric', 'date', 'datetime', 'timestamp'].contains(type) && !key.endsWith('_id')) {
+      if (!['GEODATA', 'BOOLEAN', 'OPTION'].contains(inputType)) {
         if (_controllers[key]?.text.trim().isEmpty ?? true) return false;
-      } 
+      }
       // กลุ่มที่เก็บใน FormData Direct
       else {
         final value = _currentFormData[key];
@@ -81,75 +96,47 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
     return true;
   }
 
-  // --- Dropdown Data Fetching ---
-  Future<List<Map<String, dynamic>>> _getOptions(String key) async {
-    if (_dropdownOptions.containsKey(key)) return _dropdownOptions[key]!;
-    try {
-      final dynamicBloc = context.read<DynamicBloc>();
-      var data = await dynamicBloc.api.fetchConstants(key);
-      if (data.isEmpty) {
-        data = await dynamicBloc.api.fetchData(key.replaceAll("_id", ""));
-      }
-      if (!mounted) return [];
-      setState(() => _dropdownOptions[key] = data);
-      return data;
-    } catch (e) {
-      return [];
-    }
-  }
-
   // --- Core Dynamic Dispatcher (เรียกใช้ FormHelper) ---
-  Widget _buildDynamicControl(String key, Map<String, dynamic> prop) {
-    String label = prop['description']?.split('\n')[0] ?? key;
-    String type = prop['type'] ?? 'string';
-    bool isReq = prop['is_required'] ?? false;
-
-    if (prop['is_from_input'] != true) return const SizedBox.shrink();
+  Widget _buildDynamicControl(Map<String, dynamic> question) {
+    final String key = question['fieldName'] as String;
+    final String label = (question['label'] as String?) ?? key;
+    final String inputType = (question['inputType'] as String?) ?? 'VARCHAR';
+    final bool isReq = question['isMandatory'] == true;
 
     // 1. Initialize Controllers for text-based inputs
-    if (!_controllers.containsKey(key) && 
-        !['file', 'gis', 'boolean', 'option'].contains(type) && 
-        !key.endsWith('_id')) {
+    if (!_controllers.containsKey(key) &&
+        !['GEODATA', 'BOOLEAN', 'OPTION'].contains(inputType)) {
       _controllers[key] = TextEditingController(text: _currentFormData[key]?.toString() ?? '');
     }
 
     // 2. Dispatch to Helper
-    switch (type) {
-      case 'boolean':
+    switch (inputType) {
+      case 'BOOLEAN':
         return FormHelper.buildCheckbox(
           label: label,
           value: _currentFormData[key] ?? false,
           onChanged: (v) => setState(() => _currentFormData[key] = v),
         );
 
-      case 'file':
-        _fileControllers.putIfAbsent(key, () => FileUploadController());
-        return FormHelper.buildUpload(
-          label: label,
-          controller: _fileControllers[key]!,
-        );
-
-      case 'integer':
-      case 'number':
-      case 'numeric':
+      case 'INT':
+      case 'FLOAT':
         return FormHelper.buildNumber(
           label: label,
           controller: _controllers[key]!,
           isReq: isReq,
-          isInt: type == 'integer',
+          isInt: inputType == 'INT',
         );
 
-      case 'date':
-      case 'datetime':
-      case 'timestamp':
+      case 'DATE':
+      case 'DATETIME':
         return FormHelper.buildDate(
           label: label,
           controller: _controllers[key]!,
           isReq: isReq,
-          isTime: type != 'date',
+          isTime: inputType == 'DATETIME',
         );
 
-      case 'gis':
+      case 'GEODATA':
         final List<LatLng> points = (_currentFormData[key] as List?)
             ?.map((p) => LatLng(p['lat'], p['lng']))
             .toList() ?? [];
@@ -159,30 +146,27 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
           points: points,
           areaM2: (_currentFormData['${key}_area_m2'] ?? 0.0) as double,
           onChanged: (newData) => setState(() {
-            _currentFormData[key] = newData.points.isEmpty 
-                ? null 
+            _currentFormData[key] = newData.points.isEmpty
+                ? null
                 : newData.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
             _currentFormData['${key}_area_m2'] = newData.areaM2;
           }),
         );
 
+      case 'OPTION':
+        // choices มากับ question อยู่แล้ว ({id, name} ต่อรายการ) — ไม่ต้อง fetch แยก
+        final choices = ((question['choices'] as List<dynamic>?) ?? [])
+            .cast<Map<String, dynamic>>();
+        return FormHelper.buildDropdown(
+          label: label,
+          isReq: isReq,
+          options: choices,
+          currentValue: _currentFormData[key],
+          onChanged: (val) => setState(() => _currentFormData[key] = val),
+        );
+
       default:
-        // Dropdown (Option or ID fields)
-        if (type == "option" || (key.endsWith('_id') && key != 'zip_id')) {
-          final cacheKey = key.replaceAll("_id", "");
-          return FutureBuilder<List<Map<String, dynamic>>>(
-            future: _getOptions(cacheKey),
-            builder: (context, snapshot) => FormHelper.buildDropdown(
-              label: label,
-              isReq: isReq,
-              options: snapshot.data ?? [],
-              currentValue: _currentFormData[key],
-              onChanged: (val) => setState(() => _currentFormData[key] = val),
-            ),
-          );
-        }
-        
-        // Standard Text Input
+        // VARCHAR และอื่นๆ ที่ไม่รู้จัก
         return FormHelper.buildInput(
           label: label,
           controller: _controllers[key]!,
@@ -196,7 +180,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
   void _onSave() {
     final data = Map<String, dynamic>.from(_currentFormData);
     _controllers.forEach((k, v) => data[k] = v.text.trim().isEmpty ? null : v.text.trim());
-    
+
     context.read<DynamicBloc>().add(SubmitForm(
       handler: widget.handler,
       taskId: widget.taskId,
@@ -235,15 +219,14 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             if (state is DynamicLoading && !_isDataInitialized) return const Center(child: ThreeDotsLoading());
 
             if (state is DynamicReady) {
-              final displayEntries = state.schema['properties'].entries
-                  .where((e) => e.value['is_from_input'] == true).toList();
+              final displayQuestions = _flattenQuestions(state.form);
 
-              int totalSteps = (displayEntries.length / _fieldsPerPage).ceil();
+              int totalSteps = (displayQuestions.length / _fieldsPerPage).ceil();
               int startIndex = _currentStep * _fieldsPerPage;
-              int endIndex = min(startIndex + _fieldsPerPage, displayEntries.length);
-              final currentFields = displayEntries.sublist(startIndex, endIndex);
-              
-              bool canProceed = _isCurrentStepValid(currentFields);
+              int endIndex = min(startIndex + _fieldsPerPage, displayQuestions.length);
+              final currentQuestions = displayQuestions.sublist(startIndex, endIndex);
+
+              bool canProceed = _isCurrentStepValid(currentQuestions);
 
               return Column(
                 children: [
@@ -259,14 +242,14 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
                             Text(
                               'บันทึกข้อมูล',
                               style: const TextStyle(
-                                fontSize: 22, 
-                                fontWeight: FontWeight.bold, 
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
                                 color: Color(0xFF794c46)
                               ),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
-                            ...currentFields.map((e) => _buildDynamicControl(e.key, e.value)),
+                            ...currentQuestions.map(_buildDynamicControl),
                           ],
                         ),
                       ),
@@ -352,7 +335,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
               side: BorderSide(color: Colors.grey.shade400),
             ),
             child: Text(
-              _currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก', 
+              _currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก',
               style: const TextStyle(fontSize: 18, color: Colors.black87)
             ),
           ),
