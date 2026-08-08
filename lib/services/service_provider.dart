@@ -7,7 +7,13 @@ class ServiceProvider<T> {
   final String endpoint;
   final bool isRealApi;
   final bool useCookie;
-  final String baseUrl = 'http://localhost:8080';
+  // Overridable at build time via --dart-define=API_BASE_URL=...
+  // (e.g. the CI web build points this at the deployed backend).
+  // Native builds keep the existing LAN-IP default unchanged.
+  final String baseUrl = const String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
+  );
 
   static const String _cookieKey = 'auth_cookie';
 
