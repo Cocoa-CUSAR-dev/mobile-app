@@ -1,5 +1,5 @@
 # Deploys the Flutter WEB build (not the real Android/iOS app) to GitHub Pages,
-# on pushes to `test` only. This is for testing the dynamic/networked parts of
+# on pushes to `main` only. This is for testing the dynamic/networked parts of
 # the app in a browser -- it does not validate offline behavior, GPS accuracy,
 # or performance on real farmer hardware. See the team's docs for that context.
 
@@ -7,7 +7,7 @@ name: Deploy web build to GitHub Pages (test)
 
 on:
   push:
-    branches: [test]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -45,14 +45,16 @@ jobs:
       # (served at https://<org>.github.io/mobile-app/). Change if that changes.
       # --dart-define overrides service_provider.dart's baseUrl for this build
       # only -- the native app's default (LAN IP) is untouched.
-      # Points at mobile-backend's TEST deployment (its own Render service,
-      # tracking the `test` branch) -- NOT the main/production one. Update
-      # this if the test backend's URL ever changes.
+      # API_BASE_URL comes from a repo secret (Settings > Secrets and
+      # variables > Actions > New repository secret, name API_BASE_URL) so
+      # the backend URL can change without editing this file. No trailing
+      # slash in the secret's value -- service_provider.dart concatenates it
+      # directly with endpoints that already start with "/".
       - name: Build web
         run: |
           flutter build web \
             --base-href /mobile-app/ \
-            --dart-define=API_BASE_URL=https://mobile-backend-2-t8h6.onrender.com
+            --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
