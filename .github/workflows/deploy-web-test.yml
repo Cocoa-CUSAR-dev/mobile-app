@@ -1,5 +1,5 @@
 # Deploys the Flutter WEB build (not the real Android/iOS app) to GitHub Pages,
-# on pushes to `test` only. This is for testing the dynamic/networked parts of
+# on pushes to `main` only. This is for testing the dynamic/networked parts of
 # the app in a browser -- it does not validate offline behavior, GPS accuracy,
 # or performance on real farmer hardware. See the team's docs for that context.
 
@@ -7,7 +7,7 @@ name: Deploy web build to GitHub Pages (test)
 
 on:
   push:
-    branches: [test]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
