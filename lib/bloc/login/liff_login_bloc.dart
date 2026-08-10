@@ -20,6 +20,8 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
 
   LiffLoginBloc() : super(LiffLoginInitial()) {
     on<LiffInitRequested>(_onLiffInitRequested);
+    on<LiffHasAccountPressed>(_onLiffHasAccountPressed);
+    on<LiffNoAccountPressed>(_onLiffNoAccountPressed);
     on<LiffLoginSubmitted>(_onLiffLoginSubmitted);
   }
 
@@ -35,6 +37,20 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
 
       await liffInit(liffId);
 
+      // ยังไม่ liff.login()/getIDToken() ที่นี่ — รอให้ผู้ใช้เลือกก่อนว่ามีบัญชี
+      // อยู่แล้วหรือยัง (สมัครใหม่ผ่าน browser ปกติไม่จำเป็นต้องมี idToken)
+      emit(LiffLanding());
+    } catch (e) {
+      emit(LiffLoginFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> _onLiffHasAccountPressed(
+    LiffHasAccountPressed event,
+    Emitter<LiffLoginState> emit,
+  ) async {
+    emit(LiffInitializing());
+    try {
       if (!liffIsLoggedIn()) {
         // liffLogin() จะ redirect ทั้งหน้าไปหน้า login ของ LINE เอง
         // (หน้านี้จะถูกทำลายไป ไม่ต้อง emit อะไรต่อ)
@@ -50,6 +66,20 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
       }
 
       emit(LiffReady(idToken: idToken));
+    } catch (e) {
+      emit(LiffLoginFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> _onLiffNoAccountPressed(
+    LiffNoAccountPressed event,
+    Emitter<LiffLoginState> emit,
+  ) async {
+    try {
+      // เปิดหน้าสมัครสมาชิกเว็บปกติใน browser ภายนอก — ?from=liff ให้ฝั่งเว็บ
+      // (UserRegisterPage) จำไว้ว่าต้อง redirect กลับเข้า LINE หลังสมัครสำเร็จ
+      final registerUrl = Uri.base.resolve('userRegister?from=liff').toString();
+      liffOpenWindow(registerUrl, external: true);
     } catch (e) {
       emit(LiffLoginFailure(error: e.toString()));
     }

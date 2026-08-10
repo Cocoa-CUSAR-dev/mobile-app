@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+
+/// key ใน SharedPreferences ที่บันทึกไว้ว่าผู้ใช้เปิดหน้าสมัครสมาชิกนี้มาจาก
+/// ปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (liff.openWindow ?from=liff)
+/// เพื่อให้ RegisterRolePage รู้ว่าต้อง redirect กลับเข้า LINE หลังลงทะเบียนสำเร็จ
+const liffRegistrationFlagKey = 'liff_registration_pending';
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key});
@@ -32,6 +38,19 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   };
 
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _markLiffOriginIfNeeded();
+  }
+
+  Future<void> _markLiffOriginIfNeeded() async {
+    if (Uri.base.queryParameters['from'] == 'liff') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(liffRegistrationFlagKey, true);
+    }
+  }
 
   // --- Validation Logic (Regex) ---
   String? _validatePhone(String? v) {

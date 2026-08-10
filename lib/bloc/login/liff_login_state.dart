@@ -12,6 +12,9 @@ class LiffLoginInitial extends LiffLoginState {}
 /// กำลัง liff.init() / รอ LINE redirect กลับมา
 class LiffInitializing extends LiffLoginState {}
 
+/// liff.init() สำเร็จ รอผู้ใช้เลือกว่า "มีบัญชีผู้ใช้แล้ว" หรือ "ยังไม่มีบัญชีผู้ใช้"
+class LiffLanding extends LiffLoginState {}
+
 /// liff.init() สำเร็จ ได้ ID token จาก LINE แล้ว พร้อมให้กรอกฟอร์มบัญชีเดิม
 class LiffReady extends LiffLoginState {
   final String idToken;

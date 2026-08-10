@@ -63,13 +63,20 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 100),
-              const Text(
-                'เชื่อมบัญชีเดิมกับ LINE',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+              BlocBuilder<LiffLoginBloc, LiffLoginState>(
+                builder: (context, state) {
+                  final title = state is LiffLanding
+                      ? 'ยินดีต้อนรับ'
+                      : 'เชื่อมบัญชีเดิมกับ LINE';
+                  return Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
               BlocConsumer<LiffLoginBloc, LiffLoginState>(
@@ -97,6 +104,10 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(child: CircularProgressIndicator()),
                     );
+                  }
+
+                  if (state is LiffLanding) {
+                    return _buildLanding(context);
                   }
 
                   if (state is LiffLoginSuccess) {
@@ -169,6 +180,50 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLanding(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: () =>
+              context.read<LiffLoginBloc>().add(LiffHasAccountPressed()),
+          icon: const Icon(Icons.login_rounded, color: Colors.white, size: 22),
+          label: const Text(
+            'มีบัญชีผู้ใช้แล้ว',
+            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () =>
+              context.read<LiffLoginBloc>().add(LiffNoAccountPressed()),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: BorderSide(color: Colors.grey.shade300),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            backgroundColor: Colors.white,
+          ),
+          child: const Text(
+            'ยังไม่มีบัญชีผู้ใช้',
+            style: TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
     );
   }
 

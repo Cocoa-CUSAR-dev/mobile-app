@@ -1,5 +1,6 @@
 import 'package:cocoa_supply/widgets/pages/batch_detail_page.dart';
 import 'package:cocoa_supply/widgets/pages/liff_login_page.dart';
+import 'package:cocoa_supply/widgets/pages/liff_register_success_page.dart';
 import 'package:cocoa_supply/widgets/pages/farm_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/hub_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/plot_register_page.dart';
@@ -20,6 +21,7 @@ class AppRoute {
   static const String login = '/';
   static const String home = '/home';
   static const String liffLink = '/liff-link';
+  static const String liffRegisterSuccess = '/liffRegisterSuccess';
   static const String farmRegister = '/farmRegister';
   static const String userRegister = '/userRegister';
   static const String roleRegister = '/roleRegister';
@@ -42,6 +44,8 @@ class AppRoute {
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case liffLink:
         return MaterialPageRoute(builder: (_) => const LiffLinkPage());
+      case liffRegisterSuccess:
+        return MaterialPageRoute(builder: (_) => const LiffRegisterSuccessPage());
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
       case userRegister:

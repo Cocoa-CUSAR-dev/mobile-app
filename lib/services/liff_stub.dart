@@ -15,3 +15,5 @@ void liffLogin() {}
 String? liffGetIDToken() => null;
 
 void liffCloseWindow() {}
+
+void liffOpenWindow(String url, {bool external = true}) {}
