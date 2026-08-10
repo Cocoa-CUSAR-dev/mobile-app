@@ -20,7 +20,7 @@ import 'package:cocoa_supply/widgets/pages/dynamic_register_page.dart';
 class AppRoute {
   static const String login = '/';
   static const String home = '/home';
-  static const String liffLink = '/liff-link';
+  static const String liffLink = '/liff-link'x;
   static const String liffRegisterSuccess = '/liffRegisterSuccess';
   static const String farmRegister = '/farmRegister';
   static const String userRegister = '/userRegister';

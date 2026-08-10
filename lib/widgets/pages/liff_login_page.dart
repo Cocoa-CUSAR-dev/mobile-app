@@ -210,8 +210,16 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
         ),
         const SizedBox(height: 16),
         OutlinedButton(
-          onPressed: () =>
-              context.read<LiffLoginBloc>().add(LiffNoAccountPressed()),
+          // เรียก liffOpenWindow() ตรงๆ แบบ sync ในนี้เลย ห้ามผ่าน bloc event —
+          // เพราะ Bloc.add() ประมวลผลผ่าน Stream แบบ async (มี microtask คั่นเสมอ)
+          // ทำให้เมื่อ liff.openWindow() เรียก window.open() จริงตอนนั้น browser
+          // จะมองว่าไม่ได้เกิดจาก user gesture โดยตรงแล้ว แล้วเงียบๆ บล็อกเป็น popup
+          // (ไม่มี error โผล่ให้เห็นเลย ปุ่มเหมือนกดไม่ติด)
+          onPressed: () {
+            final registerUrl =
+                Uri.base.resolve('userRegister?from=liff').toString();
+            liffOpenWindow(registerUrl, external: true);
+          },
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
             side: BorderSide(color: Colors.grey.shade300),
