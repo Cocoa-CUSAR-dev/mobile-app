@@ -24,6 +24,16 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
 
   final Color primaryColor = const Color(0xFF794c46);
 
+  // TODO(debug): log บนหน้าจอชั่วคราวสำหรับ diagnose ปุ่ม "ยังไม่มีบัญชีผู้ใช้"
+  // ที่กดแล้วไม่มีอะไรเกิดขึ้นตอนทดสอบใน LINE webview จริง (เข้า chrome://inspect
+  // ไม่ได้เพราะ LINE ไม่เปิด WebView debugging) — ลบออกได้เมื่อหาสาเหตุเจอแล้ว
+  final List<String> _debugLog = [];
+
+  void _log(String msg) {
+    debugPrint('[LiffLinkPage] $msg');
+    if (mounted) setState(() => _debugLog.add(msg));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -197,18 +207,30 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   // RegisterRolePage ไม่มี MapLibre/file upload จึงไม่เจอปัญหาเสถียรภาพแบบหน้า
   // farm/plot register ที่เคยประเมินความเสี่ยงไว้
   void _onNoAccountPressed(BuildContext context) {
+    _log('ปุ่ม "ยังไม่มีบัญชีผู้ใช้" ถูกกด');
+
     final registerUrl = Uri.base.resolve('userRegister?from=liff').toString();
-    debugPrint(
-      '[LiffLinkPage] เปิดหน้าสมัครสมาชิก: url=$registerUrl isInClient=${liffIsInClient()}',
-    );
+    _log('url=$registerUrl');
+
+    bool isInClient = false;
     try {
-      liffOpenWindow(registerUrl, external: true);
+      isInClient = liffIsInClient();
+      _log('liffIsInClient()=$isInClient');
     } catch (e) {
-      debugPrint('[LiffLinkPage] liffOpenWindow(external:true) ล้มเหลว: $e — ลอง external:false แทน');
+      _log('liffIsInClient() throw: $e');
+    }
+
+    try {
+      _log('เรียก liffOpenWindow(external:true)...');
+      liffOpenWindow(registerUrl, external: true);
+      _log('liffOpenWindow(external:true) return แล้วโดยไม่ throw');
+    } catch (e) {
+      _log('liffOpenWindow(external:true) throw: $e — ลอง external:false แทน');
       try {
         liffOpenWindow(registerUrl, external: false);
+        _log('liffOpenWindow(external:false) return แล้วโดยไม่ throw');
       } catch (e2) {
-        debugPrint('[LiffLinkPage] liffOpenWindow(external:false) ล้มเหลวด้วย: $e2');
+        _log('liffOpenWindow(external:false) throw ด้วย: $e2');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -249,11 +271,6 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
         ),
         const SizedBox(height: 16),
         OutlinedButton(
-          // เรียก liffOpenWindow() ตรงๆ แบบ sync ในนี้เลย ห้ามผ่าน bloc event —
-          // เพราะ Bloc.add() ประมวลผลผ่าน Stream แบบ async (มี microtask คั่นเสมอ)
-          // ทำให้เมื่อ liff.openWindow() เรียก window.open() จริงตอนนั้น browser
-          // จะมองว่าไม่ได้เกิดจาก user gesture โดยตรงแล้ว แล้วเงียบๆ บล็อกเป็น popup
-          // (ไม่มี error โผล่ให้เห็นเลย ปุ่มเหมือนกดไม่ติด)
           onPressed: () => _onNoAccountPressed(context),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -266,6 +283,30 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
             style: TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
           ),
         ),
+        if (_debugLog.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _debugLog
+                  .map((line) => Text(
+                        line,
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
       ],
     );
   }
