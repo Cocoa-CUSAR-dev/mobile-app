@@ -7,7 +7,7 @@ name: Deploy web build to GitHub Pages (test)
 
 on:
   push:
-    branches: [test]
+    branches: [feat/liff-landing-and-register-redirect]
   workflow_dispatch:
 
 permissions:
