@@ -14,8 +14,8 @@ class LiffInitRequested extends LiffLoginEvent {}
 /// + liff.getIDToken() เพื่อไปโชว์ฟอร์มเชื่อมบัญชีเดิม
 class LiffHasAccountPressed extends LiffLoginEvent {}
 
-// หมายเหตุ: ปุ่ม "ยังไม่มีบัญชีผู้ใช้" ไม่ผ่าน event/bloc — เรียก liffOpenWindow()
-// ตรงๆ แบบ sync ใน onPressed ของ LiffLinkPage เลย (ดูคอมเมนต์ที่นั่น)
+// หมายเหตุ: ปุ่ม "ยังไม่มีบัญชีผู้ใช้" ไม่ผ่าน event/bloc — navigate แบบ in-app
+// (Navigator.pushNamed) ตรงๆ ใน onPressed ของ LiffLinkPage เลย (ดูคอมเมนต์ที่นั่น)
 
 /// เรียกตอนกดปุ่ม submit ฟอร์ม username/password (บัญชีเดิม)
 class LiffLoginSubmitted extends LiffLoginEvent {

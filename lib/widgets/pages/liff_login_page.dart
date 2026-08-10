@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
+import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/liff_service.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/widgets/pages/user_register_page.dart' show liffRegistrationFlagKey;
 
 /// หน้าเชื่อมบัญชีเดิมกับ LINE ผ่าน LIFF — เข้าถึงได้ทาง route '/liff-link' เท่านั้น
 /// (ตั้งเป็น LIFF Endpoint URL ใน LINE Developers Console)
@@ -23,16 +26,6 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   bool _isPasswordVisible = false;
 
   final Color primaryColor = const Color(0xFF794c46);
-
-  // TODO(debug): log บนหน้าจอชั่วคราวสำหรับ diagnose ปุ่ม "ยังไม่มีบัญชีผู้ใช้"
-  // ที่กดแล้วไม่มีอะไรเกิดขึ้นตอนทดสอบใน LINE webview จริง (เข้า chrome://inspect
-  // ไม่ได้เพราะ LINE ไม่เปิด WebView debugging) — ลบออกได้เมื่อหาสาเหตุเจอแล้ว
-  final List<String> _debugLog = [];
-
-  void _log(String msg) {
-    debugPrint('[LiffLinkPage] $msg');
-    if (mounted) setState(() => _debugLog.add(msg));
-  }
 
   @override
   void initState() {
@@ -193,45 +186,17 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
     );
   }
 
-  // เรียก liffOpenWindow() ตรงๆ แบบ sync จาก onPressed เลย ห้ามผ่าน bloc event —
-  // เพราะ Bloc.add() ประมวลผลผ่าน Stream แบบ async (มี microtask คั่นเสมอ) ทำให้
-  // เมื่อ liff.openWindow() เรียก window.open() จริงตอนนั้น browser ปกติจะมองว่า
-  // ไม่ได้เกิดจาก user gesture โดยตรงแล้ว แล้วเงียบๆ บล็อกเป็น popup (ไม่มี error
-  // โผล่ให้เห็นเลย ปุ่มเหมือนกดไม่ติด — เจอเคสนี้ตอนทดสอบบน external browser)
-  //
-  // ทดสอบบน LINE app จริง (isInClient=true) แล้วพบว่า liffOpenWindow(external:true)
-  // return โดยไม่ throw แต่ไม่มีอะไรเกิดขึ้นจริง (native bridge รับ call แต่เงียบๆ
-  // ไม่ทำอะไรบน LINE version/Android build นี้) — สลับมาใช้ external:false
-  // (เปิดใน in-app browser ของ LINE เอง แทนที่จะสลับแอปออกไป) เพราะเสถียรกว่า และ
-  // หน้า UserRegisterPage/RegisterRolePage ที่เปิดในสเต็ปนี้ไม่มี MapLibre/file
-  // upload จึงไม่เจอปัญหาเสถียรภาพแบบหน้า farm/plot register ที่เคยประเมินไว้
-  void _onNoAccountPressed(BuildContext context) {
-    _log('ปุ่ม "ยังไม่มีบัญชีผู้ใช้" ถูกกด');
-
-    final registerUrl = Uri.base.resolve('userRegister?from=liff').toString();
-    _log('url=$registerUrl');
-
-    try {
-      _log('liffIsInClient()=${liffIsInClient()}');
-    } catch (e) {
-      _log('liffIsInClient() throw: $e');
-    }
-
-    try {
-      _log('เรียก liffOpenWindow(external:false)...');
-      liffOpenWindow(registerUrl, external: false);
-      _log('liffOpenWindow(external:false) return แล้วโดยไม่ throw');
-    } catch (e) {
-      _log('liffOpenWindow(external:false) throw: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เปิดหน้าสมัครสมาชิกไม่สำเร็จ: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+  // เดิมตั้งใจใช้ liffOpenWindow() สลับไป browser ปกตินอก LIFF แต่ทดสอบบนเครื่องจริง
+  // (Android, isInClient=true) แล้วพบว่า liff.openWindow() ทั้ง external:true และ
+  // false return โดยไม่ throw แต่ไม่ทำอะไรจริงเลย (native bridge เงียบ ไม่รองรับบน
+  // LINE version/Android build นี้) — เปลี่ยนมา navigate แบบ in-app ภายใน LIFF
+  // webview เดิมแทน ซึ่งไม่ต้องพึ่ง native bridge ใดๆ เลยจึงชัวร์กว่า ปลอดภัยเพราะ
+  // UserRegisterPage/RegisterRolePage ในสเต็ปนี้ไม่มี MapLibre/file upload
+  Future<void> _onNoAccountPressed(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(liffRegistrationFlagKey, true);
+    if (context.mounted) {
+      Navigator.of(context).pushNamed(AppRoute.userRegister);
     }
   }
 
@@ -274,30 +239,6 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
             style: TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
           ),
         ),
-        if (_debugLog.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: _debugLog
-                  .map((line) => Text(
-                        line,
-                        style: const TextStyle(
-                          color: Colors.greenAccent,
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-        ],
       ],
     );
   }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cocoa_supply/config/liff_config.dart';
-import 'package:cocoa_supply/services/web_redirect.dart';
+import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 
-/// หน้าปลายทางหลังสมัครสมาชิก + ลงทะเบียนโปรไฟล์ (RegisterRolePage) สำเร็จ
-/// ผ่าน flow ที่เปิดมาจากหน้า LIFF landing (liff.openWindow ไป browser ปกติ)
-/// auto-redirect กลับเข้า liff.line.me/{liffId} ให้ OS เปิดแอป LINE พาไปหน้า
-/// LIFF landing page เดิม เพื่อให้ผู้ใช้กด "มีบัญชีผู้ใช้แล้ว" เชื่อมบัญชี LINE ต่อได้เลย
+/// หน้าปลายทางหลังสมัครสมาชิก + ลงทะเบียนโปรไฟล์ (RegisterRolePage) สำเร็จ ผ่าน
+/// flow ที่เริ่มจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing — พากลับไปหน้า LIFF
+/// landing เดิมแบบ in-app (ไม่ redirect ออกนอก LIFF webview เลย เพราะทดสอบแล้วว่า
+/// liff.openWindow ใช้ไม่ได้จริงบนอุปกรณ์/เวอร์ชัน LINE บางรุ่น — ดูคอมเมนต์ใน
+/// liff_login_page.dart) เพื่อให้ผู้ใช้กด "มีบัญชีผู้ใช้แล้ว" เชื่อมบัญชี LINE ต่อได้เลย
 class LiffRegisterSuccessPage extends StatefulWidget {
   const LiffRegisterSuccessPage({super.key});
 
@@ -19,7 +19,12 @@ class _LiffRegisterSuccessPageState extends State<LiffRegisterSuccessPage> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
-      redirectTo('https://liff.line.me/$liffId');
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoute.liffLink,
+          (route) => false,
+        );
+      }
     });
   }
 
@@ -42,7 +47,7 @@ class _LiffRegisterSuccessPageState extends State<LiffRegisterSuccessPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'กำลังพาท่านกลับเข้าแอป LINE เพื่อเชื่อมบัญชี...',
+                'กำลังพาท่านกลับไปเชื่อมบัญชี LINE...',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
