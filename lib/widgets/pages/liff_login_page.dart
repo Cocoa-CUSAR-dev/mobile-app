@@ -183,6 +183,45 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
     );
   }
 
+  // เรียก liffOpenWindow() ตรงๆ แบบ sync จาก onPressed เลย ห้ามผ่าน bloc event —
+  // เพราะ Bloc.add() ประมวลผลผ่าน Stream แบบ async (มี microtask คั่นเสมอ) ทำให้
+  // เมื่อ liff.openWindow() เรียก window.open() จริงตอนนั้น browser ปกติจะมองว่า
+  // ไม่ได้เกิดจาก user gesture โดยตรงแล้ว แล้วเงียบๆ บล็อกเป็น popup (ไม่มี error
+  // โผล่ให้เห็นเลย ปุ่มเหมือนกดไม่ติด — เจอเคสนี้ตอนทดสอบบน external browser)
+  //
+  // ในแอป LINE จริง (isInClient) พังคนละสาเหตุ: liff.openWindow(external:true)
+  // อาจ throw/ไม่ทำงานเงียบๆ ตาม LINE app version หรือ platform ที่ไม่รองรับการ
+  // สลับไป external browser จาก LIFF view นี้ — จับ error โชว์ SnackBar ให้เห็น
+  // จริงว่าเกิดอะไรขึ้น แทนที่จะปล่อยให้ปุ่มดูเหมือนกดไม่ติดแบบก่อนหน้า แล้ว fallback
+  // ไปเปิดใน in-app browser แทน (external:false) — หน้า UserRegisterPage/
+  // RegisterRolePage ไม่มี MapLibre/file upload จึงไม่เจอปัญหาเสถียรภาพแบบหน้า
+  // farm/plot register ที่เคยประเมินความเสี่ยงไว้
+  void _onNoAccountPressed(BuildContext context) {
+    final registerUrl = Uri.base.resolve('userRegister?from=liff').toString();
+    debugPrint(
+      '[LiffLinkPage] เปิดหน้าสมัครสมาชิก: url=$registerUrl isInClient=${liffIsInClient()}',
+    );
+    try {
+      liffOpenWindow(registerUrl, external: true);
+    } catch (e) {
+      debugPrint('[LiffLinkPage] liffOpenWindow(external:true) ล้มเหลว: $e — ลอง external:false แทน');
+      try {
+        liffOpenWindow(registerUrl, external: false);
+      } catch (e2) {
+        debugPrint('[LiffLinkPage] liffOpenWindow(external:false) ล้มเหลวด้วย: $e2');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('เปิดหน้าสมัครสมาชิกไม่สำเร็จ: $e2'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildLanding(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -215,11 +254,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
           // ทำให้เมื่อ liff.openWindow() เรียก window.open() จริงตอนนั้น browser
           // จะมองว่าไม่ได้เกิดจาก user gesture โดยตรงแล้ว แล้วเงียบๆ บล็อกเป็น popup
           // (ไม่มี error โผล่ให้เห็นเลย ปุ่มเหมือนกดไม่ติด)
-          onPressed: () {
-            final registerUrl =
-                Uri.base.resolve('userRegister?from=liff').toString();
-            liffOpenWindow(registerUrl, external: true);
-          },
+          onPressed: () => _onNoAccountPressed(context),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
             side: BorderSide(color: Colors.grey.shade300),

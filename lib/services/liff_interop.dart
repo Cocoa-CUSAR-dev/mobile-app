@@ -11,6 +11,9 @@ external JSPromise<JSAny?> _liffInit(LiffInitOptions options);
 @JS('liff.isLoggedIn')
 external bool liffIsLoggedIn();
 
+@JS('liff.isInClient')
+external bool liffIsInClient();
+
 @JS('liff.login')
 external void liffLogin();
 

@@ -10,6 +10,8 @@ Future<void> liffInit(String liffId) async {
 
 bool liffIsLoggedIn() => false;
 
+bool liffIsInClient() => false;
+
 void liffLogin() {}
 
 String? liffGetIDToken() => null;
