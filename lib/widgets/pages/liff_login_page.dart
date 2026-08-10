@@ -199,47 +199,38 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   // ไม่ได้เกิดจาก user gesture โดยตรงแล้ว แล้วเงียบๆ บล็อกเป็น popup (ไม่มี error
   // โผล่ให้เห็นเลย ปุ่มเหมือนกดไม่ติด — เจอเคสนี้ตอนทดสอบบน external browser)
   //
-  // ในแอป LINE จริง (isInClient) พังคนละสาเหตุ: liff.openWindow(external:true)
-  // อาจ throw/ไม่ทำงานเงียบๆ ตาม LINE app version หรือ platform ที่ไม่รองรับการ
-  // สลับไป external browser จาก LIFF view นี้ — จับ error โชว์ SnackBar ให้เห็น
-  // จริงว่าเกิดอะไรขึ้น แทนที่จะปล่อยให้ปุ่มดูเหมือนกดไม่ติดแบบก่อนหน้า แล้ว fallback
-  // ไปเปิดใน in-app browser แทน (external:false) — หน้า UserRegisterPage/
-  // RegisterRolePage ไม่มี MapLibre/file upload จึงไม่เจอปัญหาเสถียรภาพแบบหน้า
-  // farm/plot register ที่เคยประเมินความเสี่ยงไว้
+  // ทดสอบบน LINE app จริง (isInClient=true) แล้วพบว่า liffOpenWindow(external:true)
+  // return โดยไม่ throw แต่ไม่มีอะไรเกิดขึ้นจริง (native bridge รับ call แต่เงียบๆ
+  // ไม่ทำอะไรบน LINE version/Android build นี้) — สลับมาใช้ external:false
+  // (เปิดใน in-app browser ของ LINE เอง แทนที่จะสลับแอปออกไป) เพราะเสถียรกว่า และ
+  // หน้า UserRegisterPage/RegisterRolePage ที่เปิดในสเต็ปนี้ไม่มี MapLibre/file
+  // upload จึงไม่เจอปัญหาเสถียรภาพแบบหน้า farm/plot register ที่เคยประเมินไว้
   void _onNoAccountPressed(BuildContext context) {
     _log('ปุ่ม "ยังไม่มีบัญชีผู้ใช้" ถูกกด');
 
     final registerUrl = Uri.base.resolve('userRegister?from=liff').toString();
     _log('url=$registerUrl');
 
-    bool isInClient = false;
     try {
-      isInClient = liffIsInClient();
-      _log('liffIsInClient()=$isInClient');
+      _log('liffIsInClient()=${liffIsInClient()}');
     } catch (e) {
       _log('liffIsInClient() throw: $e');
     }
 
     try {
-      _log('เรียก liffOpenWindow(external:true)...');
-      liffOpenWindow(registerUrl, external: true);
-      _log('liffOpenWindow(external:true) return แล้วโดยไม่ throw');
+      _log('เรียก liffOpenWindow(external:false)...');
+      liffOpenWindow(registerUrl, external: false);
+      _log('liffOpenWindow(external:false) return แล้วโดยไม่ throw');
     } catch (e) {
-      _log('liffOpenWindow(external:true) throw: $e — ลอง external:false แทน');
-      try {
-        liffOpenWindow(registerUrl, external: false);
-        _log('liffOpenWindow(external:false) return แล้วโดยไม่ throw');
-      } catch (e2) {
-        _log('liffOpenWindow(external:false) throw ด้วย: $e2');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('เปิดหน้าสมัครสมาชิกไม่สำเร็จ: $e2'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+      _log('liffOpenWindow(external:false) throw: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('เปิดหน้าสมัครสมาชิกไม่สำเร็จ: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
