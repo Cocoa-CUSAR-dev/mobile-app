@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/services/liff_service.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 
-/// หน้าปลายทางหลังสมัครสมาชิก + ลงทะเบียนโปรไฟล์ (RegisterRolePage) สำเร็จ ผ่าน
-/// flow ที่เริ่มจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing — พากลับไปหน้า LIFF
-/// landing เดิมแบบ in-app (ไม่ redirect ออกนอก LIFF webview เลย เพราะทดสอบแล้วว่า
-/// liff.openWindow ใช้ไม่ได้จริงบนอุปกรณ์/เวอร์ชัน LINE บางรุ่น — ดูคอมเมนต์ใน
-/// liff_login_page.dart) เพื่อให้ผู้ใช้กด "มีบัญชีผู้ใช้แล้ว" เชื่อมบัญชี LINE ต่อได้เลย
+/// หน้าปลายทางหลังสมัครสมาชิก + เชื่อมบัญชี LINE (LiffLinkPage) + ลงทะเบียนโปรไฟล์
+/// (RegisterRolePage) ครบทุกขั้นตอนแล้ว ผ่าน flow ที่เริ่มจากปุ่ม "ยังไม่มีบัญชีผู้ใช้"
+/// บนหน้า LIFF landing — บัญชีพร้อมใช้งานสมบูรณ์แล้ว ปิดหน้าต่าง LIFF กลับไปที่
+/// ช่องแชท LINE ให้เองเหมือน flow บัญชีเดิมปกติ (ดู liff_login_page.dart)
 class LiffRegisterSuccessPage extends StatefulWidget {
   const LiffRegisterSuccessPage({super.key});
 
@@ -18,13 +17,8 @@ class _LiffRegisterSuccessPageState extends State<LiffRegisterSuccessPage> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRoute.liffLink,
-          (route) => false,
-        );
-      }
+    Future.delayed(const Duration(seconds: 3), () {
+      liffCloseWindow();
     });
   }
 
@@ -42,17 +36,16 @@ class _LiffRegisterSuccessPageState extends State<LiffRegisterSuccessPage> {
               Icon(Icons.check_circle, color: Colors.green.shade600, size: 64),
               const SizedBox(height: 16),
               const Text(
-                'สมัครสำเร็จ!',
+                'สมัครสมาชิกและเชื่อมบัญชี LINE สำเร็จ!',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),
               const SizedBox(height: 8),
               const Text(
-                'กำลังพาท่านกลับไปเชื่อมบัญชี LINE...',
+                'พร้อมใช้งานแล้ว กำลังปิดหน้าต่างนี้...',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(),
             ],
           ),
         ),

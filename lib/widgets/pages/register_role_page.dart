@@ -1,16 +1,19 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
-import 'package:cocoa_supply/widgets/pages/user_register_page.dart' show liffRegistrationFlagKey;
 
 class RegisterRolePage extends StatefulWidget {
-  const RegisterRolePage({super.key});
+  /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
+  /// บัญชี LINE ไปแล้วผ่าน LiffLinkPage) — ลงทะเบียนโปรไฟล์เสร็จให้ไปหน้า
+  /// "สมัครสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
+  final bool fromLiff;
+
+  const RegisterRolePage({super.key, this.fromLiff = false});
 
   @override
   State<RegisterRolePage> createState() => _RegisterRolePageState();
@@ -156,18 +159,13 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ ลงทะเบียนสำเร็จ')));
 
-        // ถ้ามาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัครผ่าน browser
-        // ปกติ) ให้พาไปหน้า "สมัครสำเร็จ" เพื่อ redirect กลับเข้า LINE แทนหน้า home
-        final prefs = await SharedPreferences.getInstance();
-        final cameFromLiff = prefs.getBool(liffRegistrationFlagKey) ?? false;
-        if (cameFromLiff) await prefs.remove(liffRegistrationFlagKey);
-
-        if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            cameFromLiff ? AppRoute.liffRegisterSuccess : AppRoute.home,
-            (route) => false,
-          );
-        }
+        // ถ้ามาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
+        // บัญชี LINE ผ่าน LiffLinkPage มาแล้ว) ให้พาไปหน้า "สมัครสำเร็จ" (ปิด LIFF
+        // webview) แทนหน้า home ปกติ
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          widget.fromLiff ? AppRoute.liffRegisterSuccess : AppRoute.home,
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));

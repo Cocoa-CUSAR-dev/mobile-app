@@ -43,15 +43,20 @@ class AppRoute {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case liffLink:
-        return MaterialPageRoute(builder: (_) => const LiffLinkPage());
+        final postRegistration = args?['postRegistration'] as bool? ?? false;
+        return MaterialPageRoute(
+          builder: (_) => LiffLinkPage(postRegistration: postRegistration),
+        );
       case liffRegisterSuccess:
         return MaterialPageRoute(builder: (_) => const LiffRegisterSuccessPage());
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
       case userRegister:
-        return MaterialPageRoute(builder: (_) => UserRegisterPage());
+        final fromLiff = args?['fromLiff'] as bool? ?? false;
+        return MaterialPageRoute(builder: (_) => UserRegisterPage(fromLiff: fromLiff));
       case roleRegister:
-        return MaterialPageRoute(builder: (_) => RegisterRolePage());
+        final fromLiff = args?['fromLiff'] as bool? ?? false;
+        return MaterialPageRoute(builder: (_) => RegisterRolePage(fromLiff: fromLiff));
       case farmRegister:
         return MaterialPageRoute(
           builder: (_) => const FarmRegisterPage(),
