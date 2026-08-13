@@ -17,7 +17,7 @@ void main() {
   group('getProfile', () {
     test('returns a parsed Profile on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), 'http://localhost:8080/auth/me/');
+        expect(request.url.toString(), '$testBaseUrl/auth/me/');
         return jsonResponse({
           'user_id': 1,
           'first_name': 'สมชาย',

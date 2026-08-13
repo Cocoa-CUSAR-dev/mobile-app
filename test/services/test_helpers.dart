@@ -7,6 +7,7 @@
 
 import 'dart:convert';
 
+import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:http/http.dart' as http;
 
 http.Response jsonResponse(dynamic data, int statusCode, {Map<String, String>? headers}) {
@@ -16,3 +17,9 @@ http.Response jsonResponse(dynamic data, int statusCode, {Map<String, String>? h
     headers: {'content-type': 'application/json; charset=utf-8', ...?headers},
   );
 }
+
+/// The API base URL every ServiceProvider defaults to (overridable via
+/// --dart-define=API_BASE_URL=...). Read dynamically from ServiceProvider
+/// itself rather than hardcoded, so tests asserting on request URLs don't
+/// go stale every time the deployed backend's default URL changes.
+final String testBaseUrl = ServiceProvider(storageKey: '_probe', endpoint: '').baseUrl;

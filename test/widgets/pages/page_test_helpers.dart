@@ -55,7 +55,7 @@ List<BlocProvider> testBlocProviders({http.Client? client}) {
     BlocProvider<LoginBloc>(create: (_) => LoginBloc(client: c)),
     BlocProvider<TaskBloc>.value(value: taskBloc),
     BlocProvider<DynamicBloc>(
-      create: (ctx) => DynamicBloc(taskBloc: ctx.read<TaskBloc>(), api: DynamicApiService(client: c)),
+      create: (ctx) => DynamicBloc(taskBloc: ctx.read<TaskBloc>(), apiOverride: DynamicApiService(client: c)),
     ),
     BlocProvider<HomeBloc>(create: (ctx) => HomeBloc(taskBloc: ctx.read<TaskBloc>())),
   ];

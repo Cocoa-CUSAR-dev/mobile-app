@@ -7,11 +7,11 @@ class ServiceProvider<T> {
   final String endpoint;
   final bool isRealApi;
   final bool useCookie;
-  // Override at build/run time, e.g.:
-  //   flutter run --dart-define=API_BASE_URL=http://192.168.10.188:8080
+  // Overridable at build time via --dart-define=API_BASE_URL=...
+  // (e.g. the CI web build points this at the deployed backend).
   final String baseUrl = const String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
+    defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
   );
   final http.Client _client;
 
@@ -213,6 +213,52 @@ class ServiceProvider<T> {
       await prefs.setString(storageKey, jsonEncode(existingData));
       return payload;
     }
+  }
+
+  /// Fetch a single object (GET) with local cache fallback, for endpoints
+  /// keyed by more than a bare id (e.g. /tasks/:taskId/form). Mirrors
+  /// fetchData's cache-then-serve behaviour, but for one JSON object
+  /// instead of a list — needed so the offline-first requirement holds
+  /// for endpoints like this one too.
+  Future<Map<String, dynamic>> fetchOneCached(String pathSuffix) async {
+    final effectiveKey = '${storageKey}_$pathSuffix';
+
+    if (isRealApi) {
+      final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
+      try {
+        final response = await _client
+            .get(uri, headers: await _getHeaders())
+            .timeout(const Duration(seconds: 35));
+        await _updateCookie(response);
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          await _saveToLocal(data, effectiveKey);
+          return data;
+        } else {
+          final cached = await _fetchOneFromLocal(effectiveKey);
+          if (cached != null) return cached;
+          final body = jsonDecode(response.body);
+          throw (body is Map ? body['error'] : null) ?? 'Fetch error';
+        }
+      } catch (e) {
+        final cached = await _fetchOneFromLocal(effectiveKey);
+        if (cached != null) return cached;
+        rethrow;
+      }
+    } else {
+      await _simulateNetworkDelay();
+      return await _fetchOneFromLocal(effectiveKey) ?? {};
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchOneFromLocal(String effectiveKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? dataString = prefs.getString(effectiveKey);
+    if (dataString != null) {
+      return jsonDecode(dataString) as Map<String, dynamic>;
+    }
+    return null;
   }
 
   /// Fetch Single Data (GET) - สำหรับ /tasks/:taskId

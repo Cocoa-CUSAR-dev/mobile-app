@@ -6,6 +6,20 @@ class DynamicApiService {
 
   final http.Client? _client;
 
+  /// ดึงโครงสร้างฟอร์มสดสำหรับ task นี้ (แทนที่ assets/schema.json เดิม)
+  /// คืนค่า { form: {...}, version: N } ตามที่ mobile-backend proxy ส่งมา
+  /// แคชไว้ในเครื่องอัตโนมัติผ่าน ServiceProvider — เปิดฟอร์มได้แม้ออฟไลน์
+  Future<Map<String, dynamic>> fetchTaskForm(String taskId) async {
+    final provider = ServiceProvider<Map<String, dynamic>>(
+      storageKey: 'task_form',
+      endpoint: '/tasks',
+      isRealApi: true,
+      client: _client,
+    );
+
+    return provider.fetchOneCached('$taskId/form');
+  }
+
   /// ดึงข้อมูลตาม table
   Future<List<Map<String, dynamic>>> fetchData(String tableName,
       {Map<String, dynamic>? queryParams}) async {

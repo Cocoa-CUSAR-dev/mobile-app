@@ -19,7 +19,7 @@ void main() {
   group('getFarms', () {
     test('returns parsed farms on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), 'http://localhost:8080/farms');
+        expect(request.url.toString(), '$testBaseUrl/farms');
         return jsonResponse([
           {'farm_id': 1, 'farm_name': 'ไร่โกโก้พรีเมียม'},
         ], 200);

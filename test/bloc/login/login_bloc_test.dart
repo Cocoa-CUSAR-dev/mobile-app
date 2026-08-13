@@ -36,7 +36,7 @@ void main() {
       'a real user with an existing profile goes to HOME',
       build: () {
         final client = MockClient((request) async {
-          expect(request.url.toString(), 'http://localhost:8080/public/login');
+          expect(request.url.toString(), '$testBaseUrl/public/login');
           return jsonResponse({'has_profile': true}, 200);
         });
         return LoginBloc(client: client);

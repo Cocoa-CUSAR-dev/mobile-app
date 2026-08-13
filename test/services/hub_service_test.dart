@@ -19,7 +19,7 @@ void main() {
   group('fetchAll', () {
     test('returns parsed hubs on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), 'http://localhost:8080/hubs');
+        expect(request.url.toString(), '$testBaseUrl/hubs');
         return jsonResponse([
           {'hub_id': 1, 'hub_name': 'จุดรับซื้อกลาง'},
         ], 200);

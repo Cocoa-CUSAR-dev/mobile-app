@@ -5,6 +5,7 @@ import 'package:cocoa_supply/bloc/farm/farm_bloc.dart';
 import 'package:cocoa_supply/bloc/home/home_bloc.dart';
 import 'package:cocoa_supply/bloc/hub/hub_bloc.dart';
 import 'package:cocoa_supply/bloc/login/login_bloc.dart';
+import 'package:cocoa_supply/bloc/login/liff_login_bloc.dart';
 import 'package:cocoa_supply/bloc/plot/plot_bloc.dart';
 import 'package:cocoa_supply/bloc/processing_station/processing_station.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
@@ -15,6 +16,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class AppBloc {
   static List<BlocProvider> get providers => [
     BlocProvider<LoginBloc>(create: (BuildContext context) => LoginBloc(),),
+    BlocProvider<LiffLoginBloc>(create: (BuildContext context) => LiffLoginBloc(),),
     BlocProvider<FarmBloc>(create: (BuildContext context) => FarmBloc(),),
     BlocProvider<PlotBloc>(create: (BuildContext context) => PlotBloc(),),
     BlocProvider<ProcessingStationBloc>(create: (BuildContext context) => ProcessingStationBloc(),),

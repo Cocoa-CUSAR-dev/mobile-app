@@ -1,9 +1,6 @@
 // lib/bloc/dynamic/dynamic_bloc.dart
-import 'dart:convert';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:uuid/uuid.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_event.dart';
 
@@ -31,11 +28,6 @@ class SubmitForm extends DynamicEvent {
   });
 }
 
-class LoadDropdownOptions extends DynamicEvent {
-  final String key;
-  LoadDropdownOptions(this.key);
-}
-
 abstract class DynamicState {}
 
 class DynamicInitial extends DynamicState {}
@@ -43,10 +35,9 @@ class DynamicInitial extends DynamicState {}
 class DynamicLoading extends DynamicState {}
 
 class DynamicReady extends DynamicState {
-  final Map<String, dynamic> schema;
-  final Map<String, List<Map<String, dynamic>>> dropdownOptions;
+  final Map<String, dynamic> form;
 
-  DynamicReady(this.schema, {this.dropdownOptions = const {}});
+  DynamicReady(this.form);
 }
 
 class DynamicSuccess extends DynamicState {}
@@ -60,25 +51,26 @@ class DynamicError extends DynamicState {
 class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
   final TaskBloc taskBloc;
   final DynamicApiService api;
-  DynamicBloc({required this.taskBloc, DynamicApiService? api})
-    : api = api ?? DynamicApiService(),
+  // Named apiOverride (not api) so it doesn't shadow the `api` field inside
+  // this constructor's body — the on<...> closures below reference `api`
+  // meaning `this.api`, and a same-named parameter would silently shadow
+  // that for the whole constructor scope, not just the initializer list.
+  DynamicBloc({required this.taskBloc, DynamicApiService? apiOverride})
+    : api = apiOverride ?? DynamicApiService(),
       super(DynamicInitial()) {
     on<LoadSchemaAndData>((event, emit) async {
       emit(DynamicLoading());
       try {
-        // 1. โหลดโครงสร้างฟอร์ม
-        final String schemaString = await rootBundle.loadString(
-          'assets/schema.json',
-        );
-        final Map<String, dynamic> spec = json.decode(schemaString);
-        final schema = spec['definitions'][event.handler];
+        // 1. โหลดโครงสร้างฟอร์มสด (แทน assets/schema.json เดิม) — แคชในเครื่องให้อัตโนมัติ
+        final result = await api.fetchTaskForm(event.taskId);
+        final form = result['form'] as Map<String, dynamic>?;
 
-        if (schema == null) throw "ไม่พบโครงสร้างฟอร์มสำหรับ: ${event.handler}";
+        if (form == null) throw "ไม่พบโครงสร้างฟอร์มสำหรับงานนี้";
 
         // 2. สั่ง TaskBloc ให้ไปหาคำตอบเก่ามาเตรียมไว้ใน State
         taskBloc.add(GetTaskResponseDetails(event.taskId));
 
-        emit(DynamicReady(schema));
+        emit(DynamicReady(form));
       } catch (e) {
         emit(DynamicError(e.toString()));
       }
@@ -87,22 +79,24 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
     on<SubmitForm>((event, emit) async {
       emit(DynamicLoading());
       try {
-        final String response = await rootBundle.loadString(
-          'assets/schema.json',
-        );
-        final schema = json.decode(response)['definitions'][event.handler];
-        final Map<String, dynamic> properties = Map<String, dynamic>.from(
-          schema['properties'],
-        );
-        final Map<String, dynamic> payload = {};
+        // ใช้ฟอร์มเดียวกับที่โหลดไว้แล้ว (แคช ServiceProvider ทำให้เร็ว ไม่ยิงซ้ำจริง)
+        final result = await api.fetchTaskForm(event.taskId);
+        final form = result['form'] as Map<String, dynamic>? ?? {};
+        final sections = (form['sections'] as List<dynamic>? ?? []);
 
-        for (final key in properties.keys) {
-          final field = properties[key] ?? {};
-          if (field['is_key'] == true) {
-            payload[key] = event.isEdit ? event.data[key] : const Uuid().v4();
-            continue;
+        final Map<String, dynamic> payload = {};
+        for (final sectionRaw in sections) {
+          final section = sectionRaw as Map<String, dynamic>;
+          final questions = (section['questions'] as List<dynamic>? ?? []);
+          for (final questionRaw in questions) {
+            final question = questionRaw as Map<String, dynamic>;
+            final fieldName = question['fieldName'] as String?;
+            if (fieldName == null) continue;
+            payload[fieldName] = _parseValue(
+              event.data[fieldName],
+              question['inputType'] as String?,
+            );
           }
-          payload[key] = _parseValue(event.data[key], field['type']);
         }
 
         // ส่งงานผ่าน TaskBloc
@@ -123,11 +117,19 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
     });
   }
 
-  dynamic _parseValue(dynamic value, String? type) {
+  dynamic _parseValue(dynamic value, String? inputType) {
     if (value == null || value.toString().isEmpty) return null;
-    if (type == 'integer') return int.tryParse(value.toString());
-    if (type == 'number' || type == 'numeric')
-      return double.tryParse(value.toString());
-    return value.toString();
+    switch (inputType) {
+      case 'INT':
+        return int.tryParse(value.toString());
+      case 'FLOAT':
+        return double.tryParse(value.toString());
+      case 'BOOLEAN':
+        return value is bool ? value : value.toString().toLowerCase() == 'true';
+      default:
+        // VARCHAR, OPTION (submits the selected choice's id), DATE,
+        // DATETIME, GEODATA all pass through as-is (matches prior behaviour).
+        return value.toString();
+    }
   }
 }

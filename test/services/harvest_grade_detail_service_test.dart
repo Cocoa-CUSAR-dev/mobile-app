@@ -18,7 +18,7 @@ void main() {
   group('getHarvestGradeDetails', () {
     test('returns parsed details on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), 'http://localhost:8080/harvest_grade_details');
+        expect(request.url.toString(), '$testBaseUrl/harvest_grade_details');
         return jsonResponse([
           {'harvest_id': 1, 'grade_code': 'A'},
           {'harvest_id': 2, 'grade_code': 'B'},

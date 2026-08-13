@@ -30,7 +30,7 @@ void main() {
       var networkCalled = false;
       final client = MockClient((request) async {
         networkCalled = true;
-        expect(request.url.toString(), 'http://localhost:8080/farm');
+        expect(request.url.toString(), '$testBaseUrl/farm');
         return jsonResponse([
           {'farm_id': 1},
         ], 200);
@@ -50,7 +50,7 @@ void main() {
       var method = '';
       final client = MockClient((request) async {
         method = request.method;
-        expect(request.url.toString(), 'http://localhost:8080/farm');
+        expect(request.url.toString(), '$testBaseUrl/farm');
         return jsonResponse({}, 200);
       });
 
@@ -75,7 +75,7 @@ void main() {
   group('fetchConstants (the one method that already sets isRealApi: true)', () {
     test('routes to /constants/<key>', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), 'http://localhost:8080/constants/province_id');
+        expect(request.url.toString(), '$testBaseUrl/constants/province_id');
         return jsonResponse([
           {'province_id': '50', 'province_name_th': 'เชียงใหม่'},
         ], 200);
