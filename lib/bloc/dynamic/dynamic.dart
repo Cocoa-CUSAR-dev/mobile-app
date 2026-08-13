@@ -50,8 +50,14 @@ class DynamicError extends DynamicState {
 // Bloc Implementation
 class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
   final TaskBloc taskBloc;
-  final api = DynamicApiService();
-  DynamicBloc({required this.taskBloc}) : super(DynamicInitial()) {
+  final DynamicApiService api;
+  // Named apiOverride (not api) so it doesn't shadow the `api` field inside
+  // this constructor's body — the on<...> closures below reference `api`
+  // meaning `this.api`, and a same-named parameter would silently shadow
+  // that for the whole constructor scope, not just the initializer list.
+  DynamicBloc({required this.taskBloc, DynamicApiService? apiOverride})
+    : api = apiOverride ?? DynamicApiService(),
+      super(DynamicInitial()) {
     on<LoadSchemaAndData>((event, emit) async {
       emit(DynamicLoading());
       try {

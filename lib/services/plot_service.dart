@@ -2,17 +2,22 @@
 
 import 'package:cocoa_supply/models/plot_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart'; // Assume this exists
+import 'package:http/http.dart' as http;
 
 class PlotService {
   static const String _storageKey = 'plot_data';
   static const String _endpoint = '/plots'; // Mock endpoint
-  
+
+  PlotService({http.Client? client})
+    : _provider = ServiceProvider<Plot>(
+        storageKey: _storageKey,
+        endpoint: _endpoint,
+        isRealApi: true,
+        client: client,
+      );
+
   // ServiceProvider must be implemented to handle generic data fetching/saving
-  final ServiceProvider<Plot> _provider = ServiceProvider<Plot>(
-    storageKey: _storageKey,
-    endpoint: _endpoint,
-    isRealApi: true,
-  );
+  final ServiceProvider<Plot> _provider;
 
   /// Fetch all plots
   Future<List<Plot>> getPlots({Map<String, dynamic>? queryParams}) async {

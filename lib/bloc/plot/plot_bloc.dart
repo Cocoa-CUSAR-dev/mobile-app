@@ -6,9 +6,11 @@ import 'plot_state.dart';
 import 'package:cocoa_supply/services/plot_service.dart';
 
 class PlotBloc extends Bloc<PlotEvent, PlotState> {
-  final PlotService _service = PlotService();
+  final PlotService _service;
 
-  PlotBloc() : super(PlotInitial()) {
+  PlotBloc({PlotService? plotService})
+    : _service = plotService ?? PlotService(),
+      super(PlotInitial()) {
     on<LoadPlots>(_onLoadPlots);
     on<RegisterPlot>(_onRegisterPlot);
     on<UpdatePlot>(_onUpdatePlot);
