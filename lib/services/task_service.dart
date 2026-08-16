@@ -2,17 +2,22 @@
 
 import 'package:cocoa_supply/models/task_item_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class TaskService {
   static const String _storageKey = 'tasks_data';
   static const String _endpoint = '/tasks';
-  
-  final ServiceProvider<TaskItem> _provider = ServiceProvider<TaskItem>(
-    storageKey: _storageKey,
-    endpoint: _endpoint,
-    isRealApi: true,
-  );
+
+  TaskService({http.Client? client})
+    : _provider = ServiceProvider<TaskItem>(
+        storageKey: _storageKey,
+        endpoint: _endpoint,
+        isRealApi: true,
+        client: client,
+      );
+
+  final ServiceProvider<TaskItem> _provider;
 
   /// ดึงข้อมูลงานทั้งหมดตามวันที่ระบุ
   Future<List<TaskItem>> getTasksByDate(DateTime date) async {

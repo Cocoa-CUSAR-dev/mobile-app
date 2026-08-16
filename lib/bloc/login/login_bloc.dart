@@ -2,13 +2,22 @@ import 'package:bloc/bloc.dart';
 import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/bloc/login/login_event.dart';
+import 'package:http/http.dart' as http;
 // import 'package:cocoa_supply/core/api/auth_repository.dart'; // สมมติว่ามี repository
 
 // LoginBloc: จัดการการ Login และสถานะที่เกี่ยวข้อง
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   // final AuthRepository authRepository;
-  final loginService = ServiceProvider(storageKey: 'token', endpoint: '/public/login', isRealApi: true, useCookie: false);
-  LoginBloc() : super(LoginInitial()) {
+  final http.Client? _client;
+  late final loginService = ServiceProvider(
+    storageKey: 'token',
+    endpoint: '/public/login',
+    isRealApi: true,
+    useCookie: false,
+    client: _client,
+  );
+
+  LoginBloc({http.Client? client}) : _client = client, super(LoginInitial()) {
     on<LoginButtonPressed>(_onLoginButtonPressed);
     on<LoadLogin>(_onLoadLogin);
   }
@@ -26,7 +35,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         emit(const LoginSuccess(next_page: mockToken));
         
       } else {
-        final loginService = ServiceProvider(storageKey: 'token', endpoint: '/public/login', isRealApi: true, useCookie: false);
         try {
           final response = await loginService.postData({
             'username': event.username,

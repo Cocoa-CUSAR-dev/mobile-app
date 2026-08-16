@@ -9,11 +9,11 @@ class ServiceProvider<T> {
   final bool useCookie;
   // Overridable at build time via --dart-define=API_BASE_URL=...
   // (e.g. the CI web build points this at the deployed backend).
-  // Native builds keep the existing LAN-IP default unchanged.
   final String baseUrl = const String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
   );
+  final http.Client _client;
 
   static const String _cookieKey = 'auth_cookie';
 
@@ -22,7 +22,8 @@ class ServiceProvider<T> {
     required this.endpoint,
     this.isRealApi = false,
     this.useCookie = true,
-  });
+    http.Client? client,
+  }) : _client = client ?? http.Client();
 
   // --- PRIVATE HELPERS ---
 
@@ -36,7 +37,7 @@ class ServiceProvider<T> {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
       final prefs = await SharedPreferences.getInstance();
       final String? cookie = prefs.getString(_cookieKey);
-      final response = await http
+      final response = await _client
           .get(
             uri,
             headers: {
@@ -134,7 +135,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint').replace(queryParameters: queryParams);
       try {
-        final response = await http
+        final response = await _client
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 10));
 
@@ -166,7 +167,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint');
       try {
-        final response = await http.post(
+        final response = await _client.post(
           uri,
           headers: await _getHeaders(),
           body: jsonEncode(payload),
@@ -214,12 +215,58 @@ class ServiceProvider<T> {
     }
   }
 
+  /// Fetch a single object (GET) with local cache fallback, for endpoints
+  /// keyed by more than a bare id (e.g. /tasks/:taskId/form). Mirrors
+  /// fetchData's cache-then-serve behaviour, but for one JSON object
+  /// instead of a list — needed so the offline-first requirement holds
+  /// for endpoints like this one too.
+  Future<Map<String, dynamic>> fetchOneCached(String pathSuffix) async {
+    final effectiveKey = '${storageKey}_$pathSuffix';
+
+    if (isRealApi) {
+      final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
+      try {
+        final response = await _client
+            .get(uri, headers: await _getHeaders())
+            .timeout(const Duration(seconds: 35));
+        await _updateCookie(response);
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          await _saveToLocal(data, effectiveKey);
+          return data;
+        } else {
+          final cached = await _fetchOneFromLocal(effectiveKey);
+          if (cached != null) return cached;
+          final body = jsonDecode(response.body);
+          throw (body is Map ? body['error'] : null) ?? 'Fetch error';
+        }
+      } catch (e) {
+        final cached = await _fetchOneFromLocal(effectiveKey);
+        if (cached != null) return cached;
+        rethrow;
+      }
+    } else {
+      await _simulateNetworkDelay();
+      return await _fetchOneFromLocal(effectiveKey) ?? {};
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchOneFromLocal(String effectiveKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? dataString = prefs.getString(effectiveKey);
+    if (dataString != null) {
+      return jsonDecode(dataString) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   /// Fetch Single Data (GET) - สำหรับ /tasks/:taskId
   Future<Map<String, dynamic>> fetchOne(String id) async {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$id');
       try {
-        final response = await http.get(uri, headers: await _getHeaders());
+        final response = await _client.get(uri, headers: await _getHeaders());
         await _updateCookie(response);
 
         if (response.statusCode == 200) {
@@ -243,7 +290,7 @@ class ServiceProvider<T> {
       // ปรับให้ยิงไปที่ endpoint หลัก (เช่น /tasks) ไม่ต้องต่อท้ายด้วย /id
       final uri = Uri.parse('$baseUrl$endpoint');
       try {
-        final response = await http.put(
+        final response = await _client.put(
           uri,
           headers: await _getHeaders(),
           body: jsonEncode(payload),
@@ -269,7 +316,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$identifierValue');
       try {
-        final response = await http.delete(uri, headers: await _getHeaders());
+        final response = await _client.delete(uri, headers: await _getHeaders());
         await _updateCookie(response);
         return (response.statusCode == 200 || response.statusCode == 204);
       } catch (e) {
