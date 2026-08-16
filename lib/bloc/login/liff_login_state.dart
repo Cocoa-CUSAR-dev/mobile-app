@@ -36,15 +36,20 @@ class LiffLoginSuccess extends LiffLoginState {
   final String userId;
   final String lineUserId;
   final String message;
+  /// จาก has_profile ของ backend (ตรรกะเดียวกับ next_page ของ Login ปกติ) —
+  /// true = มีโปรไฟล์ (role) แล้ว ไปหน้า success ได้เลย, false = ต้องไปกรอก
+  /// โปรไฟล์ที่ RegisterRolePage ก่อน
+  final bool hasProfile;
 
   const LiffLoginSuccess({
     required this.userId,
     required this.lineUserId,
     required this.message,
+    required this.hasProfile,
   });
 
   @override
-  List<Object> get props => [userId, lineUserId, message];
+  List<Object> get props => [userId, lineUserId, message, hasProfile];
 }
 
 class LiffLoginFailure extends LiffLoginState {

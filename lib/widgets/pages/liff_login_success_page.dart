@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:cocoa_supply/services/liff_service.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 
-/// หน้าปลายทางหลังสมัครสมาชิก + เชื่อมบัญชี LINE (LiffLinkPage) + ลงทะเบียนโปรไฟล์
-/// (RegisterRolePage) ครบทุกขั้นตอนแล้ว ผ่าน flow ที่เริ่มจากปุ่ม "ยังไม่มีบัญชีผู้ใช้"
-/// บนหน้า LIFF landing — บัญชีพร้อมใช้งานสมบูรณ์แล้ว ปิดหน้าต่าง LIFF กลับไปที่
-/// ช่องแชท LINE ให้เองเหมือน flow บัญชีเดิมปกติ (ดู liff_login_page.dart)
-class LiffRegisterSuccessPage extends StatefulWidget {
-  const LiffRegisterSuccessPage({super.key});
+/// "Login success Page" ปลายทางร่วมของทุก flow ใน LiffLinkPage หลัง login/link
+/// สำเร็จ + มีโปรไฟล์ (role) ครบแล้ว ไม่ว่าจะมาจากทางไหน — เดิมมีบัญชี+มีโปรไฟล์
+/// อยู่แล้ว (ตรงมาเลย), เดิมมีบัญชีแต่ยังไม่มีโปรไฟล์ (ผ่าน RegisterRolePage มา),
+/// หรือเพิ่งสมัครสมาชิกใหม่ (ผ่าน RegisterRolePage มาเช่นกัน เพราะบัญชีใหม่ไม่มี
+/// โปรไฟล์แน่นอน) — ปิดหน้าต่าง LIFF กลับไปที่ช่องแชท LINE ให้เอง
+class LiffLoginSuccessPage extends StatefulWidget {
+  const LiffLoginSuccessPage({super.key});
 
   @override
-  State<LiffRegisterSuccessPage> createState() => _LiffRegisterSuccessPageState();
+  State<LiffLoginSuccessPage> createState() => _LiffLoginSuccessPageState();
 }
 
-class _LiffRegisterSuccessPageState extends State<LiffRegisterSuccessPage> {
+class _LiffLoginSuccessPageState extends State<LiffLoginSuccessPage> {
   @override
   void initState() {
     super.initState();
@@ -36,7 +37,7 @@ class _LiffRegisterSuccessPageState extends State<LiffRegisterSuccessPage> {
               Icon(Icons.check_circle, color: Colors.green.shade600, size: 64),
               const SizedBox(height: 16),
               const Text(
-                'สมัครสมาชิกและเชื่อมบัญชี LINE สำเร็จ!',
+                'เชื่อมบัญชี LINE สำเร็จ!',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
               ),

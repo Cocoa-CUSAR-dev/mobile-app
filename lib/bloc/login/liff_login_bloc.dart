@@ -94,6 +94,7 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
         userId: response['user_id']?.toString() ?? '',
         lineUserId: response['line_user_id']?.toString() ?? '',
         message: response['message']?.toString() ?? 'verify สำเร็จ และบันทึกการผูกบัญชี LINE เรียบร้อยแล้ว',
+        hasProfile: response['has_profile'] == true,
       ));
     } catch (e) {
       // แนบ idToken เดิมกลับไปด้วย — error นี้เกิดตอน submit (username/password

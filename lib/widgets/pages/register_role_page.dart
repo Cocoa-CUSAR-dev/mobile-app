@@ -159,11 +159,10 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ ลงทะเบียนสำเร็จ')));
 
-        // ถ้ามาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
-        // บัญชี LINE ผ่าน LiffLinkPage มาแล้ว) ให้พาไปหน้า "สมัครสำเร็จ" (ปิด LIFF
-        // webview) แทนหน้า home ปกติ
+        // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
+        // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
         Navigator.of(context).pushNamedAndRemoveUntil(
-          widget.fromLiff ? AppRoute.liffRegisterSuccess : AppRoute.home,
+          widget.fromLiff ? AppRoute.liffLoginSuccess : AppRoute.home,
           (route) => false,
         );
       }
