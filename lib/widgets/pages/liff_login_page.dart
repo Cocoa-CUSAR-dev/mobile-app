@@ -3,14 +3,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
-import 'package:cocoa_supply/services/liff_service.dart';
+import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 
 /// หน้าเชื่อมบัญชีเดิมกับ LINE ผ่าน LIFF — เข้าถึงได้ทาง route '/liff-link' เท่านั้น
 /// (ตั้งเป็น LIFF Endpoint URL ใน LINE Developers Console)
 /// ต่างจาก LoginPage ตรงที่ต้องเรียก liff.init() ก่อน ซึ่งหน้า web ปกติเรียกไม่ได้/ไม่ควรเรียก
 class LiffLinkPage extends StatefulWidget {
-  const LiffLinkPage({super.key});
+  /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" ที่เพิ่งสมัครสมาชิกเสร็จ (UserRegisterPage)
+  /// ข้ามหน้า landing ไปฟอร์ม login/link ตรงๆ เลย — สิ่งที่เกิดขึ้นหลัง login/link
+  /// สำเร็จ (ไปกรอกโปรไฟล์ต่อ หรือไปหน้าสำเร็จเลย) เหมือนกันทั้งสอง flow เพราะ
+  /// เช็คจาก has_profile ที่ backend ส่งกลับมา ไม่ได้แยกตาม flag นี้ (ดู listener
+  /// ใน build() ด้านล่าง)
+  final bool postRegistration;
+
+  const LiffLinkPage({super.key, this.postRegistration = false});
 
   @override
   State<LiffLinkPage> createState() => _LiffLinkPageState();
@@ -27,7 +34,12 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   @override
   void initState() {
     super.initState();
-    context.read<LiffLoginBloc>().add(LiffInitRequested());
+    // postRegistration: liff.init() วิ่งไปแล้วครั้งแรกที่เข้าหน้านี้ตอนต้น session
+    // (LiffLoginBloc เป็น instance เดียวทั้งแอป ไม่ได้ผูกกับ widget นี้) ข้ามหน้า
+    // landing ไปเรียก LiffHasAccountPressed ตรงๆ เพื่อขอ idToken + โชว์ฟอร์ม login เลย
+    context.read<LiffLoginBloc>().add(
+          widget.postRegistration ? LiffHasAccountPressed() : LiffInitRequested(),
+        );
   }
 
   @override
@@ -63,13 +75,20 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 100),
-              const Text(
-                'เชื่อมบัญชีเดิมกับ LINE',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+              BlocBuilder<LiffLoginBloc, LiffLoginState>(
+                builder: (context, state) {
+                  final title = state is LiffLanding
+                      ? 'ยินดีต้อนรับ'
+                      : 'เชื่อมบัญชีเดิมกับ LINE';
+                  return Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
               BlocConsumer<LiffLoginBloc, LiffLoginState>(
@@ -84,10 +103,25 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                     );
                   }
                   if (state is LiffLoginSuccess) {
-                    // โชว์ข้อความสำเร็จค้างไว้ 3 วินาที แล้วปิดหน้าจอ LIFF
-                    // กลับไปที่ช่องแชท LINE ให้เอง — ไม่ต้องรอ user กดปิดเอง
-                    Future.delayed(const Duration(seconds: 3), () {
-                      liffCloseWindow();
+                    // ตรรกะเดียวกันทั้งสองทาง ("มีบัญชีผู้ใช้แล้ว" กดตรงๆ หรือ
+                    // เพิ่งสมัครสมาชิกใหม่มา) — เช็ค has_profile จาก backend
+                    // (เหมือน next_page ของ Login ปกติ) ว่ามีโปรไฟล์ (role)
+                    // แล้วหรือยัง ยังไม่มีให้ไปกรอกที่ RegisterRolePage ก่อน
+                    // มีแล้วไปหน้า "เชื่อมบัญชีสำเร็จ" ได้เลย (ปิดหน้าต่างเอง)
+                    Future.delayed(const Duration(milliseconds: 800), () {
+                      if (!context.mounted) return;
+                      if (state.hasProfile) {
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRoute.liffLoginSuccess,
+                          (route) => false,
+                        );
+                      } else {
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRoute.roleRegister,
+                          (route) => false,
+                          arguments: {'fromLiff': true},
+                        );
+                      }
                     });
                   }
                 },
@@ -97,6 +131,10 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(child: CircularProgressIndicator()),
                     );
+                  }
+
+                  if (state is LiffLanding) {
+                    return _buildLanding(context);
                   }
 
                   if (state is LiffLoginSuccess) {
@@ -172,6 +210,62 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
     );
   }
 
+  // เดิมตั้งใจใช้ liffOpenWindow() สลับไป browser ปกตินอก LIFF แต่ทดสอบบนเครื่องจริง
+  // (Android, isInClient=true) แล้วพบว่า liff.openWindow() ทั้ง external:true และ
+  // false return โดยไม่ throw แต่ไม่ทำอะไรจริงเลย (native bridge เงียบ ไม่รองรับบน
+  // LINE version/Android build นี้) — เปลี่ยนมา navigate แบบ in-app ภายใน LIFF
+  // webview เดิมแทน ซึ่งไม่ต้องพึ่ง native bridge ใดๆ เลยจึงชัวร์กว่า ปลอดภัยเพราะ
+  // UserRegisterPage/RegisterRolePage ในสเต็ปนี้ไม่มี MapLibre/file upload
+  void _onNoAccountPressed(BuildContext context) {
+    Navigator.of(context).pushNamed(
+      AppRoute.userRegister,
+      arguments: {'fromLiff': true},
+    );
+  }
+
+  Widget _buildLanding(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: () =>
+              context.read<LiffLoginBloc>().add(LiffHasAccountPressed()),
+          icon: const Icon(Icons.login_rounded, color: Colors.white, size: 22),
+          label: const Text(
+            'มีบัญชีผู้ใช้แล้ว',
+            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () => _onNoAccountPressed(context),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: BorderSide(color: Colors.grey.shade300),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            backgroundColor: Colors.white,
+          ),
+          child: const Text(
+            'ยังไม่มีบัญชีผู้ใช้',
+            style: TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInitError(LiffLoginFailure state) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -191,7 +285,9 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
           Text(state.error, style: TextStyle(color: Colors.red.shade900)),
           const SizedBox(height: 16),
           OutlinedButton(
-            onPressed: () => context.read<LiffLoginBloc>().add(LiffInitRequested()),
+            onPressed: () => context.read<LiffLoginBloc>().add(
+                  widget.postRegistration ? LiffHasAccountPressed() : LiffInitRequested(),
+                ),
             child: const Text('ลองใหม่อีกครั้ง'),
           ),
         ],
@@ -200,9 +296,8 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   }
 
   Widget _buildSuccess(LiffLoginSuccess state) {
-    // ข้อความสรุปสำหรับ farmer โดยเฉพาะ (ไม่ใช่ debug detail อย่าง user_id/
-    // line_user_id ที่เคยโชว์ไว้ตอนดีบัก) — ค้างไว้ 3 วินาทีก่อนปิดหน้าจอ LIFF
-    // เอง (ดู listener ใน build() ด้านบน)
+    // สถานะเปลี่ยนผ่านสั้นๆ ก่อนพาไปหน้าถัดไป (ดู listener ใน build() ด้านบน
+    // ที่ตัดสินใจว่าจะไป RegisterRolePage หรือหน้า "เชื่อมบัญชีสำเร็จ" ต่อ)
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
       decoration: BoxDecoration(

@@ -7,7 +7,12 @@ import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 
 class RegisterRolePage extends StatefulWidget {
-  const RegisterRolePage({super.key});
+  /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
+  /// บัญชี LINE ไปแล้วผ่าน LiffLinkPage) — ลงทะเบียนโปรไฟล์เสร็จให้ไปหน้า
+  /// "สมัครสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
+  final bool fromLiff;
+
+  const RegisterRolePage({super.key, this.fromLiff = false});
 
   @override
   State<RegisterRolePage> createState() => _RegisterRolePageState();
@@ -152,7 +157,13 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       await registerService.postData(payload);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ ลงทะเบียนสำเร็จ')));
-        Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
+
+        // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
+        // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          widget.fromLiff ? AppRoute.liffLoginSuccess : AppRoute.home,
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));

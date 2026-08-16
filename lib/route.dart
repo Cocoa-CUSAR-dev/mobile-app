@@ -1,4 +1,5 @@
 import 'package:cocoa_supply/widgets/pages/liff_login_page.dart';
+import 'package:cocoa_supply/widgets/pages/liff_login_success_page.dart';
 import 'package:cocoa_supply/widgets/pages/farm_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/hub_register_page.dart';
 import 'package:cocoa_supply/widgets/pages/plot_register_page.dart';
@@ -17,6 +18,7 @@ class AppRoute {
   static const String login = '/';
   static const String home = '/home';
   static const String liffLink = '/liff-link';
+  static const String liffLoginSuccess = '/liffLoginSuccess';
   static const String farmRegister = '/farmRegister';
   static const String userRegister = '/userRegister';
   static const String roleRegister = '/roleRegister';
@@ -38,13 +40,20 @@ class AppRoute {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case liffLink:
-        return MaterialPageRoute(builder: (_) => const LiffLinkPage());
+        final postRegistration = args?['postRegistration'] as bool? ?? false;
+        return MaterialPageRoute(
+          builder: (_) => LiffLinkPage(postRegistration: postRegistration),
+        );
+      case liffLoginSuccess:
+        return MaterialPageRoute(builder: (_) => const LiffLoginSuccessPage());
       case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
       case userRegister:
-        return MaterialPageRoute(builder: (_) => UserRegisterPage());
+        final fromLiff = args?['fromLiff'] as bool? ?? false;
+        return MaterialPageRoute(builder: (_) => UserRegisterPage(fromLiff: fromLiff));
       case roleRegister:
-        return MaterialPageRoute(builder: (_) => RegisterRolePage());
+        final fromLiff = args?['fromLiff'] as bool? ?? false;
+        return MaterialPageRoute(builder: (_) => RegisterRolePage(fromLiff: fromLiff));
       case farmRegister:
         return MaterialPageRoute(
           builder: (_) => const FarmRegisterPage(),
