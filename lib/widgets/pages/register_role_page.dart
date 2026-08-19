@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
+import 'package:cocoa_supply/bloc/login/liff_login_bloc.dart';
+import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 
 class RegisterRolePage extends StatefulWidget {
-  /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
-  /// บัญชี LINE ไปแล้วผ่าน LiffLinkPage) — ลงทะเบียนโปรไฟล์เสร็จให้ไปหน้า
-  /// "สมัครสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
+  /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (login ผ่าน
+  /// LiffLinkPage มาแล้ว แต่ยังไม่มีโปรไฟล์ตอนนั้น) — ลงทะเบียนโปรไฟล์เสร็จแล้ว
+  /// ต้องผูกบัญชี LINE ต่อ (ใช้ [idToken]) ก่อนไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด
+  /// LIFF webview) แทนหน้า home ปกติ
   final bool fromLiff;
 
-  const RegisterRolePage({super.key, this.fromLiff = false});
+  /// idToken จาก LINE ที่ค้างมาจาก LiffLinkPage (เก็บไว้ผูกบัญชี LINE หลัง
+  /// กรอกโปรไฟล์เสร็จ) — null ได้ถ้า fromLiff เป็น false
+  final String? idToken;
+
+  const RegisterRolePage({super.key, this.fromLiff = false, this.idToken});
 
   @override
   State<RegisterRolePage> createState() => _RegisterRolePageState();
@@ -158,12 +165,24 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ ลงทะเบียนสำเร็จ')));
 
-        // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
-        // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          widget.fromLiff ? AppRoute.liffLoginSuccess : AppRoute.home,
-          (route) => false,
-        );
+        // ถ้ามาจาก LiffLinkPage (login ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น) ตอนนี้
+        // มีโปรไฟล์แล้ว ผูกบัญชี LINE ต่อได้เลย (LiffLinkRequested — idempotent
+        // ฝั่ง backend จึงไม่บล็อกแม้เชื่อมไปแล้วจากรอบก่อนหน้า) แล้วไปหน้าแสดง
+        // ผลการผูกบัญชี แทนหน้า home ปกติ
+        if (widget.fromLiff && widget.idToken != null) {
+          context.read<LiffLoginBloc>().add(
+                LiffLinkRequested(idToken: widget.idToken!),
+              );
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoute.liffAccountLink,
+            (route) => false,
+          );
+        } else {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoute.home,
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));

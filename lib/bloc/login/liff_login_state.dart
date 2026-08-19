@@ -31,25 +31,45 @@ class LiffLoginLoading extends LiffLoginState {
   List<Object> get props => [idToken];
 }
 
-/// backend verify กับ LINE สำเร็จ — ได้ line_user_id จริงที่ verify แล้วกลับมา
-class LiffLoginSuccess extends LiffLoginState {
-  final String userId;
-  final String lineUserId;
-  final String message;
+/// login (username/password) สำเร็จ — ยังไม่ได้ผูกบัญชี LINE (แยกออกจากกันแล้ว)
+/// เก็บ idToken ไว้ต่อเพื่อใช้ตอนผูกบัญชี LINE ในขั้นต่อไป
+class LiffLoggedIn extends LiffLoginState {
+  final String idToken;
   /// จาก has_profile ของ backend (ตรรกะเดียวกับ next_page ของ Login ปกติ) —
-  /// true = มีโปรไฟล์ (role) แล้ว ไปหน้า success ได้เลย, false = ต้องไปกรอก
-  /// โปรไฟล์ที่ RegisterRolePage ก่อน
+  /// true = มีโปรไฟล์ (role) แล้ว ไปผูกบัญชี LINE ต่อได้เลย, false = ต้องไปกรอก
+  /// โปรไฟล์ที่ RegisterRolePage ก่อน แล้วค่อยผูกบัญชี LINE
   final bool hasProfile;
 
-  const LiffLoginSuccess({
-    required this.userId,
+  const LiffLoggedIn({required this.idToken, required this.hasProfile});
+
+  @override
+  List<Object> get props => [idToken, hasProfile];
+}
+
+/// กำลังเรียก POST /line/link เพื่อผูกบัญชี LINE
+class LiffLinking extends LiffLoginState {
+  final String idToken;
+  const LiffLinking({required this.idToken});
+  @override
+  List<Object> get props => [idToken];
+}
+
+/// ผูกบัญชี LINE ผ่าน (idempotent — สำเร็จได้ทั้งกรณีผูกใหม่ และกรณีเชื่อมกับ
+/// LINE นี้อยู่แล้วมาก่อน) ดู already_linked ว่าเป็นกรณีไหน เพื่อเลือกข้อความ
+/// ที่โชว์ให้ตรงกับสถานการณ์จริง
+class LiffLinkSuccess extends LiffLoginState {
+  final bool alreadyLinked;
+  final String lineUserId;
+  final String message;
+
+  const LiffLinkSuccess({
+    required this.alreadyLinked,
     required this.lineUserId,
     required this.message,
-    required this.hasProfile,
   });
 
   @override
-  List<Object> get props => [userId, lineUserId, message, hasProfile];
+  List<Object> get props => [alreadyLinked, lineUserId, message];
 }
 
 class LiffLoginFailure extends LiffLoginState {

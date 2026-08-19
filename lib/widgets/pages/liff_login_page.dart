@@ -11,10 +11,10 @@ import 'package:cocoa_supply/widgets/components/form_input.dart';
 /// ต่างจาก LoginPage ตรงที่ต้องเรียก liff.init() ก่อน ซึ่งหน้า web ปกติเรียกไม่ได้/ไม่ควรเรียก
 class LiffLinkPage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" ที่เพิ่งสมัครสมาชิกเสร็จ (UserRegisterPage)
-  /// ข้ามหน้า landing ไปฟอร์ม login/link ตรงๆ เลย — สิ่งที่เกิดขึ้นหลัง login/link
-  /// สำเร็จ (ไปกรอกโปรไฟล์ต่อ หรือไปหน้าสำเร็จเลย) เหมือนกันทั้งสอง flow เพราะ
-  /// เช็คจาก has_profile ที่ backend ส่งกลับมา ไม่ได้แยกตาม flag นี้ (ดู listener
-  /// ใน build() ด้านล่าง)
+  /// ข้ามหน้า landing ไปฟอร์ม login ตรงๆ เลย — สิ่งที่เกิดขึ้นหลัง login สำเร็จ
+  /// (ไปกรอกโปรไฟล์ต่อ หรือผูกบัญชี LINE เลย) เหมือนกันทั้งสอง flow เพราะเช็คจาก
+  /// has_profile ที่ backend ส่งกลับมา ไม่ได้แยกตาม flag นี้ (ดู listener ใน
+  /// build() ด้านล่าง)
   final bool postRegistration;
 
   const LiffLinkPage({super.key, this.postRegistration = false});
@@ -102,31 +102,37 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                       ),
                     );
                   }
-                  if (state is LiffLoginSuccess) {
-                    // ตรรกะเดียวกันทั้งสองทาง ("มีบัญชีผู้ใช้แล้ว" กดตรงๆ หรือ
-                    // เพิ่งสมัครสมาชิกใหม่มา) — เช็ค has_profile จาก backend
-                    // (เหมือน next_page ของ Login ปกติ) ว่ามีโปรไฟล์ (role)
-                    // แล้วหรือยัง ยังไม่มีให้ไปกรอกที่ RegisterRolePage ก่อน
-                    // มีแล้วไปหน้า "เชื่อมบัญชีสำเร็จ" ได้เลย (ปิดหน้าต่างเอง)
-                    Future.delayed(const Duration(milliseconds: 800), () {
-                      if (!context.mounted) return;
-                      if (state.hasProfile) {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          AppRoute.liffLoginSuccess,
-                          (route) => false,
-                        );
-                      } else {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          AppRoute.roleRegister,
-                          (route) => false,
-                          arguments: {'fromLiff': true},
-                        );
-                      }
-                    });
+                  if (state is LiffLoggedIn) {
+                    // login สำเร็จ (ยังไม่ได้ผูกบัญชี LINE) — เช็ค has_profile
+                    // จาก backend (เหมือน next_page ของ Login ปกติ) ว่ามีโปรไฟล์
+                    // (role) แล้วหรือยัง:
+                    // - ยังไม่มี → ไปกรอกที่ RegisterRolePage ก่อน (ผูกบัญชี LINE
+                    //   ทีหลัง หลังกรอกโปรไฟล์เสร็จ — ดู register_role_page.dart)
+                    // - มีแล้ว → ผูกบัญชี LINE ต่อได้เลย (LiffLinkRequested) แล้ว
+                    //   ไปหน้าแสดงผลการผูกบัญชี (LiffAccountLinkPage)
+                    if (state.hasProfile) {
+                      context.read<LiffLoginBloc>().add(
+                            LiffLinkRequested(idToken: state.idToken),
+                          );
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        AppRoute.liffAccountLink,
+                        (route) => false,
+                      );
+                    } else {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        AppRoute.roleRegister,
+                        (route) => false,
+                        arguments: {'fromLiff': true, 'idToken': state.idToken},
+                      );
+                    }
                   }
                 },
                 builder: (context, state) {
-                  if (state is LiffLoginInitial || state is LiffInitializing) {
+                  if (state is LiffLoginInitial ||
+                      state is LiffInitializing ||
+                      state is LiffLoggedIn) {
+                    // LiffLoggedIn เป็นสถานะผ่านทาง — listener ด้านบนพาไปหน้า
+                    // ถัดไปทันที โชว์แค่ spinner สั้นๆ ระหว่างรอ navigate
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(child: CircularProgressIndicator()),
@@ -135,10 +141,6 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
 
                   if (state is LiffLanding) {
                     return _buildLanding(context);
-                  }
-
-                  if (state is LiffLoginSuccess) {
-                    return _buildSuccess(state);
                   }
 
                   // LiffLoginFailure ที่ไม่มี idToken เลย = liff.init() ล้มเหลวเอง
@@ -295,28 +297,4 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
     );
   }
 
-  Widget _buildSuccess(LiffLoginSuccess state) {
-    // สถานะเปลี่ยนผ่านสั้นๆ ก่อนพาไปหน้าถัดไป (ดู listener ใน build() ด้านบน
-    // ที่ตัดสินใจว่าจะไป RegisterRolePage หรือหน้า "เชื่อมบัญชีสำเร็จ" ต่อ)
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.shade200),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.check_circle, color: Colors.green.shade600, size: 48),
-          const SizedBox(height: 12),
-          const Text(
-            'ทำการผูกบัญชี Line สำเร็จ',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-        ],
-      ),
-    );
-  }
 }
