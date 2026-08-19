@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cocoa_supply/services/http_client_factory.dart';
 
 class ServiceProvider<T> {
   final String storageKey;
@@ -23,7 +24,7 @@ class ServiceProvider<T> {
     this.isRealApi = false,
     this.useCookie = true,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? createHttpClient();
 
   // --- PRIVATE HELPERS ---
 
