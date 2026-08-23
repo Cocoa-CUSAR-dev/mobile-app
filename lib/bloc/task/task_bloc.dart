@@ -8,7 +8,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final TaskService _taskService = TaskService();
 
-  // คิวในเครื่อง (SharedPreferences)
+  // คิวในเครื่อง (ผ่าน ServiceProvider -- secure storage หลัง APP-2)
   final ServiceProvider<Map<String, dynamic>> _queueService = ServiceProvider(
     storageKey: 'pending_task_queue',
     endpoint: '/tasks',
@@ -124,6 +124,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       final List<Map<String, dynamic>> pendingQueue = await _queueService
           .fetchData((json) => json);
       final List<Map<String, dynamic>> draftsToKeep = [];
+      // APP-5: items that turned out to already have a server-side answer
+      // by the time this device tried to send them -- held back instead of
+      // blindly overwritten (see TaskState.pendingConflicts).
+      final List<Map<String, dynamic>> conflicts = [];
       emit(state.copyWith(isLoading: true));
       for (var item in pendingQueue) {
         try {
@@ -141,7 +145,16 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
             // ถ้าเป็น Draft ให้ใช้ Update API
             await _taskService.updateTask(taskId, payload);
           } else {
-            // ถ้าเป็น Pending/Submit ให้ใช้ Submit API
+            // APP-5: this device queued a fresh submission (not an edit)
+            // while offline. If the server now already has an answer for
+            // this task, someone/something else submitted it in the
+            // meantime -- submitting on top would silently clobber that,
+            // so check first instead of firing blind.
+            final existing = await _taskService.getTaskResponse(taskId);
+            if (existing != null) {
+              conflicts.add(item);
+              continue;
+            }
             await _taskService.submitTask(taskId, payload);
           }
         } catch (e) {
@@ -153,9 +166,12 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
       _queueService.deleteAll();
 
-      for (var item in draftsToKeep){
+      // Conflicts are kept in the local queue too -- detecting one must
+      // not be the thing that deletes the farmer's only copy of it.
+      for (var item in [...draftsToKeep, ...conflicts]){
         await _queueService.postData(item);
       }
+      emit(state.copyWith(pendingConflicts: conflicts));
       // เมื่อทำครบทุกตัว ให้ Sync ข้อมูลจาก Server อีกครั้งเพื่อให้ UI เป็นปัจจุบัน
       add(SyncTasksWithQueue(event.selectedDate));
     });
