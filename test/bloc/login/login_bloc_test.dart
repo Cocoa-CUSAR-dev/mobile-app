@@ -77,9 +77,9 @@ void main() {
 
   group('LoadLogin', () {
     blocTest<LoginBloc, LoginState>(
-      'emits LoginSuccess(HOME) when a session cookie is already valid',
+      'emits LoginSuccess(HOME) when a stored session token is already valid',
       build: () {
-        SharedPreferences.setMockInitialValues({'auth_cookie': 'session=abc'});
+        SharedPreferences.setMockInitialValues({'auth_token': 'a-valid-jwt'});
         final client = MockClient((request) async => jsonResponse({'roles': ['farmer']}, 200));
         return LoginBloc(client: client);
       },

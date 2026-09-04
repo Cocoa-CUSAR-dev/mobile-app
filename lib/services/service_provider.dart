@@ -15,7 +15,14 @@ class ServiceProvider<T> {
   );
   final http.Client _client;
 
-  static const String _cookieKey = 'auth_cookie';
+  // เดิมเก็บเป็น "คุกกี้" (อ่านจาก response header set-cookie แล้วส่งกลับเป็น
+  // header Cookie: เอง) — วิธีนี้ใช้ไม่ได้บน web build เพราะเบราว์เซอร์ปิดกั้นไม่ให้
+  // JS อ่าน set-cookie เลย (ทุกเบราว์เซอร์) และต่อให้อ่านได้ คุกกี้ก็ส่งข้าม origin
+  // ไม่ได้อยู่ดี (GitHub Pages เรียก backend คนละโดเมน, ดู mobile-backend's
+  // auth_middleware.go) เปลี่ยนมาเก็บ JWT ตรง ๆ จาก field "token" ใน response
+  // body แล้วส่งเป็น header Authorization: Bearer แทน — เป็น header ธรรมดา
+  // ไม่ติดปัญหา SameSite/third-party-cookie ใด ๆ
+  static const String _tokenKey = 'auth_token';
 
   ServiceProvider({
     required this.storageKey,
@@ -36,14 +43,14 @@ class ServiceProvider<T> {
     try {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
       final prefs = await SharedPreferences.getInstance();
-      final String? cookie = prefs.getString(_cookieKey);
+      final String? token = prefs.getString(_tokenKey);
       final response = await _client
           .get(
             uri,
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              if (cookie != null) 'Cookie': cookie,
+              if (token != null) 'Authorization': 'Bearer $token',
             },
           )
           .timeout(const Duration(seconds: 10));
@@ -59,30 +66,41 @@ class ServiceProvider<T> {
           return false;
         }
       }
-      return cookie != null && cookie.isNotEmpty;
+      return token != null && token.isNotEmpty;
     } catch (e) {
       print(e);
       return false;
     }
-    
+
   }
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? cookie = prefs.getString(_cookieKey);
+    final String? token = prefs.getString(_tokenKey);
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (cookie != null && useCookie) 'Cookie': cookie,
+      if (token != null && useCookie) 'Authorization': 'Bearer $token',
     };
   }
 
-  Future<void> _updateCookie(http.Response response) async {
-    final String? rawCookie = response.headers['set-cookie'];
-    if (rawCookie != null && rawCookie.isNotEmpty) {
-      final String cookieToStore = rawCookie.split(';').first;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_cookieKey, cookieToStore);
+  // เก็บ session token จาก field "token" ใน response body (ไม่ใช่ header
+  // set-cookie อีกต่อไป — ดูคอมเมนต์ที่ _tokenKey) เรียกทุกครั้งหลัง request
+  // ไม่ว่า useCookie จะเป็น true/false ก็ตาม (login/register ไม่ได้ "แนบ" token
+  // ไปกับ request ขาออก แต่ยังต้องรับ token ที่ตอบกลับมา) — เผื่อ response
+  // ไม่ใช่ JSON object (เช่น fetchData คืน list) จึงห่อด้วย try/catch
+  Future<void> _updateToken(http.Response response) async {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded['token'] is String) {
+        final String token = decoded['token'] as String;
+        if (token.isNotEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_tokenKey, token);
+        }
+      }
+    } catch (_) {
+      // response ไม่ใช่ JSON หรือไม่ใช่ object — ไม่มี token ให้เก็บ ข้ามไป
     }
   }
 
@@ -139,7 +157,7 @@ class ServiceProvider<T> {
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 10));
 
-        await _updateCookie(response);
+        await _updateToken(response);
 
         if (response.statusCode == 200) {
           final List<dynamic> jsonData = jsonDecode(response.body);
@@ -174,7 +192,7 @@ class ServiceProvider<T> {
         );
 
         // อัปเดต Cookie จาก Response
-        await _updateCookie(response);
+        await _updateToken(response);
 
         // 1. Decode แค่ครั้งเดียวเพื่อประสิทธิภาพ
         final dynamic responseData = jsonDecode(response.body);
@@ -229,7 +247,7 @@ class ServiceProvider<T> {
         final response = await _client
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 35));
-        await _updateCookie(response);
+        await _updateToken(response);
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -267,7 +285,7 @@ class ServiceProvider<T> {
       final uri = Uri.parse('$baseUrl$endpoint/$id');
       try {
         final response = await _client.get(uri, headers: await _getHeaders());
-        await _updateCookie(response);
+        await _updateToken(response);
 
         if (response.statusCode == 200) {
           print(response.body);
@@ -295,7 +313,7 @@ class ServiceProvider<T> {
           headers: await _getHeaders(),
           body: jsonEncode(payload),
         );
-        await _updateCookie(response);
+        await _updateToken(response);
 
         if (response.statusCode == 200) {
           return jsonDecode(response.body);
@@ -317,7 +335,7 @@ class ServiceProvider<T> {
       final uri = Uri.parse('$baseUrl$endpoint/$identifierValue');
       try {
         final response = await _client.delete(uri, headers: await _getHeaders());
-        await _updateCookie(response);
+        await _updateToken(response);
         return (response.statusCode == 200 || response.statusCode == 204);
       } catch (e) {
         rethrow;
@@ -340,6 +358,6 @@ class ServiceProvider<T> {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_cookieKey);
+    await prefs.remove(_tokenKey);
   }
 }
