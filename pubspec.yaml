@@ -43,7 +43,6 @@ dependencies:
   json_annotation: ^4.8.1
   uuid: ^4.2.2
   file_picker: ^8.0.0
-  shared_preferences: ^2.1.1
   # APP-2: backs the session cookie + cached API responses in
   # service_provider.dart -- was plain SharedPreferences (unencrypted).
   flutter_secure_storage: ^9.2.2
