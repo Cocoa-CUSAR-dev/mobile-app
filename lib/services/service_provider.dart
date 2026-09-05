@@ -56,7 +56,7 @@ class ServiceProvider<T> {
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 401) {
         print('UNAUTHORIZED');
-        logout();
+        await logout();
         return false;
       }else if(response.statusCode == 200){
         final data = jsonDecode(response.body);
@@ -84,24 +84,39 @@ class ServiceProvider<T> {
     };
   }
 
+  // ตรวจแบบหยาบๆ ว่าหน้าตาเหมือน JWT จริงไหม (3 ส่วนคั่นด้วยจุด ไม่มีส่วนไหนว่าง)
+  // ก่อนเก็บ -- endpoint ทั่วไป (ไม่ใช่ auth) ที่บังเอิญมี field ชื่อ "token" อยู่
+  // ด้วยเหตุผลอื่น (เช่น pagination cursor, upload token) จะไม่ผ่านเช็คนี้ จึงไม่
+  // ไปทับ session token จริงที่ใช้งานได้อยู่แบบเงียบๆ
+  bool _looksLikeJwt(String value) {
+    final parts = value.split('.');
+    return parts.length == 3 && parts.every((p) => p.isNotEmpty);
+  }
+
   // เก็บ session token จาก field "token" ใน response body (ไม่ใช่ header
   // set-cookie อีกต่อไป — ดูคอมเมนต์ที่ _tokenKey) เรียกทุกครั้งหลัง request
   // ไม่ว่า useCookie จะเป็น true/false ก็ตาม (login/register ไม่ได้ "แนบ" token
   // ไปกับ request ขาออก แต่ยังต้องรับ token ที่ตอบกลับมา) — เผื่อ response
   // ไม่ใช่ JSON object (เช่น fetchData คืน list) จึงห่อด้วย try/catch
-  Future<void> _updateToken(http.Response response) async {
+  //
+  // คืนค่า body ที่ decode แล้วกลับไปด้วย (หรือ null ถ้า decode ไม่ได้) เพื่อให้
+  // ผู้เรียกใช้ค่านี้ต่อได้เลยแทนที่จะต้อง jsonDecode(response.body) ซ้ำอีกรอบ
+  Future<dynamic> _updateToken(http.Response response) async {
+    dynamic decoded;
     try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded['token'] is String) {
-        final String token = decoded['token'] as String;
-        if (token.isNotEmpty) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_tokenKey, token);
-        }
-      }
+      decoded = jsonDecode(response.body);
     } catch (_) {
-      // response ไม่ใช่ JSON หรือไม่ใช่ object — ไม่มี token ให้เก็บ ข้ามไป
+      // response ไม่ใช่ JSON — ไม่มี token ให้เก็บ, ไม่มีอะไรให้คืนกลับ
+      return null;
     }
+    if (decoded is Map && decoded['token'] is String) {
+      final String token = decoded['token'] as String;
+      if (token.isNotEmpty && _looksLikeJwt(token)) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_tokenKey, token);
+      }
+    }
+    return decoded;
   }
 
   String _generateCacheKey(Map<String, dynamic>? queryParams) {
@@ -157,10 +172,10 @@ class ServiceProvider<T> {
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 10));
 
-        await _updateToken(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          final List<dynamic> jsonData = jsonDecode(response.body);
+          final List<dynamic> jsonData = decoded as List<dynamic>;
           // บันทึกโดยใช้ effectiveKey
           await _saveToLocal(jsonData, effectiveKey);
           return jsonData
@@ -191,30 +206,35 @@ class ServiceProvider<T> {
           body: jsonEncode(payload),
         );
 
-        // อัปเดต Cookie จาก Response
-        await _updateToken(response);
+        // อัปเดต token จาก Response -- คืนค่า body ที่ decode แล้วกลับมาด้วย
+        // เลย ไม่ต้อง jsonDecode(response.body) ซ้ำอีกรอบ (ของเดิม decode 2
+        // รอบทั้งที่คอมเมนต์ข้างล่างบอกว่าตั้งใจจะ decode แค่ครั้งเดียว)
+        final dynamic responseData = await _updateToken(response);
 
-        // 1. Decode แค่ครั้งเดียวเพื่อประสิทธิภาพ
-        final dynamic responseData = jsonDecode(response.body);
+        // 2. _updateToken decode ไม่ได้ (เช่น Server ล่มแล้วพ่น HTML ออกมา) จะได้
+        // null กลับมา -- เดิมเช็คจาก FormatException ตอน jsonDecode ตรงนี้เอง
+        // ตอนนี้ decode ไปแล้วใน _updateToken จึงต้องเช็คจากผลลัพธ์แทน (ของจริง
+        // ที่ decode ได้เป็น null literal มีโอกาสเกิดน้อยมากและไม่ใช่ response
+        // shape ที่ backend endpointไหนใช้).
+        if (responseData == null && response.body.trim() != 'null') {
+          throw "เซิร์ฟเวอร์ตอบกลับผิดพลาด (Invalid JSON)";
+        }
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
           // ใช้ช่วง 200-299 ครอบคลุมทั้ง OK (200), Created (201), No Content (204)
           print('POST Success: $responseData');
           return responseData;
         } else {
-          // 2. ดึง Error Message อย่างปลอดภัย (ป้องกันกรณี responseData ไม่ใช่ Map หรือไม่มี key error)
+          // 3. ดึง Error Message อย่างปลอดภัย (ป้องกันกรณี responseData ไม่ใช่ Map หรือไม่มี key error)
           String errorMessage = 'Post Error';
           if (responseData is Map && responseData.containsKey('error')) {
             errorMessage = responseData['error'].toString();
           } else if (responseData is Map && responseData.containsKey('message')) {
             errorMessage = responseData['message'].toString();
           }
-          
+
           throw errorMessage;
         }
-      } on FormatException catch (_) {
-        // 3. จัดการกรณีที่ Response Body ไม่ใช่ JSON (เช่น Server ล่มแล้วพ่น HTML ออกมา)
-        throw "เซิร์ฟเวอร์ตอบกลับผิดพลาด (Invalid JSON)";
       } catch (e) {
         // 4. จัดการ Error อื่นๆ เช่น No Internet หรือ Timeout
         rethrow;
@@ -247,17 +267,16 @@ class ServiceProvider<T> {
         final response = await _client
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 35));
-        await _updateToken(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final data = decoded as Map<String, dynamic>;
           await _saveToLocal(data, effectiveKey);
           return data;
         } else {
           final cached = await _fetchOneFromLocal(effectiveKey);
           if (cached != null) return cached;
-          final body = jsonDecode(response.body);
-          throw (body is Map ? body['error'] : null) ?? 'Fetch error';
+          throw (decoded is Map ? decoded['error'] : null) ?? 'Fetch error';
         }
       } catch (e) {
         final cached = await _fetchOneFromLocal(effectiveKey);
@@ -285,13 +304,13 @@ class ServiceProvider<T> {
       final uri = Uri.parse('$baseUrl$endpoint/$id');
       try {
         final response = await _client.get(uri, headers: await _getHeaders());
-        await _updateToken(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
           print(response.body);
-          return jsonDecode(response.body) as Map<String, dynamic>;
+          return decoded as Map<String, dynamic>;
         } else {
-          throw json.decode(response.body)["error"] ?? "Fetch One Error";
+          throw (decoded is Map ? decoded['error'] : null) ?? "Fetch One Error";
         }
       } catch (e) {
         rethrow;
@@ -313,12 +332,12 @@ class ServiceProvider<T> {
           headers: await _getHeaders(),
           body: jsonEncode(payload),
         );
-        await _updateToken(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          return jsonDecode(response.body);
+          return decoded;
         } else {
-          throw json.decode(response.body)["error"] ?? "Update Error";
+          throw (decoded is Map ? decoded['error'] : null) ?? "Update Error";
         }
       } catch (e) {
         rethrow;
