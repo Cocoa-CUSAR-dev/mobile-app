@@ -6,9 +6,11 @@ import 'package:cocoa_supply/services/farm_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class FarmBloc extends Bloc<FarmEvent, FarmState> {
-  final FarmService _farmService = FarmService();
+  final FarmService _farmService;
 
-  FarmBloc() : super(FarmInitial()) {
+  FarmBloc({FarmService? farmService})
+    : _farmService = farmService ?? FarmService(),
+      super(FarmInitial()) {
     on<LoadFarms>(_onLoadFarms);
   }
 

@@ -2,16 +2,21 @@
 
 import 'package:cocoa_supply/models/harvest_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 class HarvestService {
   static const String _storageKey = 'harvest_data';
   static const String _endpoint = '/harvests';
 
-  final ServiceProvider<Harvest> _provider = ServiceProvider<Harvest>(
-    storageKey: _storageKey,
-    endpoint: _endpoint,
-    isRealApi: true,
-  );
+  HarvestService({http.Client? client})
+    : _provider = ServiceProvider<Harvest>(
+        storageKey: _storageKey,
+        endpoint: _endpoint,
+        isRealApi: true,
+        client: client,
+      );
+
+  final ServiceProvider<Harvest> _provider;
 
   /// ดึงรายการการเก็บเกี่ยวทั้งหมด
   Future<List<Harvest>> getHarvests() async {

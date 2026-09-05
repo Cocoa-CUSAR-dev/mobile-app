@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:cocoa_supply/services/url_strategy.dart';
 
 void main() {
   // path-based routing (/liff-link แทน #/liff-link) — จำเป็นสำหรับ LIFF
@@ -16,7 +16,13 @@ void main() {
   // path-based SPA routing ทำงานเองได้ — ต้องพึ่ง web/404.html +
   // สคริปต์ต้น web/index.html (rafgraph/spa-github-pages pattern) คู่กัน
   // ถึงจะใช้ path ตรงๆ บน GitHub Pages ได้จริง อย่าลบสองไฟล์นั้นทิ้ง
-  usePathUrlStrategy();
+  //
+  // configureUrlStrategy() (lib/services/url_strategy.dart) is a no-op
+  // stub off web (dart.library.js_interop conditional import, same
+  // pattern as liff_service.dart) — flutter_web_plugins needs
+  // dart:ui_web, which isn't available on the VM test target or native
+  // builds, so it can't be called/imported unconditionally here.
+  configureUrlStrategy();
   runApp(const MyApp());
 }
 
@@ -32,7 +38,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.green,
           fontFamily: 'NotoSansThaiLooped',
-          pageTransitionsTheme: const PageTransitionsTheme(
+          pageTransitionsTheme: PageTransitionsTheme(
             builders: {
               TargetPlatform.android: ZoomPageTransitionsBuilder(),
               TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),

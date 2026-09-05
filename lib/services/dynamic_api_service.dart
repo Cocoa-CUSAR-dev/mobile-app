@@ -1,6 +1,11 @@
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 class DynamicApiService {
+  DynamicApiService({http.Client? client}) : _client = client;
+
+  final http.Client? _client;
+
   /// ดึงโครงสร้างฟอร์มสดสำหรับ task นี้ (แทนที่ assets/schema.json เดิม)
   /// คืนค่า { form: {...}, version: N } ตามที่ mobile-backend proxy ส่งมา
   /// แคชไว้ในเครื่องอัตโนมัติผ่าน ServiceProvider — เปิดฟอร์มได้แม้ออฟไลน์
@@ -9,6 +14,7 @@ class DynamicApiService {
       storageKey: 'task_form',
       endpoint: '/tasks',
       isRealApi: true,
+      client: _client,
     );
 
     return provider.fetchOneCached('$taskId/form');
@@ -27,6 +33,7 @@ class DynamicApiService {
       storageKey: '${tableName}_data',
       endpoint: '/$tableName',
       isRealApi: true,
+      client: _client,
     );
 
     return provider.fetchData(
@@ -46,6 +53,7 @@ class DynamicApiService {
       storageKey: '${tableName}_data',
       endpoint: '/$tableName',
       isRealApi: true,
+      client: _client,
     );
 
     try {
@@ -65,8 +73,9 @@ class DynamicApiService {
     // ปรับ endpoint ให้เป็นแบบ dynamic ตาม key ที่ส่งมา
     final service = ServiceProvider<Map<String, dynamic>>(
       storageKey: 'constants_$key', // เก็บลง storage แยกตามประเภท
-      endpoint: '/constants/$key', 
+      endpoint: '/constants/$key',
       isRealApi: true, // เปิดใช้งาน API จริง
+      client: _client,
     );
 
     try {

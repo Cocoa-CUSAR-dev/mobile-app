@@ -26,8 +26,9 @@ class FileUploadController extends ChangeNotifier {
 class UploadInput extends StatelessWidget {
   final String label;
   final FileUploadController controller;
+  final Future<FilePickerResult?> Function()? pickFiles;
 
-  const UploadInput({super.key, required this.label, required this.controller});
+  const UploadInput({super.key, required this.label, required this.controller, this.pickFiles});
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +52,7 @@ class UploadInput extends StatelessWidget {
             // ส่วนของ Input Box
             InkWell(
               onTap: () async {
-                FilePickerResult? result = await FilePicker.platform
-                    .pickFiles();
+                FilePickerResult? result = await (pickFiles ?? FilePicker.platform.pickFiles).call();
                 if (result != null) {
                   controller.value = result.files.first;
                 }

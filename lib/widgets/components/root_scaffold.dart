@@ -10,6 +10,8 @@ class RootScaffold extends StatefulWidget {
   final ValueChanged<int> onItemSelected;
   final Color? backgroundColor;
 
+  final AuthService? authService;
+
   const RootScaffold({
     super.key,
     required this.title,
@@ -17,6 +19,7 @@ class RootScaffold extends StatefulWidget {
     required this.currentIndex,
     required this.onItemSelected,
     this.backgroundColor,
+    this.authService,
   });
 
   @override
@@ -26,7 +29,7 @@ class RootScaffold extends StatefulWidget {
 class _RootScaffoldState extends State<RootScaffold> {
   late PageController _pageController;
   Profile? _userProfile;
-  final AuthService _authService = AuthService();
+  late final AuthService _authService = widget.authService ?? AuthService();
   bool _isLoading = true;
 
   @override

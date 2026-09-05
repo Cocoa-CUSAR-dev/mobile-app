@@ -110,6 +110,31 @@ class DropdownInput<T, V> extends StatelessWidget {
     );
   }
 
+  // มือถือหลายรุ่น (เช่น Gboard ภาษาไทย) แทรกอักขระที่มองไม่เห็น เช่น zero-width
+  // space ไว้เป็นตัวช่วยแบ่งคำระหว่างพิมพ์ภาษาไทย ทำให้ข้อความที่ดูเหมือนกันทุก
+  // ตัวอักษรกับตัวเลือกในลิสต์ (เช่น "กรุงเทพ" vs "กรุงเทพมหานคร") ไม่ match กันเลย
+  // เวลาใช้ contains() ตรงๆ — กรองอักขระที่มองไม่เห็นเหล่านี้ทิ้งก่อนเทียบ (รวมถึง
+  // trim ช่องว่างหัวท้ายที่บางคีย์บอร์ดแทรกให้ตอนกดคำแนะนำ) เทียบด้วย code point
+  // ตัวเลขตรงๆ ไม่ใช้ regex/ตัวอักษร invisible ฝังในซอร์สโค้ด เพื่อให้ diff อ่านได้
+  static const List<int> _invisibleCodePoints = [
+    0x200B, // zero width space
+    0x200C, // zero width non-joiner
+    0x200D, // zero width joiner
+    0x200E, // left-to-right mark
+    0x200F, // right-to-left mark
+    0x2060, // word joiner
+    0xFEFF, // zero width no-break space / BOM
+    0x00AD, // soft hyphen
+  ];
+
+  static String _normalizeForSearch(String s) {
+    final buffer = StringBuffer();
+    for (final rune in s.runes) {
+      if (!_invisibleCodePoints.contains(rune)) buffer.writeCharCode(rune);
+    }
+    return buffer.toString().trim().toLowerCase();
+  }
+
   /// 🔍 ฟังก์ชันแสดง Dialog สำหรับการค้นหา
   void _showSearchDialog(FormFieldState<V> state) {
     showDialog(
@@ -134,9 +159,10 @@ class DropdownInput<T, V> extends StatelessWidget {
                       ),
                       onChanged: (query) {
                         setDialogState(() {
+                          final normalizedQuery = _normalizeForSearch(query);
                           filteredItems = items.where((item) {
-                            final text = itemLabelBuilder(item).toLowerCase();
-                            return text.contains(query.toLowerCase());
+                            final text = _normalizeForSearch(itemLabelBuilder(item));
+                            return text.contains(normalizedQuery);
                           }).toList();
                         });
                       },

@@ -2,17 +2,22 @@
 
 import 'package:cocoa_supply/models/farm_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart'; // Assume this exists
+import 'package:http/http.dart' as http;
 
 class FarmService {
   static const String _storageKey = 'farm_data';
   static const String _endpoint = '/farms'; // Mock endpoint
-  
+
+  FarmService({http.Client? client})
+    : _provider = ServiceProvider<Farm>(
+        storageKey: _storageKey,
+        endpoint: _endpoint,
+        isRealApi: true,
+        client: client,
+      );
+
   // ServiceProvider must be implemented to handle generic data fetching/saving
-  final ServiceProvider<Farm> _provider = ServiceProvider<Farm>(
-    storageKey: _storageKey,
-    endpoint: _endpoint,
-    isRealApi: true
-  );
+  final ServiceProvider<Farm> _provider;
 
   /// Fetch all farms
   Future<List<Farm>> getFarms({Map<String, dynamic>? queryParams}) async {

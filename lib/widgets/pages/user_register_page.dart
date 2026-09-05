@@ -5,7 +5,12 @@ import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 
 class UserRegisterPage extends StatefulWidget {
-  const UserRegisterPage({super.key});
+  /// true = มาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing — สมัครเสร็จแล้วให้
+  /// ไปฟอร์ม login/link ของ LiffLinkPage ต่อเลย (เชื่อมบัญชี LINE อัตโนมัติ) แทน
+  /// หน้า login ปกติ
+  final bool fromLiff;
+
+  const UserRegisterPage({super.key, this.fromLiff = false});
 
   @override
   State<UserRegisterPage> createState() => _UserRegisterPageState();
@@ -59,14 +64,21 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       await _registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(
-          content: Text('ลงทะเบียนสำเร็จ ครั้งถัดไปกรุณาเลือก มีบัญชีผู้ใช้แล้ว'),
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('ลงทะเบียนสำเร็จ'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ));
-        Navigator.pushNamed(context, AppRoute.login);
+        if (widget.fromLiff) {
+          // สมัครมาจากหน้า LIFF landing — ไปฟอร์ม login/link ของ LiffLinkPage
+          // ต่อเลย เพื่อ login + เชื่อมบัญชี LINE ให้อัตโนมัติในขั้นตอนเดียว
+          Navigator.of(context).pushNamed(
+            AppRoute.liffLink,
+            arguments: {'postRegistration': true},
+          );
+        } else {
+          Navigator.pushNamed(context, AppRoute.login);
+        }
       }
     } catch (e) {
       if (mounted) {

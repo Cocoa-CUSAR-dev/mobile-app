@@ -1,12 +1,17 @@
 import 'package:cocoa_supply/models/processing_station_model.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 class ProcessingStationService {
-  final ServiceProvider<ProcessingStation> _provider = ServiceProvider<ProcessingStation>(
-    storageKey: 'processing_station_data',
-    endpoint: '/processing_stations',
-    isRealApi: true,
-  );
+  ProcessingStationService({http.Client? client})
+    : _provider = ServiceProvider<ProcessingStation>(
+        storageKey: 'processing_station_data',
+        endpoint: '/processing_stations',
+        isRealApi: true,
+        client: client,
+      );
+
+  final ServiceProvider<ProcessingStation> _provider;
 
   Future<List<ProcessingStation>> getStations() async {
     return _provider.fetchData(ProcessingStation.fromJson);

@@ -5,9 +5,11 @@ import 'hub_event.dart';
 import 'hub_state.dart';
 
 class HubBloc extends Bloc<HubEvent, HubState> {
-  final HubService _hubService = HubService();
+  final HubService _hubService;
 
-  HubBloc() : super(HubInitial()) {
+  HubBloc({HubService? hubService})
+    : _hubService = hubService ?? HubService(),
+      super(HubInitial()) {
     on<LoadHubs>(_onLoadHubs);
   }
 

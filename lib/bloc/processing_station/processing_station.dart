@@ -16,9 +16,11 @@ class ProcessingStationsLoaded extends ProcessingStationState {
 
 // lib/bloc/station/station_bloc.dart
 class ProcessingStationBloc extends Bloc<ProcessingStationEvent, ProcessingStationState> {
-  final ProcessingStationService _stationService = ProcessingStationService();
+  final ProcessingStationService _stationService;
 
-  ProcessingStationBloc() : super(ProcessingStationInitial()) {
+  ProcessingStationBloc({ProcessingStationService? stationService})
+    : _stationService = stationService ?? ProcessingStationService(),
+      super(ProcessingStationInitial()) {
     on<LoadProcessingStations>((event, emit) async {
       emit(ProcessingStationLoading());
       try {
