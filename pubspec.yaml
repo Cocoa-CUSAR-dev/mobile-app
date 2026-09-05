@@ -43,7 +43,9 @@ dependencies:
   json_annotation: ^4.8.1
   uuid: ^4.2.2
   file_picker: ^8.0.0
-  shared_preferences: ^2.1.1
+  # APP-2: backs the session cookie + cached API responses in
+  # service_provider.dart -- was plain SharedPreferences (unencrypted).
+  flutter_secure_storage: ^9.2.2
   yaml: ^3.1.3
   intl: ^0.20.2
   maplibre_gl: ^0.25.0
@@ -62,6 +64,11 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   bloc_test: ^9.1.7
   mocktail: ^1.0.4
+  # Test-only: 34 widget/bloc tests call SharedPreferences.setMockInitialValues({})
+  # as boilerplate setup (see e.g. test/widgets/pages/user_register_page_test.dart).
+  # Not used anywhere in lib/ -- production code was migrated to
+  # flutter_secure_storage (APP-2) and the dependencies: entry was removed.
+  shared_preferences: ^2.1.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
