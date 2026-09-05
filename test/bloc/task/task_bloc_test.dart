@@ -1,12 +1,13 @@
 // Unit tests for lib/bloc/task/task_bloc.dart.
 //
 // TaskBloc's local sync queue (_queueService) is hard-coded to
-// isRealApi: false, so it always reads/writes through SharedPreferences
-// regardless of the injected http.Client — only _taskService (the actual
-// Go backend calls) needs the MockClient. That local queue also goes
-// through ServiceProvider's mock branch, which has a real (non-fake-clock)
-// 500ms `Future.delayed` network-simulation baked in, so every test that
-// touches it needs `wait:` long enough for that delay to actually resolve.
+// isRealApi: false, so it always reads/writes through flutter_secure_storage
+// (APP-2 -- was SharedPreferences) regardless of the injected http.Client —
+// only _taskService (the actual Go backend calls) needs the MockClient. That
+// local queue also goes through ServiceProvider's mock branch, which has a
+// real (non-fake-clock) 500ms `Future.delayed` network-simulation baked in,
+// so every test that touches it needs `wait:` long enough for that delay to
+// actually resolve.
 
 import 'dart:convert';
 
@@ -18,9 +19,12 @@ import 'package:cocoa_supply/services/task_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/test_helpers.dart';
+
+const _secureStorage = FlutterSecureStorage();
 
 const _queueDelay = Duration(milliseconds: 700);
 
@@ -55,11 +59,13 @@ void main() {
     blocTest<TaskBloc, TaskState>(
       'a queued PENDING draft overrides a NOT_STARTED remote task',
       setUp: () {
-        SharedPreferences.setMockInitialValues({
-          'pending_task_queue': jsonEncode([
-            {'task_id': 't1', 'answer': {'note': 'saved offline'}},
-          ]),
-        });
+        // The local sync queue lives in flutter_secure_storage (APP-2), not
+        // SharedPreferences -- seed both.
+        final queue = jsonEncode([
+          {'task_id': 't1', 'answer': {'note': 'saved offline'}},
+        ]);
+        SharedPreferences.setMockInitialValues({'pending_task_queue': queue});
+        FlutterSecureStorage.setMockInitialValues({'pending_task_queue': queue});
       },
       build: () {
         final client = MockClient((request) async {
@@ -106,8 +112,9 @@ void main() {
       wait: _queueDelay,
       expect: () => [],
       verify: (_) async {
-        final prefs = await SharedPreferences.getInstance();
-        final queue = jsonDecode(prefs.getString('pending_task_queue')!) as List;
+        // Written via ServiceProvider, which is backed by flutter_secure_storage
+        // (APP-2), not SharedPreferences.
+        final queue = jsonDecode((await _secureStorage.read(key: 'pending_task_queue'))!) as List;
         expect(queue, hasLength(1));
         expect(queue.first['task_id'], 't1');
         expect(queue.first['status'], 'DRAFT');
@@ -123,8 +130,7 @@ void main() {
       wait: _queueDelay,
       expect: () => [],
       verify: (_) async {
-        final prefs = await SharedPreferences.getInstance();
-        final queue = jsonDecode(prefs.getString('pending_task_queue')!) as List;
+        final queue = jsonDecode((await _secureStorage.read(key: 'pending_task_queue'))!) as List;
         expect(queue.first['status'], 'PENDING');
       },
     );
