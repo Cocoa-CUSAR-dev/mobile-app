@@ -80,7 +80,10 @@ void main() {
     blocTest<LoginBloc, LoginState>(
       'emits LoginSuccess(HOME) when a stored session token is already valid',
       build: () {
+        // The session token lives in flutter_secure_storage (APP-2), not
+        // SharedPreferences -- ServiceProvider reads it back via _storage.
         SharedPreferences.setMockInitialValues({'auth_token': 'a-valid-jwt'});
+        FlutterSecureStorage.setMockInitialValues({'auth_token': 'a-valid-jwt'});
         final client = MockClient((request) async => jsonResponse({'roles': ['farmer']}, 200));
         return LoginBloc(client: client);
       },
