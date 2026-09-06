@@ -50,8 +50,7 @@ class ServiceProvider<T> {
     final uri = Uri.parse('$baseUrl/auth/me');
     try {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
-      final prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString(_tokenKey);
+      final String? token = await _storage.read(key: _tokenKey);
       final response = await _client
           .get(
             uri,
@@ -83,8 +82,7 @@ class ServiceProvider<T> {
   }
 
   Future<Map<String, String>> _getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString(_tokenKey);
+    final String? token = await _storage.read(key: _tokenKey);
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -120,8 +118,7 @@ class ServiceProvider<T> {
     if (decoded is Map && decoded['token'] is String) {
       final String token = decoded['token'] as String;
       if (token.isNotEmpty && _looksLikeJwt(token)) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_tokenKey, token);
+        await _storage.write(key: _tokenKey, value: token);
       }
     }
     return decoded;
@@ -378,7 +375,6 @@ class ServiceProvider<T> {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    await _storage.delete(key: _tokenKey);
   }
 }
