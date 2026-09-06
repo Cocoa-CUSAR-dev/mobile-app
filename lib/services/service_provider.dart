@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ServiceProvider<T> {
   final String storageKey;
@@ -23,6 +23,14 @@ class ServiceProvider<T> {
   // body แล้วส่งเป็น header Authorization: Bearer แทน — เป็น header ธรรมดา
   // ไม่ติดปัญหา SameSite/third-party-cookie ใด ๆ
   static const String _tokenKey = 'auth_token';
+
+  // APP-2: was plain SharedPreferences (unencrypted on-device storage) for
+  // both the session cookie and every cached API response -- backed by the
+  // platform keystore/keychain instead (Android EncryptedSharedPreferences,
+  // iOS Keychain). One shared instance is fine: flutter_secure_storage
+  // handles its own concurrent access internally, same as
+  // SharedPreferences.getInstance() did.
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   ServiceProvider({
     required this.storageKey,
@@ -138,8 +146,7 @@ class ServiceProvider<T> {
 
   // 2. ปรับปรุงการบันทึก (รับ key เพิ่ม)
   Future<void> _saveToLocal(dynamic data, String effectiveKey) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(effectiveKey, jsonEncode(data));
+    await _storage.write(key: effectiveKey, value: jsonEncode(data));
   }
 
   // 3. ปรับปรุงการดึงจาก Local (รับ key เพิ่ม)
@@ -147,8 +154,7 @@ class ServiceProvider<T> {
     T Function(Map<String, dynamic>) creator,
     String effectiveKey,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? dataString = prefs.getString(effectiveKey);
+    final String? dataString = await _storage.read(key: effectiveKey);
     if (dataString != null) {
       final List<dynamic> jsonData = jsonDecode(dataString);
       return jsonData.map((e) => creator(e as Map<String, dynamic>)).toList();
@@ -242,13 +248,12 @@ class ServiceProvider<T> {
     } else {
       // Mock Logic: บันทึกลง Local และคืนค่า payload กลับไป
       await _simulateNetworkDelay();
-      final prefs = await SharedPreferences.getInstance();
-      final String? existingString = prefs.getString(storageKey);
+      final String? existingString = await _storage.read(key: storageKey);
       List<dynamic> existingData = existingString != null
           ? jsonDecode(existingString)
           : [];
       existingData.add(payload);
-      await prefs.setString(storageKey, jsonEncode(existingData));
+      await _storage.write(key: storageKey, value: jsonEncode(existingData));
       return payload;
     }
   }
@@ -290,8 +295,7 @@ class ServiceProvider<T> {
   }
 
   Future<Map<String, dynamic>?> _fetchOneFromLocal(String effectiveKey) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? dataString = prefs.getString(effectiveKey);
+    final String? dataString = await _storage.read(key: effectiveKey);
     if (dataString != null) {
       return jsonDecode(dataString) as Map<String, dynamic>;
     }
@@ -366,13 +370,11 @@ class ServiceProvider<T> {
   }
 
   Future<void> deleteAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(storageKey);
+    await _storage.delete(key: storageKey);
   }
 
   Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await _storage.deleteAll();
   }
 
   Future<void> logout() async {

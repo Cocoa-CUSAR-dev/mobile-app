@@ -4,6 +4,7 @@ import 'package:cocoa_supply/models/processing_station_model.dart';
 import 'package:cocoa_supply/services/processing_station_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_helpers.dart';
@@ -31,7 +32,11 @@ void main() {
     });
 
     test('falls back to cache on a non-200 response', () async {
+      // ServiceProvider's cache is backed by flutter_secure_storage (APP-2).
       SharedPreferences.setMockInitialValues({
+        'processing_station_data': '[{"processing_station_id":"cached"}]',
+      });
+      FlutterSecureStorage.setMockInitialValues({
         'processing_station_data': '[{"processing_station_id":"cached"}]',
       });
       final client = MockClient((request) async => jsonResponse('error', 500));
