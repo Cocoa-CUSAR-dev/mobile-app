@@ -159,17 +159,19 @@ class _RootScaffoldState extends State<RootScaffold> {
         children: filteredPages,
       ),
       backgroundColor: widget.backgroundColor ?? const Color(0xFFF8F8F8),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: widget.currentIndex,
-        onTap: (index) {
-          widget.onItemSelected(index);
-          _pageController.jumpToPage(index);
-        },
-        selectedItemColor: const Color(0xFF794c46),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: navItems,
-      ),
+      bottomNavigationBar: navItems.length < 2
+          ? null
+          : BottomNavigationBar(
+              currentIndex: widget.currentIndex,
+              onTap: (index) {
+                widget.onItemSelected(index);
+                _pageController.jumpToPage(index);
+              },
+              selectedItemColor: const Color(0xFF794c46),
+              unselectedItemColor: Colors.grey,
+              type: BottomNavigationBarType.fixed,
+              items: navItems,
+            ),
     );
   }
 

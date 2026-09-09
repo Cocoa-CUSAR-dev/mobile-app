@@ -5,6 +5,7 @@ import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
+import 'package:cocoa_supply/widgets/components/form_input.dart';
 
 class RegisterRolePage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
@@ -92,11 +93,11 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   // 2. กำหนดว่าฟิลด์ไหนจำเป็นต้องกรอก (Is Required)
   // ==========================================
   bool _isFieldRequired(String key, String role) {
-    if (['first_name', 'last_name', 'nickname', 'birth_date'].contains(key)) return true;
+    if (['first_name', 'last_name', 'nickname', 'birth_date', 'phone_number'].contains(key)) return true;
     if (['province_id', 'district_id', 'subdistrict_id'].contains(key)) return true;
-    
+
     if (role == 'farmer') {
-      return ['zip_code', 'phone_number', 'salary_income', 'family_member_count', 'agri_worker_count'].contains(key);
+      return ['zip_code', 'salary_income', 'family_member_count', 'agri_worker_count'].contains(key);
     } else if (role == 'processor') {
       return ['id_card_number', 'address_detail'].contains(key);
     } else if (role == 'hub_collector') {
@@ -250,7 +251,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
           case 'id_card_number': return _input(key, 'เลขบัตรประชาชน', isReq);
           case 'address_detail': return _input(key, 'ที่อยู่ (บ้านเลขที่/หมู่/ถนน)', isReq);
           case 'zip_code': return _input(key, 'รหัสไปรษณีย์', isReq);
-          case 'phone_number': return _input(key, 'เบอร์โทรศัพท์', isReq);
+          case 'phone_number': return _phoneInput(key, isReq);
           case 'line': return _input(key, 'Line ID', isReq);
           case 'email': return _input(key, 'อีเมล', isReq);
           case 'salary_income': return FormHelper.buildNumber(label: 'รายได้เฉลี่ยต่อเดือน (บาท)', controller: _controllers[key]!, isReq: isReq);
@@ -291,10 +292,32 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
 
   Widget _input(String key, String label, bool isReq) {
     return FormHelper.buildInput(
-      label: label, 
-      controller: _controllers[key]!, 
-      isReq: isReq, 
+      label: label,
+      controller: _controllers[key]!,
+      isReq: isReq,
       onChanged: () => setState(() {}) // อัพเดตปุ่มถัดไปเมื่อพิมพ์
+    );
+  }
+
+  Widget _phoneInput(String key, bool isReq) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: FormInput(
+        label: 'เบอร์โทรศัพท์',
+        hintText: 'เช่น 08XXXXXXXX',
+        controller: _controllers[key]!,
+        isRequired: isReq,
+        keyboardType: TextInputType.phone,
+        onChanged: (_) => setState(() {}),
+        validator: (v) {
+          if (!isReq) return null;
+          if (v == null || v.isEmpty) return 'กรุณาระบุเบอร์โทรศัพท์';
+          if (!RegExp(r'^0[0-9]{9}$').hasMatch(v)) {
+            return 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก (เช่น 08XXXXXXXX)';
+          }
+          return null;
+        },
+      ),
     );
   }
 

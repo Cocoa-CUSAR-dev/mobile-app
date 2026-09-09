@@ -8,6 +8,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
+import 'package:cocoa_supply/widgets/components/form_input.dart';
 
 class HubRegisterPage extends StatefulWidget {
   const HubRegisterPage({super.key});
@@ -205,6 +206,13 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
               controller: _controllers['found_date']!,
               isReq: true,
             ),
+            FormHelper.buildInput(
+              label: 'ชื่อผู้ติดต่อ',
+              controller: _controllers['contact_name']!,
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
+            _buildPhoneInput(),
           ],
         );
       case 1:
@@ -268,6 +276,29 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  String? _validatePhone(String? v) {
+    if (v == null || v.isEmpty) return 'กรุณาระบุเบอร์โทรศัพท์';
+    if (!RegExp(r'^0[0-9]{9}$').hasMatch(v)) {
+      return 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก (เช่น 08XXXXXXXX)';
+    }
+    return null;
+  }
+
+  Widget _buildPhoneInput() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: FormInput(
+        label: 'เบอร์โทรศัพท์',
+        hintText: 'เช่น 08XXXXXXXX',
+        controller: _controllers['phone_number']!,
+        isRequired: true,
+        keyboardType: TextInputType.phone,
+        validator: _validatePhone,
+        onChanged: (_) => setState(() {}),
+      ),
+    );
   }
 
   Widget _buildFilteredDropdown(String key, String label, {bool isReq = false, String? filterId, String? filterKey, required Function(dynamic) onChanged}) {
