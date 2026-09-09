@@ -72,7 +72,7 @@ class _RootScaffoldState extends State<RootScaffold> {
         // *actual* number of tabs this profile's roles produce before
         // ever handing it to PageController/BottomNavigationBar, both of
         // which assert currentIndex/initialPage < item count.
-        final itemCount = _navItemCount(profile.roles ?? []);
+        final itemCount = _navItemCount(profile?.roles ?? []);
         final effectiveIndex = _clampIndex(widget.currentIndex, itemCount);
         _pageController.dispose();
         setState(() {
