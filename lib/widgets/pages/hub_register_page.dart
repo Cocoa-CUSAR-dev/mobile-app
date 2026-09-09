@@ -238,18 +238,18 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
             ),
-            // FormHelper.buildInput(
-            //   label: 'ที่ตั้ง (เลขที่/ซอย/ถนน)',
-            //   controller: _controllers['address_detail']!,
-            //   isReq: true,
-            //   onChanged: () => setState(() {}),
-            // ),
-            // FormHelper.buildInput(
-            //   label: 'รหัสไปรษณีย์',
-            //   controller: _controllers['zip_code']!,
-            //   isReq: true,
-            //   onChanged: () => setState(() {}),
-            // ),
+            FormHelper.buildInput(
+              label: 'ที่ตั้ง (เลขที่/ซอย/ถนน)',
+              controller: _controllers['address_detail']!,
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
+            FormHelper.buildInput(
+              label: 'รหัสไปรษณีย์',
+              controller: _controllers['zip_code']!,
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
           ],
         );
       case 2:
