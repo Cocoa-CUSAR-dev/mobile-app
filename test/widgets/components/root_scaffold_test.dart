@@ -7,13 +7,11 @@
 // dart:io's callback doesn't advance on the fake clock the way a plain
 // MockClient's Future-based response does.
 //
-// KNOWN BUG (first test below is `skip`ped, not deleted): a profile with
-// zero roles produces a nav item list of length 1 (just "หน้าหลัก"), but
-// BottomNavigationBar requires at least 2 items and asserts otherwise —
-// so RootScaffold currently crashes for any logged-in user with no roles
-// assigned. The test asserts the graceful single-tab (no crash) rendering
-// a correct implementation should have; remove the `skip:` once fixed to
-// confirm.
+// A profile with zero roles produces a nav item list of length 1 (just
+// "หน้าหลัก"); BottomNavigationBar requires at least 2 items and asserts
+// otherwise, so RootScaffold used to crash for any logged-in user with no
+// roles assigned. Fixed by rendering no bottomNavigationBar at all below
+// that threshold, instead of an unconditional BottomNavigationBar.
 
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:cocoa_supply/widgets/components/root_scaffold.dart';
@@ -39,7 +37,7 @@ void main() {
   });
 
   testWidgets(
-    'a profile with no roles renders a single-tab shell without crashing (KNOWN BUG: currently crashes)',
+    'a profile with no roles renders a single-tab shell without crashing',
     (tester) async {
       final client = MockClient((request) async => jsonResponse({
         'first_name': 'สมชาย',
@@ -64,7 +62,37 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('home body'), findsOneWidget);
     },
-    skip: true,
+  );
+
+  testWidgets(
+    'a stale currentIndex from a previous, larger role set is clamped instead of crashing',
+    (tester) async {
+      // currentIndex=3 would have been valid for a farmer+processor+
+      // hub_collector profile (4 tabs), but this profile only has
+      // 'farmer' (2 tabs: home, farm) -- BottomNavigationBar/PageController
+      // both assert index < item count, so this must clamp, not crash.
+      final client = MockClient((request) async => jsonResponse({
+        'first_name': 'สมชาย',
+        'last_name': 'โกโก้ดี',
+        'roles': ['farmer'],
+      }, 200));
+
+      await tester.pumpWidget(MaterialApp(
+        home: RootScaffold(
+          title: 'หน้าหลัก',
+          currentIndex: 3,
+          onItemSelected: (_) {},
+          authService: AuthService(client: client),
+          children: const [Text('home body'), Text('farm body')],
+        ),
+      ));
+
+      await _pumpUntilSpinnerGone(tester);
+
+      expect(tester.takeException(), isNull);
+      final navBar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+      expect(navBar.currentIndex, 1); // clamped to the last real tab, not 3
+    },
   );
 
   testWidgets('a farmer profile adds the ฟาร์ม tab', (tester) async {
