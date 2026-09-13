@@ -373,10 +373,12 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
           ElevatedButton(
             onPressed: (canProceed && !_isLoading)
                 ? () {
-                    if (isLastStep) {
-                      _handleRegister();
-                    } else {
-                      setState(() => _currentStep++);
+                    if (_formKey.currentState!.validate()) {
+                      if (isLastStep) {
+                        _handleRegister();
+                      } else {
+                        setState(() => _currentStep++);
+                      }
                     }
                   }
                 : null,
