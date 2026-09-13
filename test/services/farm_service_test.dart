@@ -5,6 +5,7 @@ import 'package:cocoa_supply/services/farm_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_helpers.dart';
@@ -32,7 +33,11 @@ void main() {
     });
 
     test('falls back to cache on a non-200 response', () async {
+      // ServiceProvider's cache is backed by flutter_secure_storage (APP-2).
       SharedPreferences.setMockInitialValues({
+        'farm_data': '[{"farm_id":"cached"}]',
+      });
+      FlutterSecureStorage.setMockInitialValues({
         'farm_data': '[{"farm_id":"cached"}]',
       });
       final client = MockClient((request) async => http.Response('error', 500));

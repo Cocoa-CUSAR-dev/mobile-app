@@ -3,6 +3,7 @@ import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_event.dart';
+import 'package:cocoa_supply/bloc/dynamic/parse_field_value.dart';
 
 // Events & States
 abstract class DynamicEvent {}
@@ -92,7 +93,7 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
             final question = questionRaw as Map<String, dynamic>;
             final fieldName = question['fieldName'] as String?;
             if (fieldName == null) continue;
-            payload[fieldName] = _parseValue(
+            payload[fieldName] = parseFieldValue(
               event.data[fieldName],
               question['inputType'] as String?,
             );
@@ -115,21 +116,5 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
         emit(DynamicError(e.toString()));
       }
     });
-  }
-
-  dynamic _parseValue(dynamic value, String? inputType) {
-    if (value == null || value.toString().isEmpty) return null;
-    switch (inputType) {
-      case 'INT':
-        return int.tryParse(value.toString());
-      case 'FLOAT':
-        return double.tryParse(value.toString());
-      case 'BOOLEAN':
-        return value is bool ? value : value.toString().toLowerCase() == 'true';
-      default:
-        // VARCHAR, OPTION (submits the selected choice's id), DATE,
-        // DATETIME, GEODATA all pass through as-is (matches prior behaviour).
-        return value.toString();
-    }
   }
 }

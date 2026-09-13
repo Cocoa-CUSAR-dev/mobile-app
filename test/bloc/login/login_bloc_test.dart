@@ -7,6 +7,7 @@ import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/test_helpers.dart';
@@ -77,9 +78,12 @@ void main() {
 
   group('LoadLogin', () {
     blocTest<LoginBloc, LoginState>(
-      'emits LoginSuccess(HOME) when a session cookie is already valid',
+      'emits LoginSuccess(HOME) when a stored session token is already valid',
       build: () {
-        SharedPreferences.setMockInitialValues({'auth_cookie': 'session=abc'});
+        // The session token lives in flutter_secure_storage (APP-2), not
+        // SharedPreferences -- ServiceProvider reads it back via _storage.
+        SharedPreferences.setMockInitialValues({'auth_token': 'a-valid-jwt'});
+        FlutterSecureStorage.setMockInitialValues({'auth_token': 'a-valid-jwt'});
         final client = MockClient((request) async => jsonResponse({'roles': ['farmer']}, 200));
         return LoginBloc(client: client);
       },

@@ -35,17 +35,50 @@ class _RootScaffoldState extends State<RootScaffold> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: widget.currentIndex);
+    // Real page count depends on the profile's roles, which aren't known
+    // yet here -- page 0 is always safe. _fetchProfile() below replaces
+    // this with a correctly-bounded controller once roles are known,
+    // before the PageView/BottomNavigationBar ever get built with them.
+    _pageController = PageController();
     _fetchProfile();
+  }
+
+  // Mirrors the role -> nav-item filtering in build() below (home + one
+  // item per matched role) -- kept in sync deliberately so this and build()
+  // never disagree about how many tabs there really are.
+  int _navItemCount(List<String> roles) {
+    var count = 1;
+    if (roles.contains('farmer')) count++;
+    if (roles.contains('processor')) count++;
+    if (roles.contains('hub_collector')) count++;
+    return count;
+  }
+
+  // int.clamp(int, int) returns num, not int (it's inherited from num) --
+  // a plain helper avoids needing a .toInt() at every call site.
+  int _clampIndex(int index, int itemCount) {
+    if (index < 0) return 0;
+    if (index >= itemCount) return itemCount - 1;
+    return index;
   }
 
   Future<void> _fetchProfile() async {
     try {
       final profile = await _authService.getProfile();
       if (mounted) {
+        // widget.currentIndex was chosen against a stale/different tab
+        // count (e.g. a previous session's role set, or simply the
+        // fixed 4-tab index HomeBloc tracks) -- clamp it against the
+        // *actual* number of tabs this profile's roles produce before
+        // ever handing it to PageController/BottomNavigationBar, both of
+        // which assert currentIndex/initialPage < item count.
+        final itemCount = _navItemCount(profile?.roles ?? []);
+        final effectiveIndex = _clampIndex(widget.currentIndex, itemCount);
+        _pageController.dispose();
         setState(() {
           _userProfile = profile;
           _isLoading = false;
+          _pageController = PageController(initialPage: effectiveIndex);
         });
       }
     } catch (e) {
@@ -102,8 +135,9 @@ class _RootScaffoldState extends State<RootScaffold> {
   @override
   void didUpdateWidget(RootScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.currentIndex != oldWidget.currentIndex) {
-      _pageController.jumpToPage(widget.currentIndex);
+    if (widget.currentIndex != oldWidget.currentIndex && !_isLoading) {
+      final itemCount = _navItemCount(_userProfile?.roles ?? []);
+      _pageController.jumpToPage(_clampIndex(widget.currentIndex, itemCount));
     }
   }
 
@@ -138,6 +172,12 @@ class _RootScaffoldState extends State<RootScaffold> {
       if (widget.children.length > 3) filteredPages.add(widget.children[3]);
     }
 
+    // Belt-and-suspenders: _fetchProfile() already reconstructs
+    // _pageController with a bounded initialPage, but BottomNavigationBar
+    // reads widget.currentIndex directly every build, so it needs its own
+    // clamp against whatever navItems this build actually produced.
+    final effectiveIndex = _clampIndex(widget.currentIndex, navItems.length);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -159,17 +199,19 @@ class _RootScaffoldState extends State<RootScaffold> {
         children: filteredPages,
       ),
       backgroundColor: widget.backgroundColor ?? const Color(0xFFF8F8F8),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: widget.currentIndex,
-        onTap: (index) {
-          widget.onItemSelected(index);
-          _pageController.jumpToPage(index);
-        },
-        selectedItemColor: const Color(0xFF794c46),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: navItems,
-      ),
+      bottomNavigationBar: navItems.length < 2
+          ? null
+          : BottomNavigationBar(
+              currentIndex: effectiveIndex,
+              onTap: (index) {
+                widget.onItemSelected(index);
+                _pageController.jumpToPage(index);
+              },
+              selectedItemColor: const Color(0xFF794c46),
+              unselectedItemColor: Colors.grey,
+              type: BottomNavigationBarType.fixed,
+              items: navItems,
+            ),
     );
   }
 

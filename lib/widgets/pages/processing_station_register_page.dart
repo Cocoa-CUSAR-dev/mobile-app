@@ -120,7 +120,7 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
       _dropdown('subdistrict_id', 'ตำบล', isReq: true),
       _input('zip_code', 'รหัสไปรษณีย์'),
       _input('contact_name', 'ชื่อผู้ติดต่อ'),
-      _input('phone_number', 'เบอร์โทรศัพท์'),
+      _phoneInput('phone_number', 'เบอร์โทรศัพท์'),
       _input('line', 'Line ID'),
       _input('facebook', 'Facebook'),
       _gis('gis', 'ตำแหน่งปัจจุบัน (GIS)'),
@@ -169,6 +169,23 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
       isRequired: isReq,
       hintText: 'กรอก$label',
       validator: (value) => (isReq && (value == null || value.isEmpty)) ? 'กรุณากรอกข้อมูล' : null,
+    );
+  }
+
+  Widget _phoneInput(String key, String label) {
+    return FormInput(
+      label: label,
+      controller: _controllers[key]!,
+      isRequired: true,
+      hintText: 'เช่น 08XXXXXXXX',
+      keyboardType: TextInputType.phone,
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'กรุณาระบุเบอร์โทรศัพท์';
+        if (!RegExp(r'^0[0-9]{9}$').hasMatch(value)) {
+          return 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก (เช่น 08XXXXXXXX)';
+        }
+        return null;
+      },
     );
   }
 

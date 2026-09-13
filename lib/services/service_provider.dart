@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ServiceProvider<T> {
   final String storageKey;
@@ -15,7 +15,22 @@ class ServiceProvider<T> {
   );
   final http.Client _client;
 
-  static const String _cookieKey = 'auth_cookie';
+  // เดิมเก็บเป็น "คุกกี้" (อ่านจาก response header set-cookie แล้วส่งกลับเป็น
+  // header Cookie: เอง) — วิธีนี้ใช้ไม่ได้บน web build เพราะเบราว์เซอร์ปิดกั้นไม่ให้
+  // JS อ่าน set-cookie เลย (ทุกเบราว์เซอร์) และต่อให้อ่านได้ คุกกี้ก็ส่งข้าม origin
+  // ไม่ได้อยู่ดี (GitHub Pages เรียก backend คนละโดเมน, ดู mobile-backend's
+  // auth_middleware.go) เปลี่ยนมาเก็บ JWT ตรง ๆ จาก field "token" ใน response
+  // body แล้วส่งเป็น header Authorization: Bearer แทน — เป็น header ธรรมดา
+  // ไม่ติดปัญหา SameSite/third-party-cookie ใด ๆ
+  static const String _tokenKey = 'auth_token';
+
+  // APP-2: was plain SharedPreferences (unencrypted on-device storage) for
+  // both the session cookie and every cached API response -- backed by the
+  // platform keystore/keychain instead (Android EncryptedSharedPreferences,
+  // iOS Keychain). One shared instance is fine: flutter_secure_storage
+  // handles its own concurrent access internally, same as
+  // SharedPreferences.getInstance() did.
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   ServiceProvider({
     required this.storageKey,
@@ -35,21 +50,20 @@ class ServiceProvider<T> {
     final uri = Uri.parse('$baseUrl/auth/me');
     try {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
-      final prefs = await SharedPreferences.getInstance();
-      final String? cookie = prefs.getString(_cookieKey);
+      final String? token = await _storage.read(key: _tokenKey);
       final response = await _client
           .get(
             uri,
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              if (cookie != null) 'Cookie': cookie,
+              if (token != null) 'Authorization': 'Bearer $token',
             },
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 401) {
         print('UNAUTHORIZED');
-        logout();
+        await logout();
         return false;
       }else if(response.statusCode == 200){
         final data = jsonDecode(response.body);
@@ -59,31 +73,55 @@ class ServiceProvider<T> {
           return false;
         }
       }
-      return cookie != null && cookie.isNotEmpty;
+      return token != null && token.isNotEmpty;
     } catch (e) {
       print(e);
       return false;
     }
-    
+
   }
 
   Future<Map<String, String>> _getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? cookie = prefs.getString(_cookieKey);
+    final String? token = await _storage.read(key: _tokenKey);
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (cookie != null && useCookie) 'Cookie': cookie,
+      if (token != null && useCookie) 'Authorization': 'Bearer $token',
     };
   }
 
-  Future<void> _updateCookie(http.Response response) async {
-    final String? rawCookie = response.headers['set-cookie'];
-    if (rawCookie != null && rawCookie.isNotEmpty) {
-      final String cookieToStore = rawCookie.split(';').first;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_cookieKey, cookieToStore);
+  // ตรวจแบบหยาบๆ ว่าหน้าตาเหมือน JWT จริงไหม (3 ส่วนคั่นด้วยจุด ไม่มีส่วนไหนว่าง)
+  // ก่อนเก็บ -- endpoint ทั่วไป (ไม่ใช่ auth) ที่บังเอิญมี field ชื่อ "token" อยู่
+  // ด้วยเหตุผลอื่น (เช่น pagination cursor, upload token) จะไม่ผ่านเช็คนี้ จึงไม่
+  // ไปทับ session token จริงที่ใช้งานได้อยู่แบบเงียบๆ
+  bool _looksLikeJwt(String value) {
+    final parts = value.split('.');
+    return parts.length == 3 && parts.every((p) => p.isNotEmpty);
+  }
+
+  // เก็บ session token จาก field "token" ใน response body (ไม่ใช่ header
+  // set-cookie อีกต่อไป — ดูคอมเมนต์ที่ _tokenKey) เรียกทุกครั้งหลัง request
+  // ไม่ว่า useCookie จะเป็น true/false ก็ตาม (login/register ไม่ได้ "แนบ" token
+  // ไปกับ request ขาออก แต่ยังต้องรับ token ที่ตอบกลับมา) — เผื่อ response
+  // ไม่ใช่ JSON object (เช่น fetchData คืน list) จึงห่อด้วย try/catch
+  //
+  // คืนค่า body ที่ decode แล้วกลับไปด้วย (หรือ null ถ้า decode ไม่ได้) เพื่อให้
+  // ผู้เรียกใช้ค่านี้ต่อได้เลยแทนที่จะต้อง jsonDecode(response.body) ซ้ำอีกรอบ
+  Future<dynamic> _updateToken(http.Response response) async {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      // response ไม่ใช่ JSON — ไม่มี token ให้เก็บ, ไม่มีอะไรให้คืนกลับ
+      return null;
     }
+    if (decoded is Map && decoded['token'] is String) {
+      final String token = decoded['token'] as String;
+      if (token.isNotEmpty && _looksLikeJwt(token)) {
+        await _storage.write(key: _tokenKey, value: token);
+      }
+    }
+    return decoded;
   }
 
   String _generateCacheKey(Map<String, dynamic>? queryParams) {
@@ -105,8 +143,7 @@ class ServiceProvider<T> {
 
   // 2. ปรับปรุงการบันทึก (รับ key เพิ่ม)
   Future<void> _saveToLocal(dynamic data, String effectiveKey) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(effectiveKey, jsonEncode(data));
+    await _storage.write(key: effectiveKey, value: jsonEncode(data));
   }
 
   // 3. ปรับปรุงการดึงจาก Local (รับ key เพิ่ม)
@@ -114,8 +151,7 @@ class ServiceProvider<T> {
     T Function(Map<String, dynamic>) creator,
     String effectiveKey,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? dataString = prefs.getString(effectiveKey);
+    final String? dataString = await _storage.read(key: effectiveKey);
     if (dataString != null) {
       final List<dynamic> jsonData = jsonDecode(dataString);
       return jsonData.map((e) => creator(e as Map<String, dynamic>)).toList();
@@ -139,10 +175,10 @@ class ServiceProvider<T> {
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 10));
 
-        await _updateCookie(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          final List<dynamic> jsonData = jsonDecode(response.body);
+          final List<dynamic> jsonData = decoded as List<dynamic>;
           // บันทึกโดยใช้ effectiveKey
           await _saveToLocal(jsonData, effectiveKey);
           return jsonData
@@ -173,30 +209,35 @@ class ServiceProvider<T> {
           body: jsonEncode(payload),
         );
 
-        // อัปเดต Cookie จาก Response
-        await _updateCookie(response);
+        // อัปเดต token จาก Response -- คืนค่า body ที่ decode แล้วกลับมาด้วย
+        // เลย ไม่ต้อง jsonDecode(response.body) ซ้ำอีกรอบ (ของเดิม decode 2
+        // รอบทั้งที่คอมเมนต์ข้างล่างบอกว่าตั้งใจจะ decode แค่ครั้งเดียว)
+        final dynamic responseData = await _updateToken(response);
 
-        // 1. Decode แค่ครั้งเดียวเพื่อประสิทธิภาพ
-        final dynamic responseData = jsonDecode(response.body);
+        // 2. _updateToken decode ไม่ได้ (เช่น Server ล่มแล้วพ่น HTML ออกมา) จะได้
+        // null กลับมา -- เดิมเช็คจาก FormatException ตอน jsonDecode ตรงนี้เอง
+        // ตอนนี้ decode ไปแล้วใน _updateToken จึงต้องเช็คจากผลลัพธ์แทน (ของจริง
+        // ที่ decode ได้เป็น null literal มีโอกาสเกิดน้อยมากและไม่ใช่ response
+        // shape ที่ backend endpointไหนใช้).
+        if (responseData == null && response.body.trim() != 'null') {
+          throw "เซิร์ฟเวอร์ตอบกลับผิดพลาด (Invalid JSON)";
+        }
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
           // ใช้ช่วง 200-299 ครอบคลุมทั้ง OK (200), Created (201), No Content (204)
           print('POST Success: $responseData');
           return responseData;
         } else {
-          // 2. ดึง Error Message อย่างปลอดภัย (ป้องกันกรณี responseData ไม่ใช่ Map หรือไม่มี key error)
+          // 3. ดึง Error Message อย่างปลอดภัย (ป้องกันกรณี responseData ไม่ใช่ Map หรือไม่มี key error)
           String errorMessage = 'Post Error';
           if (responseData is Map && responseData.containsKey('error')) {
             errorMessage = responseData['error'].toString();
           } else if (responseData is Map && responseData.containsKey('message')) {
             errorMessage = responseData['message'].toString();
           }
-          
+
           throw errorMessage;
         }
-      } on FormatException catch (_) {
-        // 3. จัดการกรณีที่ Response Body ไม่ใช่ JSON (เช่น Server ล่มแล้วพ่น HTML ออกมา)
-        throw "เซิร์ฟเวอร์ตอบกลับผิดพลาด (Invalid JSON)";
       } catch (e) {
         // 4. จัดการ Error อื่นๆ เช่น No Internet หรือ Timeout
         rethrow;
@@ -204,13 +245,12 @@ class ServiceProvider<T> {
     } else {
       // Mock Logic: บันทึกลง Local และคืนค่า payload กลับไป
       await _simulateNetworkDelay();
-      final prefs = await SharedPreferences.getInstance();
-      final String? existingString = prefs.getString(storageKey);
+      final String? existingString = await _storage.read(key: storageKey);
       List<dynamic> existingData = existingString != null
           ? jsonDecode(existingString)
           : [];
       existingData.add(payload);
-      await prefs.setString(storageKey, jsonEncode(existingData));
+      await _storage.write(key: storageKey, value: jsonEncode(existingData));
       return payload;
     }
   }
@@ -229,17 +269,16 @@ class ServiceProvider<T> {
         final response = await _client
             .get(uri, headers: await _getHeaders())
             .timeout(const Duration(seconds: 35));
-        await _updateCookie(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final data = decoded as Map<String, dynamic>;
           await _saveToLocal(data, effectiveKey);
           return data;
         } else {
           final cached = await _fetchOneFromLocal(effectiveKey);
           if (cached != null) return cached;
-          final body = jsonDecode(response.body);
-          throw (body is Map ? body['error'] : null) ?? 'Fetch error';
+          throw (decoded is Map ? decoded['error'] : null) ?? 'Fetch error';
         }
       } catch (e) {
         final cached = await _fetchOneFromLocal(effectiveKey);
@@ -253,8 +292,7 @@ class ServiceProvider<T> {
   }
 
   Future<Map<String, dynamic>?> _fetchOneFromLocal(String effectiveKey) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? dataString = prefs.getString(effectiveKey);
+    final String? dataString = await _storage.read(key: effectiveKey);
     if (dataString != null) {
       return jsonDecode(dataString) as Map<String, dynamic>;
     }
@@ -267,13 +305,13 @@ class ServiceProvider<T> {
       final uri = Uri.parse('$baseUrl$endpoint/$id');
       try {
         final response = await _client.get(uri, headers: await _getHeaders());
-        await _updateCookie(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
           print(response.body);
-          return jsonDecode(response.body) as Map<String, dynamic>;
+          return decoded as Map<String, dynamic>;
         } else {
-          throw json.decode(response.body)["error"] ?? "Fetch One Error";
+          throw (decoded is Map ? decoded['error'] : null) ?? "Fetch One Error";
         }
       } catch (e) {
         rethrow;
@@ -295,12 +333,12 @@ class ServiceProvider<T> {
           headers: await _getHeaders(),
           body: jsonEncode(payload),
         );
-        await _updateCookie(response);
+        final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          return jsonDecode(response.body);
+          return decoded;
         } else {
-          throw json.decode(response.body)["error"] ?? "Update Error";
+          throw (decoded is Map ? decoded['error'] : null) ?? "Update Error";
         }
       } catch (e) {
         rethrow;
@@ -317,7 +355,7 @@ class ServiceProvider<T> {
       final uri = Uri.parse('$baseUrl$endpoint/$identifierValue');
       try {
         final response = await _client.delete(uri, headers: await _getHeaders());
-        await _updateCookie(response);
+        await _updateToken(response);
         return (response.statusCode == 200 || response.statusCode == 204);
       } catch (e) {
         rethrow;
@@ -329,17 +367,14 @@ class ServiceProvider<T> {
   }
 
   Future<void> deleteAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(storageKey);
+    await _storage.delete(key: storageKey);
   }
 
   Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await _storage.deleteAll();
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_cookieKey);
+    await _storage.delete(key: _tokenKey);
   }
 }

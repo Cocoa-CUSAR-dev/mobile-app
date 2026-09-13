@@ -12,6 +12,7 @@ import 'package:cocoa_supply/services/batch_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_helpers.dart';
@@ -40,11 +41,14 @@ void main() {
   });
 
   test('getBatches falls back to cache on a non-200 response', () async {
-    SharedPreferences.setMockInitialValues({
-      'batch_data': jsonEncode([
-        {'batch_id': 'cached', 'origin': 'cache'},
-      ]),
-    });
+    // ServiceProvider's local cache is backed by flutter_secure_storage
+    // (APP-2), not SharedPreferences -- seed both since some other code
+    // paths in this suite still assume SharedPreferences.
+    final cached = jsonEncode([
+      {'batch_id': 'cached', 'origin': 'cache'},
+    ]);
+    SharedPreferences.setMockInitialValues({'batch_data': cached});
+    FlutterSecureStorage.setMockInitialValues({'batch_data': cached});
 
     final client = MockClient((request) async => http.Response('error', 500));
 
@@ -56,11 +60,11 @@ void main() {
   });
 
   test('getBatches falls back to cache when the request throws', () async {
-    SharedPreferences.setMockInitialValues({
-      'batch_data': jsonEncode([
-        {'batch_id': 'cached'},
-      ]),
-    });
+    final cached = jsonEncode([
+      {'batch_id': 'cached'},
+    ]);
+    SharedPreferences.setMockInitialValues({'batch_data': cached});
+    FlutterSecureStorage.setMockInitialValues({'batch_data': cached});
 
     final client = MockClient((request) async => throw Exception('network down'));
 
