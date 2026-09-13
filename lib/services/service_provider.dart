@@ -9,10 +9,19 @@ class ServiceProvider<T> {
   final bool useCookie;
   // Overridable at build time via --dart-define=API_BASE_URL=...
   // (e.g. the CI web build points this at the deployed backend).
-  final String baseUrl = const String.fromEnvironment(
+  //
+  // Strip any trailing slash: every call site below builds the request URL
+  // as '$baseUrl$endpoint' with endpoint already starting with '/', so a
+  // secret/default value that itself ends in '/' (e.g. "https://host.com/")
+  // would otherwise produce a double slash ("https://host.com//public/login")
+  // that 404s on the backend.
+  static const String _rawBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
   );
+  final String baseUrl = _rawBaseUrl.endsWith('/')
+      ? _rawBaseUrl.substring(0, _rawBaseUrl.length - 1)
+      : _rawBaseUrl;
   final http.Client _client;
 
   static const String _cookieKey = 'auth_cookie';
