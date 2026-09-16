@@ -9,6 +9,9 @@ class TaskItem {
   final DateTime? openAt;    
   final DateTime? closeAt;   
   final Map<String, dynamic>? answer; 
+  // form.task_form.is_multiple_submit: the farmer may file several rows
+  // against this task, so a second queued row is not a conflict.
+  final bool isMultipleSubmit;
 
   TaskItem({
     required this.taskId,
@@ -19,6 +22,7 @@ class TaskItem {
     this.openAt,
     this.closeAt,
     this.answer,
+    this.isMultipleSubmit = false,
   });
 
   // --- Logic การแสดงผลภาษาไทย ---
@@ -29,6 +33,8 @@ class TaskItem {
         return "ดำเนินการแล้ว";
       case 'PENDING':
         return "รออัปโหลด (Offline)";
+      case 'IN_PROGRESS':
+        return "กำลังดำเนินการ";
       case 'OVERDUE':
         return "เลยกำหนดส่ง";
       case 'NOT_STARTED':
@@ -42,6 +48,7 @@ class TaskItem {
       case 'COMPLETED':
         return const Color(0xFF4CAF50); // เขียว (Success)
       case 'PENDING':
+      case 'IN_PROGRESS':
         return const Color(0xFF2196F3); // น้ำเงิน (Info/Sync)
       case 'OVERDUE':
         return const Color(0xFFF44336); // แดง (Error)
@@ -65,6 +72,7 @@ class TaskItem {
       openAt: json['open_at'] != null ? DateTime.parse(json['open_at']) : null,
       closeAt: json['close_at'] != null ? DateTime.parse(json['close_at']) : null,
       answer: json['answer'],
+      isMultipleSubmit: json['is_multiple_submit'] == true,
     );
   }
 
@@ -79,6 +87,7 @@ class TaskItem {
       openAt: openAt,
       closeAt: closeAt,
       answer: newAnswer,
+      isMultipleSubmit: isMultipleSubmit,
     );
   }
 }

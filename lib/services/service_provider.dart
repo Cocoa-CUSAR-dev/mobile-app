@@ -366,6 +366,13 @@ class ServiceProvider<T> {
     }
   }
 
+  /// Overwrite the local list under [storageKey] in one write -- for the
+  /// offline queue, which removes individual items by rebuilding the list
+  /// (deleteData is a no-op in local mode, so it can't remove anything).
+  Future<void> replaceLocal(List<Map<String, dynamic>> items) async {
+    await _storage.write(key: storageKey, value: jsonEncode(items));
+  }
+
   Future<void> deleteAll() async {
     await _storage.delete(key: storageKey);
   }

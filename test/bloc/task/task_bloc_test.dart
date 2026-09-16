@@ -135,4 +135,141 @@ void main() {
       },
     );
   });
+
+  // Multi-submit: several rows for one task can sit in the offline queue at
+  // once. They used to be keyed by task_id alone.
+  group('offline queue with several rows per task', () {
+    const syncWait = Duration(milliseconds: 2500);
+
+    Future<List<dynamic>> readQueue() async =>
+        jsonDecode((await _secureStorage.read(key: 'pending_task_queue'))!) as List;
+
+    blocTest<TaskBloc, TaskState>(
+      'two failed submits for the same task both stay queued with distinct queue_ids',
+      setUp: () => FlutterSecureStorage.setMockInitialValues({}),
+      build: () => TaskBloc(
+        taskService: TaskService(client: MockClient((r) async => http.Response('error', 500))),
+      ),
+      act: (bloc) async {
+        bloc.add(SubmitTaskAction('t1', 'harvest_grade_detail', {'grade': 'A'}));
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        bloc.add(SubmitTaskAction('t1', 'harvest_grade_detail', {'grade': 'B'}));
+      },
+      wait: const Duration(milliseconds: 1500),
+      verify: (_) async {
+        final queue = await readQueue();
+        expect(queue.map((i) => i['answer']['grade']), ['A', 'B']);
+        expect(queue.map((i) => i['queue_id']).toSet(), hasLength(2));
+      },
+    );
+
+    blocTest<TaskBloc, TaskState>(
+      'saving a draft again replaces the previous draft instead of appending',
+      setUp: () => FlutterSecureStorage.setMockInitialValues({}),
+      build: () => TaskBloc(taskService: TaskService(client: MockClient((r) async => jsonResponse({}, 200)))),
+      act: (bloc) async {
+        bloc.add(SubmitTaskAction('t1', 'activity', {'note': 'first'}, isDraft: true));
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        bloc.add(SubmitTaskAction('t1', 'activity', {'note': 'second'}, isDraft: true));
+      },
+      wait: const Duration(milliseconds: 1500),
+      verify: (_) async {
+        final queue = await readQueue();
+        expect(queue, hasLength(1));
+        expect(queue.single['answer']['note'], 'second');
+      },
+    );
+
+    final requests = <http.Request>[];
+
+    blocTest<TaskBloc, TaskState>(
+      'multi-submit rows are all sent even though the task already has an answer',
+      setUp: () {
+        requests.clear();
+        FlutterSecureStorage.setMockInitialValues({
+          'pending_task_queue': jsonEncode([
+            {'task_id': 't1', 'answer': {'grade': 'A'}, 'is_draft': false, 'is_edit': false, 'is_multiple_submit': true},
+            {'task_id': 't1', 'answer': {'grade': 'B'}, 'is_draft': false, 'is_edit': false, 'is_multiple_submit': true},
+          ]),
+        });
+      },
+      build: () => TaskBloc(
+        taskService: TaskService(
+          client: MockClient((r) async {
+            requests.add(r);
+            if (r.method == 'GET' && r.url.path.endsWith('/tasks/t1')) {
+              return jsonResponse({'answer': {'grade': 'earlier'}}, 200);
+            }
+            if (r.method == 'GET') return jsonResponse([], 200);
+            return jsonResponse({}, 201);
+          }),
+        ),
+      ),
+      act: (bloc) => bloc.add(TriggerPendingQueueSync(DateTime(2026, 1, 11))),
+      wait: syncWait,
+      verify: (bloc) async {
+        final posts = requests.where((r) => r.method == 'POST').toList();
+        expect(posts.map((r) => jsonDecode(r.body)['answer']['grade']), ['A', 'B']);
+        expect(bloc.state.pendingConflicts, isEmpty);
+        expect(await readQueue(), isEmpty);
+      },
+    );
+
+    blocTest<TaskBloc, TaskState>(
+      'a single-submit row whose task already has an answer is still held as a conflict',
+      setUp: () {
+        requests.clear();
+        FlutterSecureStorage.setMockInitialValues({
+          'pending_task_queue': jsonEncode([
+            {'task_id': 't1', 'answer': {'note': 'x'}, 'is_draft': false, 'is_edit': false},
+          ]),
+        });
+      },
+      build: () => TaskBloc(
+        taskService: TaskService(
+          client: MockClient((r) async {
+            requests.add(r);
+            if (r.method == 'GET' && r.url.path.endsWith('/tasks/t1')) {
+              return jsonResponse({'answer': {'note': 'server'}}, 200);
+            }
+            if (r.method == 'GET') return jsonResponse([], 200);
+            return jsonResponse({}, 201);
+          }),
+        ),
+      ),
+      act: (bloc) => bloc.add(TriggerPendingQueueSync(DateTime(2026, 1, 11))),
+      wait: syncWait,
+      verify: (bloc) async {
+        expect(requests.where((r) => r.method == 'POST'), isEmpty);
+        expect(bloc.state.pendingConflicts, hasLength(1));
+        expect(await readQueue(), hasLength(1));
+      },
+    );
+
+    blocTest<TaskBloc, TaskState>(
+      'a row whose send fails stays in the queue instead of being dropped',
+      setUp: () {
+        FlutterSecureStorage.setMockInitialValues({
+          'pending_task_queue': jsonEncode([
+            {'task_id': 't1', 'answer': {'grade': 'A'}, 'is_draft': false, 'is_edit': false, 'is_multiple_submit': true},
+          ]),
+        });
+      },
+      build: () => TaskBloc(
+        taskService: TaskService(
+          client: MockClient((r) async {
+            if (r.method == 'GET') return jsonResponse([], 200);
+            return http.Response('error', 500);
+          }),
+        ),
+      ),
+      act: (bloc) => bloc.add(TriggerPendingQueueSync(DateTime(2026, 1, 11))),
+      wait: syncWait,
+      verify: (_) async {
+        final queue = await readQueue();
+        expect(queue, hasLength(1));
+        expect(queue.single['queue_id'], isNotNull);
+      },
+    );
+  });
 }
