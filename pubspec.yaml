@@ -51,6 +51,7 @@ dependencies:
   maplibre_gl: ^0.25.0
   latlong2: ^0.9.1
   geolocator: ^14.0.2
+  sentry_flutter: ^8.14.2
 
 dev_dependencies:
   flutter_test:
