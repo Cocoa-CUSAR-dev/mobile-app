@@ -87,9 +87,9 @@ class UploadInput extends StatelessWidget {
 
                     // ไอคอนด้านขวา (เปลี่ยนตามสถานะไฟล์)
                     if (controller.hasFile)
-                      GestureDetector(
-                        onTap: () => controller.clear(),
-                        child: const Icon(
+                      IconButton(
+                        onPressed: () => controller.clear(),
+                        icon: const Icon(
                           Icons.cancel,
                           color: Colors.redAccent,
                           size: 20,
