@@ -17,8 +17,7 @@ class AuthService {
   /// ฟังก์ชันสำหรับดึงข้อมูลโปรไฟล์ทั้งหมด (ใช้ในหน้า Profile)
   Future<Profile?> getProfile() async {
     try {
-      // เรียก fetchData ซึ่งจะได้ List กลับมา
-      final Map<String, dynamic> result = await _provider.fetchOne('');
+      final Map<String, dynamic> result = await _provider.fetchSelf();
       print(result);
       return Profile.fromJson(result);
     } catch (e) {
