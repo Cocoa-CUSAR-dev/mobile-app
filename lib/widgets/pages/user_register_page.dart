@@ -80,7 +80,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, '❌ ลงทะเบียนไม่สำเร็จ: ${e.toString()}', type: AppSnackBarType.error);
+        AppSnackBar.show(context, 'ลงทะเบียนไม่สำเร็จ: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

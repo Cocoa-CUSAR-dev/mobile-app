@@ -95,12 +95,12 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
       await registerService.postData(payload);
 
       if (mounted) {
-        AppSnackBar.show(context, '✅ ลงทะเบียนแปลงปลูกสำเร็จ', type: AppSnackBarType.success);
+        AppSnackBar.show(context, 'ลงทะเบียนแปลงปลูกสำเร็จ', type: AppSnackBarType.success);
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, '❌ เกิดข้อผิดพลาด: ${e.toString()}', type: AppSnackBarType.error);
+        AppSnackBar.show(context, 'เกิดข้อผิดพลาด: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

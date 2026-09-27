@@ -159,7 +159,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
 
       await registerService.postData(payload);
       if (mounted) {
-        AppSnackBar.show(context, '✅ ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
+        AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
 
         // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
         // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
@@ -169,7 +169,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         );
       }
     } catch (e) {
-      if (mounted) AppSnackBar.show(context, '❌ Error: $e', type: AppSnackBarType.error);
+      if (mounted) AppSnackBar.show(context, 'Error: $e', type: AppSnackBarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -425,6 +425,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         _selectedRole = roleValue;
         _currentStep = 0;
       }),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(

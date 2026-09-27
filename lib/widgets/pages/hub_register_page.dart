@@ -135,12 +135,12 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
       await registerService.postData(payload);
       
       if (mounted) {
-        AppSnackBar.show(context, '✅ ลงทะเบียนหน่วยรวบรวม (Hub) สำเร็จ', type: AppSnackBarType.success);
+        AppSnackBar.show(context, 'ลงทะเบียนหน่วยรวบรวม (Hub) สำเร็จ', type: AppSnackBarType.success);
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, '❌ เกิดข้อผิดพลาด: $e', type: AppSnackBarType.error);
+        AppSnackBar.show(context, 'เกิดข้อผิดพลาด: $e', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

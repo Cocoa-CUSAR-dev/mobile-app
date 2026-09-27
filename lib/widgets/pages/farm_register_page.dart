@@ -117,11 +117,11 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
 
       await registerService.postData(payload);
       if (mounted) {
-        AppSnackBar.show(context, '✅ ลงทะเบียนฟาร์มสำเร็จ', type: AppSnackBarType.success);
+        AppSnackBar.show(context, 'ลงทะเบียนฟาร์มสำเร็จ', type: AppSnackBarType.success);
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
       }
     } catch (e) {
-      if (mounted) AppSnackBar.show(context, '❌ Error: $e', type: AppSnackBarType.error);
+      if (mounted) AppSnackBar.show(context, 'Error: $e', type: AppSnackBarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
