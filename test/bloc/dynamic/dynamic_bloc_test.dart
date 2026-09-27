@@ -62,6 +62,41 @@ void main() {
       ],
     );
 
+    // Only the question ticked "Reuse answer" is prefilled when the form is
+    // multi-submit; a single-submit form still prefills every answer.
+    for (final multi in [true, false]) {
+      late TaskBloc taskBloc;
+
+      blocTest<DynamicBloc, DynamicState>(
+        multi
+            ? 'multi-submit form prefills only carryForward answers'
+            : 'single-submit form prefills every previous answer',
+        build: () {
+          taskBloc = TaskBloc(
+            taskService: TaskService(
+              client: MockClient((request) async => jsonResponse({'farm_id': 'f1', 'notes': 'old'}, 200)),
+            ),
+          );
+          final client = MockClient((request) async => jsonResponse({
+            'form': {
+              ...formWith([
+                {'fieldName': 'notes', 'inputType': 'VARCHAR', 'isActive': true, 'carryForward': false, 'sortOrder': 0},
+                {'fieldName': 'farm_id', 'inputType': 'OPTION', 'isActive': true, 'carryForward': true, 'sortOrder': 1},
+              ]),
+              'isMultipleSubmit': multi,
+            },
+          }, 200));
+          return DynamicBloc(taskBloc: taskBloc, apiOverride: DynamicApiService(client: client));
+        },
+        act: (bloc) => bloc.add(LoadSchemaAndData('farm_activity', 't1')),
+        wait: const Duration(milliseconds: 700),
+        verify: (_) => expect(
+          taskBloc.state.currentTaskResponse,
+          multi ? {'farm_id': 'f1'} : {'farm_id': 'f1', 'notes': 'old'},
+        ),
+      );
+    }
+
     blocTest<DynamicBloc, DynamicState>(
       'emits DynamicError when the backend response has no form',
       build: () {
