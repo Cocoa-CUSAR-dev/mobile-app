@@ -65,6 +65,17 @@
 
   <title>cocoa_supply</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    maplibre_gl's web implementation (see lib/widgets/components/gis_input.dart)
+    calls into a global `maplibregl` JS object that only exists once these are
+    loaded -- without them, MapLibreMapController.initPlatform() throws
+    immediately ("Cannot read properties of undefined (reading 'LngLat')") and
+    every map screen renders as a blank white area. Version pinned per the
+    maplibre_gl 0.25.0 README's own web setup instructions.
+  -->
+  <script src="https://unpkg.com/maplibre-gl@^4.3/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@^4.3/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
