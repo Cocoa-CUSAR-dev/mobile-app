@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
@@ -193,7 +194,12 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                 _currentFormData['subdistrict_id'] = null;
               })
             ),
-            _buildFilteredDropdown('district_id', 'อำเภอ', isReq: true, 
+            _buildFilteredDropdown(
+              'district_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'เขต'
+                  : 'อำเภอ',
+              isReq: true,
               filterId: _currentFormData['province_id']?.toString(),
               filterKey: 'province_id',
               onChanged: (val) => setState(() {
@@ -201,7 +207,12 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                 _currentFormData['subdistrict_id'] = null;
               })
             ),
-            _buildFilteredDropdown('subdistrict_id', 'ตำบล', isReq: true,
+            _buildFilteredDropdown(
+              'subdistrict_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'แขวง'
+                  : 'ตำบล',
+              isReq: true,
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),

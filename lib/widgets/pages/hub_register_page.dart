@@ -11,6 +11,7 @@ import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
 class HubRegisterPage extends StatefulWidget {
   const HubRegisterPage({super.key});
@@ -223,7 +224,12 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
                 _currentFormData['subdistrict_id'] = null;
               })
             ),
-            _buildFilteredDropdown('district_id', 'อำเภอ', isReq: true, 
+            _buildFilteredDropdown(
+              'district_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'เขต'
+                  : 'อำเภอ',
+              isReq: true,
               filterId: _currentFormData['province_id']?.toString(),
               filterKey: 'province_id',
               onChanged: (val) => setState(() {
@@ -231,7 +237,12 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
                 _currentFormData['subdistrict_id'] = null;
               })
             ),
-            _buildFilteredDropdown('subdistrict_id', 'ตำบล', isReq: true,
+            _buildFilteredDropdown(
+              'subdistrict_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'แขวง'
+                  : 'ตำบล',
+              isReq: true,
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),

@@ -8,6 +8,7 @@ import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
 class RegisterRolePage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
@@ -271,7 +272,12 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               })
             );
           case 'district_id':
-            return _buildFilteredDropdown('district_id', 'อำเภอ', isReq: isReq,
+            return _buildFilteredDropdown(
+              'district_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'เขต'
+                  : 'อำเภอ',
+              isReq: isReq,
               filterId: _currentFormData['province_id']?.toString(),
               filterKey: 'province_id',
               onChanged: (val) => setState(() {
@@ -280,7 +286,12 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               })
             );
           case 'subdistrict_id':
-            return _buildFilteredDropdown('subdistrict_id', 'ตำบล', isReq: isReq,
+            return _buildFilteredDropdown(
+              'subdistrict_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'แขวง'
+                  : 'ตำบล',
+              isReq: isReq,
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),

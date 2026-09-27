@@ -116,4 +116,26 @@ class DynamicApiService {
       return [];
     }
   }
+
+  // APP-11: กรุงเทพมหานครใช้ "เขต"/"แขวง" ไม่ใช่ "อำเภอ"/"ตำบล" -- หน้าลงทะเบียน
+  // ต้องรู้ชื่อจังหวัดที่เลือกอยู่ (ไม่ใช่แค่ id) เพื่อสลับ label ให้ถูก แต่
+  // onChanged ของ dropdown จังหวัดส่งมาแค่ id เท่านั้น เลยต้องมีตัวช่วยย้อนดูชื่อ
+  // จาก cache ของ fetchConstants('province') ที่โหลดไว้แล้วตอนเปิด dropdown
+  // จังหวัด (ไม่ต้อง fetch ซ้ำ)
+  static String? lookupCachedProvinceName(String? provinceId) {
+    if (provinceId == null) return null;
+    final cached = _constantsCache['province'];
+    if (cached == null) return null;
+    for (final row in cached) {
+      if (row['province_id']?.toString() == provinceId) {
+        return row['province_name_th']?.toString();
+      }
+    }
+    return null;
+  }
+
+  static bool isBangkokProvinceId(String? provinceId) {
+    final name = lookupCachedProvinceName(provinceId);
+    return name != null && name.contains('กรุงเทพ');
+  }
 }
