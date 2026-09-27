@@ -4,6 +4,7 @@ import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/theme/app_text_theme.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class RootScaffold extends StatefulWidget {
   final String title;
@@ -219,7 +220,12 @@ class _RootScaffoldState extends State<RootScaffold> {
 
   // เนื้อหาภายใน Profile (ปรับให้เข้ากับ Pop-up)
   Widget _buildProfileContent() {
-    if (_userProfile == null) return const Padding(padding: EdgeInsets.all(20), child: Text("ไม่พบข้อมูล"));
+    if (_userProfile == null) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: EmptyStateView(icon: Icons.person_off_outlined, message: "ไม่พบข้อมูล"),
+      );
+    }
 
     return Flexible(
       child: SingleChildScrollView(

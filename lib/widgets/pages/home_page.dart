@@ -4,6 +4,7 @@ import 'package:cocoa_supply/bloc/home/home_state.dart';
 import 'package:cocoa_supply/models/task_item_model.dart';
 import 'package:cocoa_supply/services/util_service.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
@@ -151,15 +152,24 @@ class _HomeTabContentState extends State<HomeTabContent> {
                 const SizedBox(height: 12),
 
                 // รายการ Task Cards
-                ...state.dailyTasks.map(
-                  (task) => _TaskCard(
-                    title: task.title,
-                    detail: task.description,
-                    statusText: task.statusText,
-                    statusColor: task.statusColor,
-                    onTap: () => _navigateToDetail(context, task),
+                if (state.dailyTasks.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: EmptyStateView(
+                      icon: Icons.check_circle_outline,
+                      message: "ไม่มีสิ่งที่ต้องทำวันนี้",
+                    ),
+                  )
+                else
+                  ...state.dailyTasks.map(
+                    (task) => _TaskCard(
+                      title: task.title,
+                      detail: task.description,
+                      statusText: task.statusText,
+                      statusColor: task.statusColor,
+                      onTap: () => _navigateToDetail(context, task),
+                    ),
                   ),
-                ),
 
                 const SizedBox(height: 40),
               ],

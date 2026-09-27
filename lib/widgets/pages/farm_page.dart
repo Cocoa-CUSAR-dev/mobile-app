@@ -8,6 +8,7 @@ import 'package:cocoa_supply/bloc/farm/farm_bloc.dart';
 import 'package:cocoa_supply/bloc/farm/farm_event.dart';
 import 'package:cocoa_supply/bloc/farm/farm_state.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class FarmPage extends StatefulWidget {
   const FarmPage({super.key});
@@ -46,26 +47,7 @@ class _FarmPageState extends State<FarmPage> {
             final farms = state.farms;
             
             if (farms.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 80,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'ไม่พบข้อมูล',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return const EmptyStateView(message: 'ไม่พบข้อมูล');
             }
 
             return ListView.builder(

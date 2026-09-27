@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/data_record_container.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class ProcessingStationPage extends StatefulWidget {
   const ProcessingStationPage({super.key});
@@ -87,23 +88,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'ไม่พบข้อมูลสถานีแปรรูป',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+    return const EmptyStateView(message: 'ไม่พบข้อมูลสถานีแปรรูป');
   }
 
   Widget _buildProcessingStationCard(
