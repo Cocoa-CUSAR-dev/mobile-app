@@ -1,4 +1,9 @@
 // Widget tests for lib/widgets/components/tree_dot_loading.dart.
+//
+// Bean shapes are an elongated rounded-rect (BorderRadius), not
+// BoxShape.circle -- matched here by decoration.borderRadius being set,
+// since that's what distinguishes a bean container from any other
+// Container in the tree (there's no other structural marker to key off).
 
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:flutter/material.dart';
@@ -6,14 +11,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ThreeDotsLoading', () {
-    testWidgets('renders exactly 3 animated dots', (tester) async {
+    testWidgets('renders exactly 3 animated cacao-bean shapes', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: ThreeDotsLoading()));
       await tester.pump(const Duration(milliseconds: 100));
 
-      final dots = find.byWidgetPredicate(
-        (w) => w is Container && (w.decoration as BoxDecoration?)?.shape == BoxShape.circle,
+      final beans = find.byWidgetPredicate(
+        (w) => w is Container && (w.decoration as BoxDecoration?)?.borderRadius != null,
       );
-      expect(dots, findsNWidgets(3));
+      expect(beans, findsNWidgets(3));
 
       // Stop the repeating animation before the test ends.
       await tester.pumpWidget(const SizedBox());
@@ -25,10 +30,10 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 50));
 
-      final dots = find.byWidgetPredicate(
-        (w) => w is Container && (w.decoration as BoxDecoration?)?.shape == BoxShape.circle,
+      final beans = find.byWidgetPredicate(
+        (w) => w is Container && (w.decoration as BoxDecoration?)?.borderRadius != null,
       );
-      final container = tester.widgetList<Container>(dots).first;
+      final container = tester.widgetList<Container>(beans).first;
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.color, Colors.red);
       expect(container.constraints?.maxWidth ?? 20, 20);

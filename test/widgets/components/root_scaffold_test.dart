@@ -15,6 +15,7 @@
 
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:cocoa_supply/widgets/components/root_scaffold.dart';
+import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
@@ -25,7 +26,7 @@ import '../../services/test_helpers.dart';
 Future<void> _pumpUntilSpinnerGone(WidgetTester tester, {int maxPumps = 30}) async {
   for (var i = 0; i < maxPumps; i++) {
     await tester.pump(const Duration(milliseconds: 50));
-    if (find.byType(CircularProgressIndicator).evaluate().isEmpty) return;
+    if (find.byType(ThreeDotsLoading).evaluate().isEmpty) return;
   }
 }
 
@@ -55,7 +56,7 @@ void main() {
         ),
       ));
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(ThreeDotsLoading), findsOneWidget);
 
       await _pumpUntilSpinnerGone(tester);
 
