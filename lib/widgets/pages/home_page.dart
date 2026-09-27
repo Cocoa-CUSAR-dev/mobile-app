@@ -6,6 +6,9 @@ import 'package:cocoa_supply/services/util_service.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
+import 'package:cocoa_supply/widgets/components/date_strip.dart';
+import 'package:cocoa_supply/theme/app_text_theme.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
@@ -93,6 +96,34 @@ class _HomeTabContentState extends State<HomeTabContent> {
     }
   }
 
+  // เปิดปฏิทินแบบเต็ม (เลือกเดือน/ปี แล้วแตะวันได้ตรงๆ) -- ทำเป็นทางเลือกคู่กับ
+  // DateStrip ด้านบน สำหรับตอนต้องการกระโดดข้ามหลายเดือนทีเดียว
+  Future<void> _openCalendarPicker(BuildContext context, DateTime selectedDate) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(selectedDate.year - 5),
+      lastDate: DateTime(selectedDate.year + 5),
+      helpText: 'เลือกวันที่',
+      cancelText: 'ยกเลิก',
+      confirmText: 'ตกลง',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && context.mounted) {
+      context.read<HomeBloc>().add(HomeDataRequested(selectedDate: picked));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<HomeBloc, HomeState>(
@@ -109,35 +140,25 @@ class _HomeTabContentState extends State<HomeTabContent> {
                 // ส่วนหัวเรื่องและตัวเลือกวันที่
                 Row(
                   children: [
-                    Text(
-                      'วันที่ ${UtilService.formatThaiDate(state.selectedDate)}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left, size: 30),
-                      onPressed: () => context.read<HomeBloc>().add(
-                        HomeDataRequested(
-                          selectedDate: state.selectedDate.subtract(
-                            const Duration(days: 1),
-                          ),
-                        ),
+                    Expanded(
+                      child: Text(
+                        'วันที่ ${UtilService.formatThaiDate(state.selectedDate)}',
+                        style: AppTextTheme.scale.titleLarge,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.chevron_right, size: 30),
-                      onPressed: () => context.read<HomeBloc>().add(
-                        HomeDataRequested(
-                          selectedDate: state.selectedDate.add(
-                            const Duration(days: 1),
-                          ),
-                        ),
-                      ),
+                      icon: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
+                      tooltip: 'เปิดปฏิทิน',
+                      onPressed: () => _openCalendarPicker(context, state.selectedDate),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                DateStrip(
+                  selectedDate: state.selectedDate,
+                  onDateSelected: (date) => context.read<HomeBloc>().add(
+                    HomeDataRequested(selectedDate: date),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
