@@ -8,6 +8,7 @@ import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class HubPage extends StatefulWidget {
   const HubPage({super.key});
@@ -179,7 +180,7 @@ class _HubPageState extends State<HubPage> {
           style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF794c46),
+          backgroundColor: AppColors.primary,
         ),
       ),
     );

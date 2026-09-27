@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Single source of truth for the app's brand colors. Every widget that
-/// used to hardcode `Color(0xFF794c46)` (and its tinted variants) directly
-/// now reads it from here, so the palette can be adjusted in one place.
+/// used to hardcode the cacao-brown literal directly now reads it from
+/// here, so the palette can be adjusted in one place.
 class AppColors {
   AppColors._();
 

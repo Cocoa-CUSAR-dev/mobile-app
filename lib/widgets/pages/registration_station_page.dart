@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class RegistrationSelectionPage extends StatelessWidget {
   const RegistrationSelectionPage({super.key});
@@ -103,8 +104,8 @@ class RegistrationSelectionPage extends StatelessWidget {
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF794c46),
-        side: const BorderSide(color: Color(0xFF794c46), width: 2),
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary, width: 2),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),

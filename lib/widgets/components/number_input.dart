@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class NumberInput extends StatefulWidget {
   final String label;
@@ -73,7 +74,7 @@ class _NumberInputState extends State<NumberInput> {
             style: const TextStyle(
               fontSize: 24, 
               fontWeight: FontWeight.bold, 
-              color: Color(0xFF794c46)
+              color: AppColors.primary
             ),
             keyboardType: TextInputType.numberWithOptions(decimal: !widget.isInt),
             decoration: InputDecoration(

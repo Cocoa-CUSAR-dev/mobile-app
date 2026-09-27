@@ -5,6 +5,7 @@ import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// หน้าเชื่อมบัญชีเดิมกับ LINE ผ่าน LIFF — เข้าถึงได้ทาง route '/liff-link' เท่านั้น
 /// (ตั้งเป็น LIFF Endpoint URL ใน LINE Developers Console)
@@ -29,7 +30,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
-  final Color primaryColor = const Color(0xFF794c46);
+  final Color primaryColor = AppColors.primary;
 
   @override
   void initState() {

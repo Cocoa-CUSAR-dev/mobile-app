@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/data_record_container.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class ProcessingStationPage extends StatefulWidget {
   const ProcessingStationPage({super.key});
@@ -78,7 +79,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
           style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF794c46),
+          backgroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),

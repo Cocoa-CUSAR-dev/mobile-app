@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// Component สำหรับ Form Input ที่นำมาใช้ซ้ำได้
 class FormInput extends StatelessWidget {
@@ -104,7 +105,7 @@ class FormInput extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: const BorderSide(
-                    color: Color(0xFF794c46), width: 2),
+                    color: AppColors.primary, width: 2),
               ),
               suffixIcon: suffixIcon,
             ),

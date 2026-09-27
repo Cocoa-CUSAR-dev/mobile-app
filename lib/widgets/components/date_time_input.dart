@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DateTimeInput extends StatefulWidget {
   final String label;
@@ -219,7 +220,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
           border: Border.all(color: Colors.grey.shade300),
           borderRadius: isTop ? const BorderRadius.vertical(top: Radius.circular(8)) : const BorderRadius.vertical(bottom: Radius.circular(8)),
         ),
-        child: Icon(icon, size: 20, color: const Color(0xFF794c46)),
+        child: Icon(icon, size: 20, color: AppColors.primary),
       ),
     );
   }

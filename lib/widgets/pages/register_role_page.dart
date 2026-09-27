@@ -6,6 +6,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class RegisterRolePage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
@@ -217,7 +218,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   const SizedBox(height: 32),
                   Text(
                     'ข้อมูล${_roleConfigs[_selectedRole!]['title']}',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF794c46)),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const SizedBox(height: 24),
                   _buildCurrentStepFields(),
@@ -355,7 +356,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
             height: 8,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
-              color: _currentStep == i ? const Color(0xFF794c46) : Colors.grey.shade300,
+              color: _currentStep == i ? AppColors.primary : Colors.grey.shade300,
             ),
           )),
         ),
@@ -383,7 +384,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               disabledBackgroundColor: Colors.grey.shade300,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -434,8 +435,8 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: const Color(0xFF794c46).withOpacity(0.1),
-              child: Icon(icon, color: const Color(0xFF794c46)),
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Icon(icon, color: AppColors.primary),
             ),
             const SizedBox(width: 16),
             Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),

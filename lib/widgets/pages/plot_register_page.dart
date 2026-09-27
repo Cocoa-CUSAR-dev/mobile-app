@@ -12,6 +12,7 @@ import 'package:cocoa_supply/widgets/components/dropdown_input.dart';
 import 'package:cocoa_supply/widgets/components/gis_input.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/checkbox_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class PlotRegisterPage extends StatefulWidget {
   final String farmId; // รับ farmId เข้ามาโดยตรง
@@ -164,7 +165,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF794c46),
+                        color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -301,7 +302,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
                 color: _currentStep == i
-                    ? const Color(0xFF794c46)
+                    ? AppColors.primary
                     : Colors.grey.shade300,
               ),
             ),
@@ -338,7 +339,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                     }
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

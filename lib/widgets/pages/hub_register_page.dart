@@ -9,6 +9,7 @@ import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class HubRegisterPage extends StatefulWidget {
   const HubRegisterPage({super.key});
@@ -171,7 +172,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
                       style: TextStyle(
                         fontSize: 22, 
                         fontWeight: FontWeight.bold, 
-                        color: Color(0xFF794c46)
+                        color: AppColors.primary
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -334,7 +335,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
               height: 6,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),
-                color: _currentStep >= i ? const Color(0xFF794c46) : Colors.grey.shade300,
+                color: _currentStep >= i ? AppColors.primary : Colors.grey.shade300,
               ),
             ),
           )),
@@ -363,7 +364,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               disabledBackgroundColor: Colors.grey.shade400,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -2,6 +2,7 @@ import 'package:cocoa_supply/models/profile_model.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class RootScaffold extends StatefulWidget {
   final String title;
@@ -185,7 +186,7 @@ class _RootScaffoldState extends State<RootScaffold> {
           style: const TextStyle(color: Colors.white)
         ),
         toolbarHeight: 64,
-        backgroundColor: const Color(0xFF794c46),
+        backgroundColor: AppColors.primary,
         actions: [
           IconButton(
             icon: const Icon(Icons.account_circle, color: Colors.white, size: 42.0),
@@ -207,7 +208,7 @@ class _RootScaffoldState extends State<RootScaffold> {
                 widget.onItemSelected(index);
                 _pageController.jumpToPage(index);
               },
-              selectedItemColor: const Color(0xFF794c46),
+              selectedItemColor: AppColors.primary,
               unselectedItemColor: Colors.grey,
               type: BottomNavigationBarType.fixed,
               items: navItems,
@@ -226,7 +227,7 @@ class _RootScaffoldState extends State<RootScaffold> {
           children: [
             const CircleAvatar(
               radius: 40,
-              backgroundColor: Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               child: Icon(Icons.person, size: 45, color: Colors.white),
             ),
             const SizedBox(height: 12),
@@ -296,7 +297,7 @@ class _RootScaffoldState extends State<RootScaffold> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          if (icon != null) Icon(icon, size: 18, color: const Color(0xFF794c46)),
+          if (icon != null) Icon(icon, size: 18, color: AppColors.primary),
           if (icon != null) const SizedBox(width: 10),
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 18)),
           const Spacer(),

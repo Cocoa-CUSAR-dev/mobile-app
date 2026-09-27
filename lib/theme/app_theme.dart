@@ -1,9 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// Central ThemeData for the app -- was previously built inline in
 /// main.dart with just a primarySwatch, leaving every screen to hardcode
-/// its own brown (Color(0xFF794c46)) instead of reading it from a shared
+/// its own brown color literal instead of reading it from a shared
 /// ColorScheme.
 class AppTheme {
   AppTheme._();

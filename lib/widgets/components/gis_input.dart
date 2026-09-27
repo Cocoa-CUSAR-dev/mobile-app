@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class PolygonData {
   final List<LatLng> points;
@@ -75,13 +76,13 @@ class GISInput extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: hasData ? const Color(0xFF794c46) : Colors.grey.shade300),
+              border: Border.all(color: hasData ? AppColors.primary : Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              color: hasData ? const Color(0x1A794C46) : Colors.grey.shade50,
+              color: hasData ? AppColors.primaryFaint : Colors.grey.shade50,
             ),
             child: Row(
               children: [
-                Icon(Icons.map_rounded, color: hasData ? const Color(0xFF794c46) : Colors.grey),
+                Icon(Icons.map_rounded, color: hasData ? AppColors.primary : Colors.grey),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -97,11 +98,11 @@ class GISInput extends StatelessWidget {
                       ),
                       if (hasData)
                         Text(data.points.length < 3 ? "ส่งค่าเป็น: พิกัด (1 จุด)" : "ส่งค่าเป็น: พื้นที่ (${data.points.length} จุด)",
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF794c46))),
+                            style: const TextStyle(fontSize: 14, color: AppColors.primary)),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: hasData ? const Color(0xFF794c46) : Colors.grey),
+                Icon(Icons.chevron_right, color: hasData ? AppColors.primary : Colors.grey),
               ],
             ),
           ),
@@ -208,7 +209,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF794c46),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         toolbarHeight: 64,
         title: Text(_points.length < 3 ? "ระบุตำแหน่ง (1 จุด)" : "ระบุพื้นที่ (3 จุดขึ้นไป)"),
@@ -269,7 +270,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
           //   const Center(
           //     child: Padding(
           //       padding: EdgeInsetsGeometry.all(40),
-          //       child: Icon(Icons.add_location_alt_outlined, size: 40, color: Color(0xFF794c46)),
+          //       child: Icon(Icons.add_location_alt_outlined, size: 40, color: AppColors.primary),
           //     ),
           //   ),
 
@@ -288,7 +289,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
                 children: [
                   Text(
                     ThaiAreaUtils.format(_areaM2, _points.length, _points),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF794c46)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
                   ),
                   Text(
                     "กรุณาเลื่อนแผนที่ไปยังบริเวณที่ต้องการแล้วกดบนแผนที่เพื่อระบุตำแหน่ง หากต้องการระบุเพียงตำแหน่ง ให้ปัก 1 จุด แต่กรณีต้องการระบุพื้นที่กรุณาปัก 3 จุดขึ้นไป",
@@ -312,12 +313,12 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
                   heroTag: "gps",
                   backgroundColor: Colors.white,
                   onPressed: _goToCurrentLocation,
-                  child: const Icon(Icons.my_location, color: Color(0xFF794c46)),
+                  child: const Icon(Icons.my_location, color: AppColors.primary),
                 ),
                 const SizedBox(height: 12),
                 FloatingActionButton(
                   heroTag: "undo",
-                  backgroundColor: const Color(0xFF794c46),
+                  backgroundColor: AppColors.primary,
                   onPressed: () {
                     if (_points.isNotEmpty) {
                       _points.removeLast();

@@ -12,6 +12,7 @@ import 'package:cocoa_supply/bloc/task/task_state.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DynamicRegisterPage extends StatefulWidget {
   final String handler;
@@ -244,7 +245,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF794c46)
+                                color: AppColors.primary
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -283,7 +284,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             height: 8,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
-              color: _currentStep == i ? const Color(0xFF794c46) : Colors.grey.shade300,
+              color: _currentStep == i ? AppColors.primary : Colors.grey.shade300,
             ),
           )),
         ),
@@ -311,7 +312,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               disabledBackgroundColor: Colors.grey.shade400,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

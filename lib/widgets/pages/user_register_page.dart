@@ -3,6 +3,7 @@ import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class UserRegisterPage extends StatefulWidget {
   /// true = มาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing — สมัครเสร็จแล้วให้
@@ -111,7 +112,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF794c46),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -152,7 +153,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF794c46),
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
