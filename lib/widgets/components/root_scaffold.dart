@@ -3,6 +3,7 @@ import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/theme/app_text_theme.dart';
 
 class RootScaffold extends StatefulWidget {
   final String title;
@@ -108,7 +109,7 @@ class _RootScaffoldState extends State<RootScaffold> {
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -222,45 +223,42 @@ class _RootScaffoldState extends State<RootScaffold> {
 
     return Flexible(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
         child: Column(
           children: [
-            const CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.primary,
-              child: Icon(Icons.person, size: 45, color: Colors.white),
+            _buildProfileHeader(),
+            const SizedBox(height: 24),
+
+            _buildInfoCard(
+              icon: Icons.contact_phone_outlined,
+              title: "ข้อมูลติดต่อ",
+              rows: [
+                _infoRow(Icons.phone_outlined, "เบอร์โทร", _userProfile!.phoneNumber),
+                _infoRow(Icons.chat_bubble_outline, "Line", _userProfile!.line),
+              ],
             ),
             const SizedBox(height: 12),
-            Text(
-              _userProfile!.firstName ?? "ไม่ระบุชื่อ",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            _buildInfoCard(
+              icon: Icons.location_on_outlined,
+              title: "ที่อยู่",
+              rows: [
+                _infoRow(null, "ตำบล", _userProfile!.subdistrictName),
+                _infoRow(null, "อำเภอ", _userProfile!.districtName),
+                _infoRow(null, "จังหวัด", "${_userProfile!.provinceName} ${_userProfile!.zipCode}"),
+              ],
             ),
-            Text("บทบาท: ${_userProfile!.roles?.join(', ') ?? 'ทั่วไป'}",
-                style: const TextStyle(color: Colors.black, fontSize: 18)),
-            const SizedBox(height: 20),
-            
-            _buildInfoCard("ข้อมูลติดต่อ", [
-              _infoRow(Icons.phone, "เบอร์โทร", _userProfile!.phoneNumber),
-              _infoRow(Icons.chat_bubble_outline, "Line", _userProfile!.line),
-            ]),
-            
-            _buildInfoCard("ที่อยู่", [
-              _infoRow(null, "ตำบล", _userProfile!.subdistrictName),
-              _infoRow(null, "อำเภอ", _userProfile!.districtName),
-              _infoRow(null, "จังหวัด", "${_userProfile!.provinceName} ${_userProfile!.zipCode}"),
-            ]),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
+              height: 52,
               child: OutlinedButton.icon(
                 onPressed: _handleLogout,
                 icon: const Icon(Icons.logout, color: Colors.red, size: 20),
-                label: const Text("ออกจากระบบ", style: TextStyle(color: Colors.red)),
+                label: Text("ออกจากระบบ", style: AppTextTheme.scale.titleSmall?.copyWith(color: Colors.red)),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: const BorderSide(color: Colors.red, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ),
@@ -270,22 +268,81 @@ class _RootScaffoldState extends State<RootScaffold> {
     );
   }
 
-  Widget _buildInfoCard(String title, List<Widget> rows) {
+  Widget _buildProfileHeader() {
+    final roleLabel = _userProfile!.roles?.join(', ') ?? 'ทั่วไป';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: AppColors.primaryFaint,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const CircleAvatar(
+              radius: 42,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 48, color: AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            _userProfile!.firstName ?? "ไม่ระบุชื่อ",
+            style: AppTextTheme.scale.titleLarge,
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "บทบาท: $roleLabel",
+              style: AppTextTheme.scale.labelMedium?.copyWith(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({required IconData icon, required String title, required List<Widget> rows}) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      color: Colors.grey.shade50,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey.shade200)),
+      margin: EdgeInsets.zero,
+      elevation: 1,
+      shadowColor: Colors.black26,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const Divider(height: 20),
-            ...rows,
+            Row(
+              children: [
+                Icon(icon, size: 20, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(title, style: AppTextTheme.scale.titleSmall),
+              ],
+            ),
+            const Divider(height: 24),
+            for (int i = 0; i < rows.length; i++) ...[
+              if (i > 0) const Divider(height: 20, color: Color(0xFFF0F0F0)),
+              rows[i],
+            ],
           ],
         ),
       ),
@@ -293,17 +350,14 @@ class _RootScaffoldState extends State<RootScaffold> {
   }
 
   Widget _infoRow(IconData? icon, String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          if (icon != null) Icon(icon, size: 18, color: AppColors.primary),
-          if (icon != null) const SizedBox(width: 10),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 18)),
-          const Spacer(),
-          Text(value ?? "-", style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 18)),
-        ],
-      ),
+    return Row(
+      children: [
+        if (icon != null) Icon(icon, size: 18, color: AppColors.primary),
+        if (icon != null) const SizedBox(width: 10),
+        Text(label, style: AppTextTheme.scale.bodyMedium?.copyWith(color: Colors.grey.shade600)),
+        const Spacer(),
+        Text(value ?? "-", style: AppTextTheme.scale.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
