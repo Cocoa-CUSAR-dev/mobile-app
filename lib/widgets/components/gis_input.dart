@@ -67,6 +67,7 @@ class GISInput extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         InkWell(
+          borderRadius: BorderRadius.circular(12),
           onTap: () async {
             final PolygonData? result = await Navigator.push(
               context,

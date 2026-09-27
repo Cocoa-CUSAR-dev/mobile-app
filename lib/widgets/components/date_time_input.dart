@@ -210,15 +210,19 @@ class _DateTimeInputState extends State<DateTimeInput> {
   }
 
   Widget _stepBtn(IconData icon, VoidCallback onTap, {required bool isTop}) {
+    final radius = isTop
+        ? const BorderRadius.vertical(top: Radius.circular(8))
+        : const BorderRadius.vertical(bottom: Radius.circular(8));
     return InkWell(
       onTap: onTap,
+      borderRadius: radius,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey.shade300),
-          borderRadius: isTop ? const BorderRadius.vertical(top: Radius.circular(8)) : const BorderRadius.vertical(bottom: Radius.circular(8)),
+          borderRadius: radius,
         ),
         child: Icon(icon, size: 20, color: AppColors.primary),
       ),

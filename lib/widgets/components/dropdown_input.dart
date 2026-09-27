@@ -80,6 +80,7 @@ class DropdownInput<T, V> extends StatelessWidget {
 
     return InkWell(
       onTap: () => _showSearchDialog(state), // เมื่อกดจะเปิด Dialog ค้นหา
+      borderRadius: BorderRadius.circular(4),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14), // ปรับ padding ให้ใกล้เคียงเดิม
