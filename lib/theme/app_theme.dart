@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/theme/app_text_theme.dart';
 
 /// Central ThemeData for the app -- was previously built inline in
 /// main.dart with just a primarySwatch, leaving every screen to hardcode
@@ -22,16 +23,18 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: 'NotoSansThaiLooped',
+      textTheme: AppTextTheme.scale,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: AppTextTheme.scale.titleLarge?.copyWith(color: Colors.white),
       ),
     );
   }
