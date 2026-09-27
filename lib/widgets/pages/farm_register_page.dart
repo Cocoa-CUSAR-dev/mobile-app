@@ -8,6 +8,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart'; // ตรวจสอบชื่อไฟล์ให้ถูกต้อง
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class FarmRegisterPage extends StatefulWidget {
   const FarmRegisterPage({super.key});
@@ -144,7 +145,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                     const SizedBox(height: 32),
                     const Text(
                       'ลงทะเบียนข้อมูลฟาร์ม',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF794c46)),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                     const SizedBox(height: 24),
                     _buildCurrentStepFields(),
@@ -266,7 +267,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
             height: 8,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
-              color: _currentStep == i ? const Color(0xFF794c46) : Colors.grey.shade300,
+              color: _currentStep == i ? AppColors.primary : Colors.grey.shade300,
             ),
           )),
         ),
@@ -294,7 +295,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               disabledBackgroundColor: Colors.grey.shade400,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class ThreeDotsLoading extends StatefulWidget {
   final Color color;
@@ -6,8 +7,8 @@ class ThreeDotsLoading extends StatefulWidget {
 
   const ThreeDotsLoading({
     super.key,
-    // 🔽 ปรับค่า Default เป็นสีน้ำตาล Color(0xFF794c46) ที่คุณต้องการ
-    this.color = const Color(0xFF794c46), 
+    // 🔽 ปรับค่า Default เป็นสีน้ำตาล AppColors.primary ที่คุณต้องการ
+    this.color = AppColors.primary, 
     this.size = 10.0,
   });
 

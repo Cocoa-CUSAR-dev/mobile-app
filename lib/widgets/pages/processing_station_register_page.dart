@@ -10,6 +10,7 @@ import 'package:cocoa_supply/widgets/components/date_input.dart';
 import 'package:cocoa_supply/widgets/components/dropdown_input.dart';
 import 'package:cocoa_supply/widgets/components/gis_input.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class ProcessingStationRegisterPage extends StatefulWidget {
   const ProcessingStationRegisterPage({super.key});
@@ -145,7 +146,7 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
                     const SizedBox(height: 32),
                     const Text(
                       'ข้อมูลสถานีแปรรูป',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF794c46)),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                     const SizedBox(height: 24),
                     allFields[_currentStep],
@@ -257,7 +258,7 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
         LinearProgressIndicator(
           value: (_currentStep + 1) / totalSteps,
           backgroundColor: Colors.grey.shade200,
-          color: const Color(0xFF794c46),
+          color: AppColors.primary,
         ),
       ],
     );
@@ -283,7 +284,7 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
                     }
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),

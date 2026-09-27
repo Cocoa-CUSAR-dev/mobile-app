@@ -7,6 +7,7 @@ import 'package:cocoa_supply/widgets/components/data_record_container.dart';
 import 'package:cocoa_supply/bloc/farm/farm_bloc.dart';
 import 'package:cocoa_supply/bloc/farm/farm_event.dart';
 import 'package:cocoa_supply/bloc/farm/farm_state.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class FarmPage extends StatefulWidget {
   const FarmPage({super.key});
@@ -36,7 +37,7 @@ class _FarmPageState extends State<FarmPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<FarmBloc, FarmState>(
         builder: (context, state) {
           if (state is FarmLoading || state is FarmInitial) {
@@ -152,7 +153,7 @@ class _FarmPageState extends State<FarmPage> {
           style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF794c46),
+          backgroundColor: AppColors.primary,
         ),
       ),
     );

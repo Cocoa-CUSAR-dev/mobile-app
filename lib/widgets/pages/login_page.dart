@@ -5,6 +5,7 @@ import 'package:cocoa_supply/bloc/login/login_bloc.dart';
 import 'package:cocoa_supply/bloc/login/login_event.dart';
 import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   // โทนสีตามธีมเดิม
-  final Color primaryColor = const Color(0xFF794c46);
+  final Color primaryColor = AppColors.primary;
 
   @override
   void initState() {
@@ -58,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // --- พื้นหลังเดิม (Positioned + Image.asset) ---

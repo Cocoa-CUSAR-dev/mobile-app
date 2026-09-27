@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DropdownInput<T, V> extends StatelessWidget {
   final String label;
@@ -83,7 +84,7 @@ class DropdownInput<T, V> extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14), // ปรับ padding ให้ใกล้เคียงเดิม
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: hasError ? Colors.red : Colors.grey.shade300, 
@@ -103,7 +104,7 @@ class DropdownInput<T, V> extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(Icons.search, color: hasError ? Colors.red : const Color(0xFF794c46)),
+            Icon(Icons.search, color: hasError ? Colors.red : AppColors.primary),
           ],
         ),
       ),
@@ -184,7 +185,7 @@ class DropdownInput<T, V> extends StatelessWidget {
                           return ListTile(
                             title: Text(itemLabelBuilder(item)),
                             selected: isSelected,
-                            trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF794c46)) : null,
+                            trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
                             onTap: () {
                               onChanged(itemValue);
                               state.didChange(itemValue);
@@ -238,7 +239,7 @@ class DropdownInput<T, V> extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              backgroundColor: isSelected ? const Color(0xFF794c46) : const Color(0xFFF8F8F8),
+              backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
               side: BorderSide(
                 // ถ้า Error และยังไม่ได้เลือก ให้ขอบเป็นสีแดง
                 color: isSelected 
