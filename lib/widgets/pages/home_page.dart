@@ -78,6 +78,21 @@ class HomeTabContent extends StatefulWidget {
 }
 
 class _HomeTabContentState extends State<HomeTabContent> {
+  // Owned here (not inside DateStrip) because HomeTabContent swaps this
+  // whole subtree for a loading spinner between date changes, unmounting
+  // and remounting DateStrip -- this State object is what actually
+  // survives that cycle. Starts at today; _ensureAnchorCovers moves it
+  // only when the calendar picker jumps somewhere the strip doesn't reach.
+  late DateTime _stripAnchor = _normalizeDate(DateTime.now());
+
+  DateTime _normalizeDate(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  void _ensureAnchorCovers(DateTime date) {
+    final diff = date.difference(_stripAnchor).inDays;
+    if (diff < -DateStrip.daysBefore || diff > DateStrip.daysAfter) {
+      _stripAnchor = _normalizeDate(date);
+    }
+  }
 
   // จัดการการเปลี่ยนหน้าและรับผลลัพธ์กลับมา
   Future<void> _navigateToDetail(BuildContext context, TaskItem task) async {
@@ -132,6 +147,7 @@ class _HomeTabContentState extends State<HomeTabContent> {
           return const Center(child: ThreeDotsLoading());
         }
         if (state is HomeLoaded) {
+          _ensureAnchorCovers(state.selectedDate);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -155,6 +171,7 @@ class _HomeTabContentState extends State<HomeTabContent> {
                 ),
                 const SizedBox(height: 8),
                 DateStrip(
+                  anchorDate: _stripAnchor,
                   selectedDate: state.selectedDate,
                   onDateSelected: (date) => context.read<HomeBloc>().add(
                     HomeDataRequested(selectedDate: date),
@@ -181,8 +198,10 @@ class _HomeTabContentState extends State<HomeTabContent> {
                     (task) => _TaskCard(
                       title: task.title,
                       detail: task.description,
+                      status: task.status,
                       statusText: task.statusText,
                       statusColor: task.statusColor,
+                      dueDate: task.closeAt,
                       onTap: () => _navigateToDetail(context, task),
                     ),
                   ),
@@ -202,17 +221,40 @@ class _HomeTabContentState extends State<HomeTabContent> {
 class _TaskCard extends StatelessWidget {
   final String title;
   final String detail;
+  final String status;
   final String statusText;
   final Color statusColor;
+  final DateTime? dueDate;
   final VoidCallback onTap;
 
   const _TaskCard({
     required this.title,
     required this.detail,
+    required this.status,
     required this.statusText,
     required this.statusColor,
+    required this.dueDate,
     required this.onTap,
   });
+
+  IconData get _statusIcon {
+    switch (status) {
+      case 'COMPLETED':
+        return Icons.check_circle;
+      case 'PENDING':
+        return Icons.sync;
+      case 'OVERDUE':
+        return Icons.error;
+      case 'NOT_STARTED':
+      default:
+        return Icons.schedule;
+    }
+  }
+
+  static const _thaiMonthsAbbr = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -257,13 +299,34 @@ class _TaskCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Icon(_statusIcon, color: statusColor, size: 22),
+                      ],
                     ),
+                    if (dueDate != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.event_outlined, size: 16, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ครบกำหนด ${dueDate!.day} ${_thaiMonthsAbbr[dueDate!.month - 1]}',
+                            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Text(
                       detail,
@@ -285,13 +348,20 @@ class _TaskCard extends StatelessWidget {
                           color: statusColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          statusText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_statusIcon, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              statusText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

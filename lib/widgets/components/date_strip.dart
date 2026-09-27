@@ -6,12 +6,32 @@ import 'package:cocoa_supply/theme/app_text_theme.dart';
 /// "< date >" pair of buttons that only moved one day at a time (and that,
 /// at narrower widths, overflowed -- the date text + two 48dp IconButtons
 /// didn't fit in one Row). Tapping any visible day jumps straight to it;
-/// scrolling reveals more days either direction without repeated taps.
+/// scrolling (drag/swipe) reveals more days either direction. Jumping
+/// further than the visible window is what the calendar-icon button next
+/// to the date header is for, not an arrow bolted onto this strip.
+///
+/// `anchorDate` is owned by the caller, not computed internally, because
+/// HomeTabContent swaps in a loading spinner in place of this whole widget
+/// between date changes (see home_page.dart's HomeLoading branch), which
+/// unmounts and remounts DateStrip on every single date change. An anchor
+/// computed fresh in initState from `selectedDate` would re-center the
+/// visible window on whatever day was just tapped every time -- the
+/// caller keeps one stable DateTime across that remount cycle and only
+/// moves it when `selectedDate` would otherwise fall outside the strip.
 class DateStrip extends StatefulWidget {
+  static const int daysBefore = 7;
+  static const int daysAfter = 21;
+
+  final DateTime anchorDate;
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
 
-  const DateStrip({super.key, required this.selectedDate, required this.onDateSelected});
+  const DateStrip({
+    super.key,
+    required this.anchorDate,
+    required this.selectedDate,
+    required this.onDateSelected,
+  });
 
   @override
   State<DateStrip> createState() => _DateStripState();
@@ -19,24 +39,11 @@ class DateStrip extends StatefulWidget {
 
 class _DateStripState extends State<DateStrip> {
   static const _thaiWeekdayAbbr = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
-
-  // Anchored to today, not to widget.selectedDate: HomeTabContent swaps in
-  // a loading spinner in place of this whole widget between date changes
-  // (see home_page.dart's HomeLoading branch), which unmounts and remounts
-  // DateStrip -- an anchor taken from the constructor argument would reset
-  // to whatever date was just tapped on every remount, making the visible
-  // window jump to a new position on every single tap instead of staying
-  // put. "Today" stays constant across those remounts within the same day.
-  late final DateTime _anchor = () {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  }();
   final ScrollController _scrollController = ScrollController();
 
-  static const int _daysBefore = 7;
-  static const int _daysAfter = 21;
   static const double _itemWidth = 56;
-  static const double _itemGap = 8;
+  static const double _itemGap = 10;
+  static const double _edgeReserve = 40;
 
   @override
   void initState() {
@@ -44,11 +51,19 @@ class _DateStripState extends State<DateStrip> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelected(animate: false));
   }
 
+  void _nudge(int days) {
+    if (!_scrollController.hasClients) return;
+    final target = (_scrollController.offset + days * (_itemWidth + _itemGap))
+        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    _scrollController.animateTo(target, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+  }
+
   @override
   void didUpdateWidget(DateStrip oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_isSameDay(oldWidget.selectedDate, widget.selectedDate)) {
-      _scrollToSelected(animate: true);
+    if (!_isSameDay(oldWidget.selectedDate, widget.selectedDate) ||
+        !_isSameDay(oldWidget.anchorDate, widget.anchorDate)) {
+      _scrollToSelected(animate: !_isSameDay(oldWidget.anchorDate, widget.anchorDate) ? false : true);
     }
   }
 
@@ -61,7 +76,7 @@ class _DateStripState extends State<DateStrip> {
   bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   void _scrollToSelected({required bool animate}) {
-    final index = widget.selectedDate.difference(_anchor).inDays + _daysBefore;
+    final index = widget.selectedDate.difference(widget.anchorDate).inDays + DateStrip.daysBefore;
     final target = (index * (_itemWidth + _itemGap)) - 24;
     if (!_scrollController.hasClients) return;
     final clamped = target.clamp(0.0, _scrollController.position.maxScrollExtent);
@@ -72,17 +87,66 @@ class _DateStripState extends State<DateStrip> {
     }
   }
 
+  Widget _edgeFade({required bool alignLeft, required VoidCallback onTap}) {
+    return Positioned(
+      left: alignLeft ? 0 : null,
+      right: alignLeft ? null : 0,
+      top: 0,
+      bottom: 0,
+      child: IgnorePointer(
+        ignoring: false,
+        child: Container(
+          width: _edgeReserve,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: alignLeft ? Alignment.centerLeft : Alignment.centerRight,
+              end: alignLeft ? Alignment.centerRight : Alignment.centerLeft,
+              colors: [
+                AppColors.background,
+                AppColors.background.withValues(alpha: 0.0),
+              ],
+            ),
+          ),
+          child: Align(
+            alignment: alignLeft ? Alignment.centerLeft : Alignment.centerRight,
+            child: Material(
+              color: Colors.white,
+              shape: const CircleBorder(),
+              elevation: 1.5,
+              shadowColor: Colors.black26,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    alignLeft ? Icons.chevron_left : Icons.chevron_right,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final totalDays = _daysBefore + _daysAfter + 1;
+    final totalDays = DateStrip.daysBefore + DateStrip.daysAfter + 1;
     return SizedBox(
       height: 68,
-      child: ListView.builder(
+      child: Stack(
+        children: [
+          ListView.builder(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: _edgeReserve - 4),
         itemCount: totalDays,
         itemBuilder: (context, index) {
-          final date = _anchor.add(Duration(days: index - _daysBefore));
+          final date = widget.anchorDate.add(Duration(days: index - DateStrip.daysBefore));
           final isSelected = _isSameDay(date, widget.selectedDate);
           return Padding(
             padding: const EdgeInsets.only(right: _itemGap),
@@ -95,8 +159,17 @@ class _DateStripState extends State<DateStrip> {
                   color: isSelected ? AppColors.primary : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey.shade300,
+                    color: isSelected ? AppColors.primary : Colors.grey.shade200,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.35)
+                          : Colors.black.withValues(alpha: 0.04),
+                      blurRadius: isSelected ? 10 : 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -119,7 +192,11 @@ class _DateStripState extends State<DateStrip> {
               ),
             ),
           );
-        },
+            },
+          ),
+          _edgeFade(alignLeft: true, onTap: () => _nudge(-3)),
+          _edgeFade(alignLeft: false, onTap: () => _nudge(3)),
+        ],
       ),
     );
   }
