@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/theme/app_text_theme.dart';
 import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
+import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 
 class RootScaffold extends StatefulWidget {
   final String title;
@@ -153,7 +154,10 @@ class _RootScaffoldState extends State<RootScaffold> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: ThreeDotsLoading()),
+      );
     }
 
     final roles = _userProfile?.roles ?? [];
