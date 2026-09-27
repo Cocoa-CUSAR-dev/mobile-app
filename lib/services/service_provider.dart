@@ -306,11 +306,27 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint');
       try {
-        final response = await _client.get(uri, headers: await _getHeaders());
+        // RootScaffold leaves _isLoading true until this future settles,
+        // and while it is true the whole screen is a bare spinner -- no
+        // nav bar, no retry. A connection that stalls without erroring
+        // (weak signal out on a farm) would hang the app until force
+        // quit, so this has to fail rather than wait. Same 10s as
+        // isLoggedIn() and fetchAll().
+        final response = await _client
+            .get(uri, headers: await _getHeaders())
+            .timeout(const Duration(seconds: 10));
         final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
-          return decoded as Map<String, dynamic>;
+          // _updateToken returns null when the body is not JSON at all, so
+          // a bare cast would throw an opaque TypeError here -- and
+          // RootScaffold's catch swallows it, leaving the same silently
+          // empty profile page this endpoint was just fixed to stop
+          // producing. Fail with something readable instead.
+          if (decoded is! Map<String, dynamic>) {
+            throw "รูปแบบข้อมูลโปรไฟล์ไม่ถูกต้อง";
+          }
+          return decoded;
         } else {
           throw (decoded is Map ? decoded['error'] : null) ?? "Fetch Self Error";
         }
