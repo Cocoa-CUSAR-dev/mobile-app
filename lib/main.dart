@@ -5,6 +5,7 @@ import 'package:cocoa_supply/bloc/bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cocoa_supply/services/url_strategy.dart';
+import 'package:cocoa_supply/theme/app_theme.dart';
 
 void main() {
   // path-based routing (/liff-link แทน #/liff-link) — จำเป็นสำหรับ LIFF
@@ -35,19 +36,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Cacao Farmer App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.green,
-          fontFamily: 'NotoSansThaiLooped',
-          pageTransitionsTheme: PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: ZoomPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
-          appBarTheme: const AppBarTheme(
-            iconTheme: IconThemeData(color: Colors.white),
-          ),
-        ),
+        theme: AppTheme.light,
         initialRoute: AppRoute.login,
         onGenerateRoute: AppRoute.onGenerateRoute,
         // ค่า default ของ Flutter (Navigator.defaultGenerateInitialRoutes)

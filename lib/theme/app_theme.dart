@@ -1,0 +1,37 @@
+import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+
+/// Central ThemeData for the app -- was previously built inline in
+/// main.dart with just a primarySwatch, leaving every screen to hardcode
+/// its own brown (Color(0xFF794c46)) instead of reading it from a shared
+/// ColorScheme.
+class AppTheme {
+  AppTheme._();
+
+  static ThemeData get light {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      primary: AppColors.primary,
+      secondary: AppColors.accent,
+      surface: AppColors.surface,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: AppColors.background,
+      fontFamily: 'NotoSansThaiLooped',
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+    );
+  }
+}
