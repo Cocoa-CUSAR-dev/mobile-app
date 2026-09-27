@@ -4,6 +4,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class UserRegisterPage extends StatefulWidget {
   /// true = มาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing — สมัครเสร็จแล้วให้
@@ -65,11 +66,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       await _registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('ลงทะเบียนสำเร็จ'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
         if (widget.fromLiff) {
           // สมัครมาจากหน้า LIFF landing — ไปฟอร์ม login/link ของ LiffLinkPage
           // ต่อเลย เพื่อ login + เชื่อมบัญชี LINE ให้อัตโนมัติในขั้นตอนเดียว
@@ -83,13 +80,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ ลงทะเบียนไม่สำเร็จ: ${e.toString()}'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.show(context, '❌ ลงทะเบียนไม่สำเร็จ: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

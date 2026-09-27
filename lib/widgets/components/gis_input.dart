@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class PolygonData {
   final List<LatLng> points;
@@ -217,8 +218,10 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
           TextButton.icon(
             onPressed: () {
               if (_points.length == 2) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("กรุณาปักเพิ่มอีก 1 จุดเพื่อเป็นพื้นที่ หรือลบให้เหลือ 1 จุดเพื่อเป็นพิกัด"))
+                AppSnackBar.show(
+                  context,
+                  "กรุณาปักเพิ่มอีก 1 จุดเพื่อเป็นพื้นที่ หรือลบให้เหลือ 1 จุดเพื่อเป็นพิกัด",
+                  type: AppSnackBarType.error,
                 );
                 return;
               }

@@ -5,6 +5,7 @@ import 'package:cocoa_supply/models/task_item_model.dart';
 import 'package:cocoa_supply/services/util_service.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
@@ -42,13 +43,7 @@ class _HomePageState extends State<HomePage> {
     return BlocConsumer<HomeBloc, HomeState>(
       listener: (context, state) {
         if (state is HomeLoadFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('เกิดข้อผิดพลาด: ${state.error}'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnackBar.show(context, 'เกิดข้อผิดพลาด: ${state.error}', type: AppSnackBarType.error);
         }
       },
       builder: (context, state) {

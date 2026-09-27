@@ -13,6 +13,7 @@ import 'package:cocoa_supply/widgets/components/gis_input.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/checkbox_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class PlotRegisterPage extends StatefulWidget {
   final String farmId; // รับ farmId เข้ามาโดยตรง
@@ -94,22 +95,12 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
       await registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ ลงทะเบียนแปลงปลูกสำเร็จ'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.show(context, '✅ ลงทะเบียนแปลงปลูกสำเร็จ', type: AppSnackBarType.success);
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ เกิดข้อผิดพลาด: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.show(context, '❌ เกิดข้อผิดพลาด: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -330,12 +321,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                         setState(() => _currentStep++);
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("กรุณากรอกข้อมูลให้ครบถ้วน"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
+                      AppSnackBar.show(context, "กรุณากรอกข้อมูลให้ครบถ้วน", type: AppSnackBarType.error);
                     }
                   },
             style: ElevatedButton.styleFrom(

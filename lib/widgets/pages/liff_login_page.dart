@@ -6,6 +6,7 @@ import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 /// หน้าเชื่อมบัญชีเดิมกับ LINE ผ่าน LIFF — เข้าถึงได้ทาง route '/liff-link' เท่านั้น
 /// (ตั้งเป็น LIFF Endpoint URL ใน LINE Developers Console)
@@ -52,9 +53,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
 
   void _onSubmit() {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบถ้วน')),
-      );
+      AppSnackBar.show(context, 'กรุณากรอกข้อมูลให้ครบถ้วน', type: AppSnackBarType.error);
       return;
     }
     context.read<LiffLoginBloc>().add(
@@ -95,13 +94,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
               BlocConsumer<LiffLoginBloc, LiffLoginState>(
                 listener: (context, state) {
                   if (state is LiffLoginFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.error),
-                        backgroundColor: Colors.red,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                    AppSnackBar.show(context, state.error, type: AppSnackBarType.error);
                   }
                   if (state is LiffLoginSuccess) {
                     // ตรรกะเดียวกันทั้งสองทาง ("มีบัญชีผู้ใช้แล้ว" กดตรงๆ หรือ

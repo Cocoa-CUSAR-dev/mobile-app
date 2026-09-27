@@ -10,6 +10,7 @@ import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class HubRegisterPage extends StatefulWidget {
   const HubRegisterPage({super.key});
@@ -134,16 +135,12 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
       await registerService.postData(payload);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ ลงทะเบียนหน่วยรวบรวม (Hub) สำเร็จ'))
-        );
+        AppSnackBar.show(context, '✅ ลงทะเบียนหน่วยรวบรวม (Hub) สำเร็จ', type: AppSnackBarType.success);
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ เกิดข้อผิดพลาด: $e'), backgroundColor: Colors.red)
-        );
+        AppSnackBar.show(context, '❌ เกิดข้อผิดพลาด: $e', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

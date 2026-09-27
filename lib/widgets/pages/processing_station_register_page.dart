@@ -11,6 +11,7 @@ import 'package:cocoa_supply/widgets/components/dropdown_input.dart';
 import 'package:cocoa_supply/widgets/components/gis_input.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class ProcessingStationRegisterPage extends StatefulWidget {
   const ProcessingStationRegisterPage({super.key});
@@ -93,16 +94,12 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
       await registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ ลงทะเบียนสถานีแปรรูปสำเร็จ'), behavior: SnackBarBehavior.floating),
-        );
+        AppSnackBar.show(context, '✅ ลงทะเบียนสถานีแปรรูปสำเร็จ', type: AppSnackBarType.success);
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ ข้อผิดพลาด: ${e.toString()}'), backgroundColor: Colors.red),
-        );
+        AppSnackBar.show(context, '❌ ข้อผิดพลาด: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
