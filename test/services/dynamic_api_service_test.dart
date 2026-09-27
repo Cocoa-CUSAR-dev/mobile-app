@@ -90,7 +90,11 @@ void main() {
     test('swallows errors and returns an empty list', () async {
       final client = MockClient((request) async => throw Exception('offline'));
 
-      final rows = await DynamicApiService(client: client).fetchConstants('province_id');
+      // A different key than the test above -- fetchConstants caches
+      // successful results in-memory keyed by key+queryParams (APP-10), so
+      // reusing 'province_id' here would return that test's cached rows
+      // instead of ever reaching this MockClient.
+      final rows = await DynamicApiService(client: client).fetchConstants('district_id');
 
       expect(rows, isEmpty);
     });

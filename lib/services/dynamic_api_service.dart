@@ -67,8 +67,29 @@ class DynamicApiService {
     }
   }
 
+  // APP-10: province/district/subdistrict never change during a session,
+  // but every dropdown open called fetchConstants() again -- re-hitting
+  // the network for the exact same list each time (confirmed live: opening
+  // the same province/district dropdown twice logged two identical
+  // fetches). In-memory cache keyed by key+queryParams so the same list is
+  // only ever fetched once per session; a fresh app launch still fetches
+  // normally.
+  static final Map<String, List<Map<String, dynamic>>> _constantsCache = {};
+
+  String _constantsCacheKey(String key, Map<String, dynamic>? queryParams) {
+    if (queryParams == null || queryParams.isEmpty) return key;
+    final sortedEntries = queryParams.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final paramsPart = sortedEntries.map((e) => '${e.key}=${e.value}').join(',');
+    return '$key?$paramsPart';
+  }
+
   Future<List<Map<String, dynamic>>> fetchConstants(String key,
       {Map<String, dynamic>? queryParams}) async {
+    final cacheKey = _constantsCacheKey(key, queryParams);
+    final cached = _constantsCache[cacheKey];
+    if (cached != null) return cached;
+
     // 1. สร้าง Instance ของ ServiceProvider สำหรับ Constants
     // ปรับ endpoint ให้เป็นแบบ dynamic ตาม key ที่ส่งมา
     final service = ServiceProvider<Map<String, dynamic>>(
@@ -85,15 +106,14 @@ class DynamicApiService {
         (json) => json, // creator: รับ json map มาแล้วคืนค่าออกไปเลย
         queryParams: queryParams,
       );
-      print(key);
-      print(results);
+      _constantsCache[cacheKey] = results;
       return results;
     } catch (e) {
       print('Error fetching constants for $key: $e');
-      
-      // 3. Fallback: กรณี Error หรือ Server ล่ม 
+
+      // 3. Fallback: กรณี Error หรือ Server ล่ม
       // คุณสามารถเลือกได้ว่าจะคืนค่าว่าง [] หรือจะเอา Mock Data เดิมมาใส่ไว้ที่นี่
-      return []; 
+      return [];
     }
   }
 }
