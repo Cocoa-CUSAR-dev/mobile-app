@@ -91,7 +91,7 @@ class FormInput extends StatelessWidget {
               filled: true,
               hintStyle: TextStyle(color: Colors.grey.shade500),
               fillColor:
-                  readOnly ? Colors.grey.shade50 : Color(0xFFF8F8F8),
+                  readOnly ? Colors.grey.shade50 : AppColors.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide:

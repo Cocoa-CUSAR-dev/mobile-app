@@ -41,7 +41,7 @@ class _HubPageState extends State<HubPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<HubBloc, HubState>(
         builder: (context, state) {
           if (state is HubLoading || state is HubInitial) {

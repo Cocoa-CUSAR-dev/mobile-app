@@ -16,18 +16,26 @@ import 'package:flutter/material.dart';
 class AppTextTheme {
   AppTextTheme._();
 
+  /// Declared here rather than only on ThemeData, because ThemeData's
+  /// fontFamily is applied to the TextTheme *it* builds -- anything that
+  /// reads `AppTextTheme.scale` directly gets the raw styles, with no
+  /// font. AppBarTheme.titleTextStyle did exactly that and silently fell
+  /// back to the platform default, which is how the largest Thai text on
+  /// every screen lost the looped face chosen for readability.
+  static const String fontFamily = 'NotoSansThaiLooped';
+
   static const TextTheme scale = TextTheme(
-    headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-    headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-    headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-    titleLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-    titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-    titleSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-    bodyLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.normal),
-    bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-    bodySmall: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-    labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-    labelMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-    labelSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+    headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, fontFamily: fontFamily),
+    headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: fontFamily),
+    headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, fontFamily: fontFamily),
+    titleLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, fontFamily: fontFamily),
+    titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: fontFamily),
+    titleSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: fontFamily),
+    bodyLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.normal, fontFamily: fontFamily),
+    bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.normal, fontFamily: fontFamily),
+    bodySmall: TextStyle(fontSize: 14, fontWeight: FontWeight.normal, fontFamily: fontFamily),
+    labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, fontFamily: fontFamily),
+    labelMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: fontFamily),
+    labelSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: fontFamily),
   );
 }

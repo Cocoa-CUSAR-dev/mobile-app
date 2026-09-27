@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class FileUploadController extends ChangeNotifier {
   PlatformFile? _value;
@@ -65,7 +66,7 @@ class UploadInput extends StatelessWidget {
                     color: Colors.grey.shade300,
                   ),
                   borderRadius: BorderRadius.circular(8),
-                  color: Color(0xFFF8F8F8),
+                  color: AppColors.surface,
                 ),
                 child: Row(
                   children: [

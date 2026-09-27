@@ -15,6 +15,12 @@ class AppTheme {
       seedColor: AppColors.primary,
       primary: AppColors.primary,
       secondary: AppColors.accent,
+      // Overriding secondary without this leaves onSecondary as the white
+      // fromSeed derived for the old value: 3.27:1 against accent, under
+      // WCAG AA. Black is 6.42:1. Nothing reads the pair yet, but accent
+      // is designated for the #40 task-card badges, and this audience is
+      // reading Thai text outdoors.
+      onSecondary: Colors.black,
       surface: AppColors.surface,
     );
 
@@ -22,7 +28,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: 'NotoSansThaiLooped',
+      fontFamily: AppTextTheme.fontFamily,
       textTheme: AppTextTheme.scale,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

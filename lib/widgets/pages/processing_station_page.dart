@@ -41,7 +41,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<ProcessingStationBloc, ProcessingStationState>(
         builder: (context, state) {
           if (state is ProcessingStationLoading ||
