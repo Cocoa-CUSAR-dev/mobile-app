@@ -299,6 +299,30 @@ class ServiceProvider<T> {
     return null;
   }
 
+  /// Fetch Single Data (GET) at the endpoint's own path, e.g. /auth/me --
+  /// unlike fetchOne(id), nothing is appended after `endpoint`, so this
+  /// never produces a trailing-slash URL for endpoints with no id segment.
+  Future<Map<String, dynamic>> fetchSelf() async {
+    if (isRealApi) {
+      final uri = Uri.parse('$baseUrl$endpoint');
+      try {
+        final response = await _client.get(uri, headers: await _getHeaders());
+        final decoded = await _updateToken(response);
+
+        if (response.statusCode == 200) {
+          return decoded as Map<String, dynamic>;
+        } else {
+          throw (decoded is Map ? decoded['error'] : null) ?? "Fetch Self Error";
+        }
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _simulateNetworkDelay();
+      return {};
+    }
+  }
+
   /// Fetch Single Data (GET) - สำหรับ /tasks/:taskId
   Future<Map<String, dynamic>> fetchOne(String id) async {
     if (isRealApi) {
