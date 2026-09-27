@@ -84,7 +84,7 @@ class DropdownInput<T, V> extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14), // ปรับ padding ให้ใกล้เคียงเดิม
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: hasError ? Colors.red : Colors.grey.shade300, 
@@ -239,7 +239,7 @@ class DropdownInput<T, V> extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              backgroundColor: isSelected ? AppColors.primary : const Color(0xFFF8F8F8),
+              backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
               side: BorderSide(
                 // ถ้า Error และยังไม่ได้เลือก ให้ขอบเป็นสีแดง
                 color: isSelected 

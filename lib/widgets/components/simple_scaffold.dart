@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// RootComponent สำหรับหน้าจอที่ต้องการความเรียบง่าย พร้อมภาพพื้นหลังจางๆ
 class SimpleScaffold extends StatelessWidget {
@@ -53,7 +54,7 @@ class SimpleScaffold extends StatelessWidget {
               )
             : null,
       ),
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           Positioned(

@@ -37,7 +37,7 @@ class _FarmPageState extends State<FarmPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<FarmBloc, FarmState>(
         builder: (context, state) {
           if (state is FarmLoading || state is FarmInitial) {

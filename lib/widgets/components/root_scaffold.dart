@@ -199,7 +199,7 @@ class _RootScaffoldState extends State<RootScaffold> {
         physics: const NeverScrollableScrollPhysics(),
         children: filteredPages,
       ),
-      backgroundColor: widget.backgroundColor ?? const Color(0xFFF8F8F8),
+      backgroundColor: widget.backgroundColor ?? AppColors.surface,
       bottomNavigationBar: navItems.length < 2
           ? null
           : BottomNavigationBar(
