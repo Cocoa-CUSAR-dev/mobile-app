@@ -71,11 +71,38 @@
     calls into a global `maplibregl` JS object that only exists once these are
     loaded -- without them, MapLibreMapController.initPlatform() throws
     immediately ("Cannot read properties of undefined (reading 'LngLat')") and
-    every map screen renders as a blank white area. Version pinned per the
-    maplibre_gl 0.25.0 README's own web setup instructions.
+    every map screen renders as a blank white area.
+
+    Three deliberate departures from the snippet in maplibre_gl 0.25.0's
+    README, which is written for a demo rather than for this app:
+
+    1. Exact version, not the README's "@^4.3". That is a semver range, and
+       unpkg resolves it per request with a 60-second cache -- it already
+       serves 4.7.1, and any of the 11 matching releases could start running
+       in production without anyone deploying. pubspec.lock pins the Dart
+       half of this dependency down to a sha256; the JS half should not be
+       free to move on its own.
+
+    2. `defer`, because flutter_bootstrap.js sits further down in <body>: a
+       render-blocking 803 KB script here delays the whole app, not just the
+       map, and this is opened over mobile data inside the LINE webview.
+       Safe because the map only ever mounts on the register screens
+       (GisInput), never on the initial route -- deferred scripts finish
+       before DOMContentLoaded, long before anyone navigates there.
+
+    3. Subresource Integrity, since this runs on the same origin as the
+       farmer's JWT. Only possible because of (1): a floating version has no
+       stable hash. To regenerate after a version bump, pipe the file
+       through: openssl dgst -sha384 -binary | openssl base64 -A
   -->
-  <script src="https://unpkg.com/maplibre-gl@^4.3/dist/maplibre-gl.js"></script>
-  <link href="https://unpkg.com/maplibre-gl@^4.3/dist/maplibre-gl.css" rel="stylesheet" />
+  <script defer
+          src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"
+          integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj"
+          crossorigin="anonymous"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+        rel="stylesheet"
+        integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V"
+        crossorigin="anonymous" />
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
