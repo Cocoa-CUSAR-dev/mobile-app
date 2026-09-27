@@ -114,7 +114,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
       case 'BOOLEAN':
         return FormHelper.buildCheckbox(
           label: label,
-          value: _currentFormData[key] ?? false,
+          value: _currentFormData[key] == true || _currentFormData[key] == 'true',
           onChanged: (v) => setState(() => _currentFormData[key] = v),
         );
 
@@ -177,7 +177,9 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
     }
   }
 
-  void _onSave() {
+  // isDraft: เก็บไว้ในเครื่องอย่างเดียว ไม่ส่งขึ้น server (sync ข้ามร่างเสมอ)
+  // บันทึกซ้ำจะแทนที่ร่างเดิมของงานนี้ เปิดฟอร์มครั้งหน้าจะได้ร่างนี้กลับมา
+  void _onSave({bool isDraft = false}) {
     final data = Map<String, dynamic>.from(_currentFormData);
     _controllers.forEach((k, v) => data[k] = v.text.trim().isEmpty ? null : v.text.trim());
 
@@ -186,7 +188,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
       taskId: widget.taskId,
       data: data,
       isEdit: widget.status == 'COMPLETED',
-      isDraft: false,
+      isDraft: isDraft,
     ));
   }
 
@@ -207,6 +209,11 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
               if (state.currentTaskResponse != null && !_isDataInitialized) {
                 setState(() {
                   _currentFormData.addAll(state.currentTaskResponse!);
+                  // The form usually renders before the saved answer arrives,
+                  // so text controllers already exist (empty) -- fill them too.
+                  state.currentTaskResponse!.forEach((k, v) {
+                    if (v != null) _controllers[k]?.text = v.toString();
+                  });
                   _isDataInitialized = true;
                 });
               }
@@ -319,6 +326,17 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : Text(isLastStep ? 'บันทึกข้อมูล' : 'ถัดไป', style: const TextStyle(color: Colors.white, fontSize: 18)),
+          ),
+          const SizedBox(height: 12),
+          // ร่างกรอกยังไม่ครบก็เก็บได้ จึงไม่ต้องผ่าน validate
+          OutlinedButton(
+            onPressed: _isLoading ? null : () => _onSave(isDraft: true),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: const BorderSide(color: Color(0xFF794c46)),
+            ),
+            child: const Text('บันทึกแบบร่าง', style: TextStyle(fontSize: 18, color: Color(0xFF794c46))),
           ),
           const SizedBox(height: 12),
           OutlinedButton(

@@ -9,7 +9,12 @@ class SyncTasksWithQueue extends TaskEvent {
 // ดึงรายละเอียดคำตอบรายชิ้น (เพื่อเอามาใส่ในฟอร์ม)
 class GetTaskResponseDetails extends TaskEvent {
   final String taskId;
-  GetTaskResponseDetails(this.taskId);
+  // null = prefill every answer (single-submit: the form edits that one
+  // row). A set = multi-submit: the form starts a NEW row, so only these
+  // carry-forward fields are copied from the previous answer -- an empty
+  // set means start blank.
+  final Set<String>? onlyFields;
+  GetTaskResponseDetails(this.taskId, {this.onlyFields});
 }
 
 // ส่งงานหรือบันทึกร่าง

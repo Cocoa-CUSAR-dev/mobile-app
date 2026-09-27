@@ -100,6 +100,76 @@ void main() {
             .having((s) => s.currentTaskResponse, 'currentTaskResponse', {'note': 'from server'}),
       ],
     );
+
+    // Multi-submit: the form starts a new row, so only carry-forward fields
+    // come from the previous answer -- the rest must start blank.
+    blocTest<TaskBloc, TaskState>(
+      'with onlyFields, keeps just those fields of the previous answer',
+      build: () {
+        final client = MockClient((request) async =>
+            jsonResponse({'farm_id': 'f1', 'notes': 'old', 'qa_boolean_flag': 'true'}, 200));
+        return TaskBloc(taskService: TaskService(client: client));
+      },
+      act: (bloc) => bloc.add(GetTaskResponseDetails('t1', onlyFields: {'farm_id'})),
+      wait: _queueDelay,
+      expect: () => [
+        isA<TaskState>().having((s) => s.isLoadingDetails, 'isLoadingDetails', isTrue),
+        isA<TaskState>().having((s) => s.currentTaskResponse, 'currentTaskResponse', {'farm_id': 'f1'}),
+      ],
+    );
+
+    blocTest<TaskBloc, TaskState>(
+      'with an empty onlyFields set, prefills nothing',
+      build: () {
+        final client = MockClient((request) async => jsonResponse({'notes': 'old'}, 200));
+        return TaskBloc(taskService: TaskService(client: client));
+      },
+      act: (bloc) => bloc.add(GetTaskResponseDetails('t1', onlyFields: {})),
+      wait: _queueDelay,
+      expect: () => [
+        isA<TaskState>().having((s) => s.isLoadingDetails, 'isLoadingDetails', isTrue),
+        isA<TaskState>().having((s) => s.currentTaskResponse, 'currentTaskResponse', isEmpty),
+      ],
+    );
+
+    blocTest<TaskBloc, TaskState>(
+      'multi-submit ignores a queued PENDING row (a previous submission, not this one)',
+      setUp: () => FlutterSecureStorage.setMockInitialValues({
+        'pending_task_queue': jsonEncode([
+          {'task_id': 't1', 'answer': {'farm_id': 'queued', 'notes': 'queued'}, 'is_draft': false, 'status': 'PENDING'},
+        ]),
+      }),
+      build: () {
+        final client = MockClient((request) async => jsonResponse({'farm_id': 'f1', 'notes': 'old'}, 200));
+        return TaskBloc(taskService: TaskService(client: client));
+      },
+      act: (bloc) => bloc.add(GetTaskResponseDetails('t1', onlyFields: {'farm_id'})),
+      wait: _queueDelay,
+      expect: () => [
+        isA<TaskState>().having((s) => s.isLoadingDetails, 'isLoadingDetails', isTrue),
+        isA<TaskState>().having((s) => s.currentTaskResponse, 'currentTaskResponse', {'farm_id': 'f1'}),
+      ],
+    );
+
+    blocTest<TaskBloc, TaskState>(
+      'a saved draft is restored whole, even for multi-submit',
+      setUp: () => FlutterSecureStorage.setMockInitialValues({
+        'pending_task_queue': jsonEncode([
+          {'task_id': 't1', 'answer': {'farm_id': 'f2', 'notes': 'half done'}, 'is_draft': true, 'status': 'DRAFT'},
+        ]),
+      }),
+      build: () => TaskBloc(taskService: TaskService(client: MockClient((r) async => jsonResponse({}, 200)))),
+      act: (bloc) => bloc.add(GetTaskResponseDetails('t1', onlyFields: {'farm_id'})),
+      wait: _queueDelay,
+      expect: () => [
+        isA<TaskState>().having((s) => s.isLoadingDetails, 'isLoadingDetails', isTrue),
+        isA<TaskState>().having(
+          (s) => s.currentTaskResponse,
+          'currentTaskResponse',
+          {'farm_id': 'f2', 'notes': 'half done'},
+        ),
+      ],
+    );
   });
 
   group('SubmitTaskAction', () {

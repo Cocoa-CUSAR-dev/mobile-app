@@ -69,7 +69,11 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
         if (form == null) throw "ไม่พบโครงสร้างฟอร์มสำหรับงานนี้";
 
         // 2. สั่ง TaskBloc ให้ไปหาคำตอบเก่ามาเตรียมไว้ใน State
-        taskBloc.add(GetTaskResponseDetails(event.taskId));
+        // ฟอร์มส่งได้หลายครั้ง = กำลังเริ่มแถวใหม่ ใช้คำตอบเดิมเฉพาะข้อที่ติ๊ก carryForward
+        taskBloc.add(GetTaskResponseDetails(
+          event.taskId,
+          onlyFields: form['isMultipleSubmit'] == true ? _carryForwardFields(form) : null,
+        ));
 
         emit(DynamicReady(form));
       } catch (e) {
@@ -116,5 +120,19 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
         emit(DynamicError(e.toString()));
       }
     });
+  }
+
+  // fieldName ของทุกคำถามที่ researcher ติ๊ก "Reuse answer" (carryForward)
+  static Set<String> _carryForwardFields(Map<String, dynamic> form) {
+    final fields = <String>{};
+    for (final sectionRaw in (form['sections'] as List<dynamic>? ?? [])) {
+      final section = sectionRaw as Map<String, dynamic>;
+      for (final questionRaw in (section['questions'] as List<dynamic>? ?? [])) {
+        final question = questionRaw as Map<String, dynamic>;
+        final fieldName = question['fieldName'] as String?;
+        if (fieldName != null && question['carryForward'] == true) fields.add(fieldName);
+      }
+    }
+    return fields;
   }
 }

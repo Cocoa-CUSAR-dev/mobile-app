@@ -62,10 +62,20 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         // เช็กในคิวก่อน (ข้อมูลสดกว่า)
         final List<Map<String, dynamic>> pendingQueue = await _queueService
             .fetchData((json) => json);
-        final draft = pendingQueue.firstWhere(
-          (item) => item['task_id'] == event.taskId,
+        // The draft is the row being worked on, so it always wins. Other
+        // queued rows are finished submissions waiting to sync: for a
+        // single-submit task that row IS the answer being edited, but for a
+        // multi-submit task it's a previous row, not this one.
+        var draft = pendingQueue.firstWhere(
+          (item) => item['task_id'] == event.taskId && item['is_draft'] == true,
           orElse: () => {},
         );
+        if (draft.isEmpty && event.onlyFields == null) {
+          draft = pendingQueue.firstWhere(
+            (item) => item['task_id'] == event.taskId,
+            orElse: () => {},
+          );
+        }
 
         if (draft.isNotEmpty) {
           emit(
@@ -77,9 +87,15 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         } else {
           // ถ้าไม่มีในคิว ค่อยไปถาม API
           final response = await _taskService.getTaskResponse(event.taskId);
+          final onlyFields = event.onlyFields;
           emit(
             state.copyWith(
-              currentTaskResponse: response,
+              currentTaskResponse: response == null || onlyFields == null
+                  ? response
+                  : {
+                      for (final key in onlyFields)
+                        if (response[key] != null) key: response[key],
+                    },
               isLoadingDetails: false,
             ),
           );
