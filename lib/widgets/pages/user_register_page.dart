@@ -98,18 +98,14 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'ลงทะเบียนผู้ใช้งานใหม่',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'กรุณากรอกข้อมูลเพื่อเข้าใช้งานระบบ',
-                style: TextStyle(fontSize: 18),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
 
@@ -159,9 +155,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'ยืนยันการลงทะเบียน',
-                        style: TextStyle(color: Colors.white, fontSize: 20),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
                       ),
               ),
             ],

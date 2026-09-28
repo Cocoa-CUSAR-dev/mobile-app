@@ -145,9 +145,9 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                   children: [
                     _buildStepIndicator(_totalSteps),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'ลงทะเบียนข้อมูลฟาร์ม',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                     ),
                     const SizedBox(height: 24),
                     _buildCurrentStepFields(),
@@ -269,7 +269,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
   Widget _buildStepIndicator(int totalSteps) {
     return Column(
       children: [
-        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: const TextStyle(fontSize: 18)),
+        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: Theme.of(context).textTheme.bodyLarge),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -314,7 +314,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
             ),
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(isLastStep ? 'ยืนยันลงทะเบียน' : 'ถัดไป', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                : Text(isLastStep ? 'ยืนยันลงทะเบียน' : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
@@ -329,7 +329,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text(_currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก', style: const TextStyle(fontSize: 18, color: Colors.black)),
+            child: Text(_currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black)),
           ),
         ],
       ),

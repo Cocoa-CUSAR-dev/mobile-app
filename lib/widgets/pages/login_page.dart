@@ -93,10 +93,9 @@ class _LoginPageState extends State<LoginPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'ยินดีต้อนรับเข้าสู่แอปพลิเคชัน',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
@@ -128,12 +127,9 @@ class _LoginPageState extends State<LoginPage> {
       key: const ValueKey(1),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 32),
         _buildMainButton(
@@ -181,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.red),
                 ),
               ),
             const SizedBox(height: 24),
@@ -241,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
               )
             : Text(
                 label,
-                style: TextStyle(fontSize: 18, color: textColor, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: textColor, fontWeight: FontWeight.bold),
               ),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
@@ -266,7 +262,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
       ),
     );
   }

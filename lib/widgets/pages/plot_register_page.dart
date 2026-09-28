@@ -151,13 +151,9 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                   children: [
                     _buildStepIndicator(totalSteps),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'ข้อมูลแปลงปลูกโกโก้',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                     ),
                     const SizedBox(height: 24),
                     allFields[_currentStep],
@@ -279,7 +275,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
       children: [
         Text(
           "หน้า ${_currentStep + 1} จาก $totalSteps",
-          style: const TextStyle(fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
         const SizedBox(height: 8),
         Row(
@@ -342,7 +338,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                   )
                 : Text(
                     isLastStep ? 'บันทึกข้อมูลแปลง' : 'ต่อไป',
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
                   ),
           ),
           const SizedBox(height: 12),
@@ -362,7 +358,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
             ),
             child: Text(
               _currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก',
-              style: const TextStyle(fontSize: 18, color: Colors.black),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
             ),
           ),
         ],

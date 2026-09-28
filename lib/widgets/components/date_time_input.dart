@@ -132,9 +132,9 @@ class _DateTimeInputState extends State<DateTimeInput> {
           children: [
             const Spacer(),
             _buildPicker("ชม.", _hourCtrl, (v) => hour = int.tryParse(v) ?? hour, 'hour'),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(8, 24, 8, 0),
-              child: Text(":", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 24, 8, 0),
+              child: Text(":", style: Theme.of(context).textTheme.headlineSmall),
             ),
             _buildPicker("นาที", _minCtrl, (v) => minute = int.tryParse(v) ?? minute, 'minute'),
             const Spacer(),
@@ -150,7 +150,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
     return Expanded(
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           _stepBtn(Icons.add, () => _handleBtnClick(type, 1), isTop: true),
           Container(
@@ -163,7 +163,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
               onChanged: (v) {
                 onChanged(v);
                 _saveToMainController(); // บันทึกทันทีที่พิมพ์แต่ไม่ทับ text ใน ctrl
@@ -191,7 +191,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
       flex: flex,
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           _stepBtn(Icons.add, () => _handleBtnClick(type, 1), isTop: true),
           Container(
@@ -201,7 +201,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
               color: Colors.grey.shade50,
               border: Border.symmetric(vertical: BorderSide(color: Colors.grey.shade300)),
             ),
-            child: Text(value, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(value, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
           ),
           _stepBtn(Icons.remove, () => _handleBtnClick(type, -1), isTop: false),
         ],
@@ -238,7 +238,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
     return RichText(
       text: TextSpan(
         text: widget.label,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         children: [if (widget.isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red))],
       ),
     );

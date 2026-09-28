@@ -63,7 +63,7 @@ class GISInput extends StatelessWidget {
       children: [
         Text(
           "$label ${isRequired ? '*' : ''}",
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         InkWell(
@@ -92,15 +92,14 @@ class GISInput extends StatelessWidget {
                     children: [
                       Text(
                         ThaiAreaUtils.format(data.areaM2, data.points.length, data.points),
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: hasData ? Colors.black87 : Colors.grey.shade600,
-                          fontSize: 18,
                           fontWeight: hasData ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                       if (hasData)
                         Text(data.points.length < 3 ? "ส่งค่าเป็น: พิกัด (1 จุด)" : "ส่งค่าเป็น: พื้นที่ (${data.points.length} จุด)",
-                            style: const TextStyle(fontSize: 14, color: AppColors.primary)),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.primary)),
                     ],
                   ),
                 ),
@@ -229,7 +228,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
               Navigator.pop(context, PolygonData(points: _points, areaM2: _areaM2));
             },
             icon: const Icon(Icons.save, color: Colors.white),
-            label: const Text("บันทึก", style: TextStyle(color: Colors.white, fontSize: 16)),
+            label: Text("บันทึก", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
           )
         ],
       ),
@@ -293,11 +292,11 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
                 children: [
                   Text(
                     ThaiAreaUtils.format(_areaM2, _points.length, _points),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.primary),
                   ),
                   Text(
                     "กรุณาเลื่อนแผนที่ไปยังบริเวณที่ต้องการแล้วกดบนแผนที่เพื่อระบุตำแหน่ง หากต้องการระบุเพียงตำแหน่ง ให้ปัก 1 จุด แต่กรณีต้องการระบุพื้นที่กรุณาปัก 3 จุดขึ้นไป",
-                    style: const TextStyle(fontSize: 16),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   
                   // if (_points.isNotEmpty)

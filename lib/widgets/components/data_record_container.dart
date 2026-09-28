@@ -72,18 +72,12 @@ class _DataRecordContainerState<TItem>
                     children: [
                       Text(
                         widget.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       if (widget.subtitle != null)
                         Text(
                           widget.subtitle!,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                         ),
                     ],
                   ),
@@ -166,7 +160,7 @@ class _DataRecordContainerState<TItem>
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('ใส่ข้อมูล', style: TextStyle(fontFamily: 'NotoSansThaiLooped', fontSize:18)),
+                  child: Text('ใส่ข้อมูล', style: Theme.of(context).textTheme.bodyLarge),
                 ),
               ),
           ],

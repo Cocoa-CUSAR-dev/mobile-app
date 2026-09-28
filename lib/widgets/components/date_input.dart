@@ -148,7 +148,7 @@ class _DateInputState extends State<DateInput> {
       flex: flex,
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+          Text(label, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           _stepBtn(Icons.add, () => _changeValue(type, 1), isTop: true),
           Container(
@@ -165,7 +165,7 @@ class _DateInputState extends State<DateInput> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: onChanged,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
@@ -177,7 +177,7 @@ class _DateInputState extends State<DateInput> {
                   child: Text(
                     displayValue ?? "", 
                     textAlign: TextAlign.center, 
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)
                   ),
                 ),
           ),
@@ -216,7 +216,7 @@ class _DateInputState extends State<DateInput> {
     return RichText(
       text: TextSpan(
         text: label,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         children: [if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red))],
       ),
     );

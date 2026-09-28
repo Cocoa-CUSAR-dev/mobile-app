@@ -47,17 +47,15 @@ class FormInput extends StatelessWidget {
             child: RichText(
               text: TextSpan(
                 text: label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'NotoSansThaiLooped',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
                 children: [
                   if (isRequired)
-                    const TextSpan(
+                    TextSpan(
                       text: ' *',
-                      style: TextStyle(color: Colors.red, fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red),
                     ),
                 ],
               ),
@@ -80,10 +78,7 @@ class FormInput extends StatelessWidget {
             minLines: isTextArea ? textAreaLines : 1,
             maxLines: isTextArea ? textAreaLines : 1,
 
-            style: const TextStyle(
-              fontSize: 18,
-              fontFamily: 'NotoSansThaiLooped',
-            ),
+            style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: hintText,
               contentPadding:

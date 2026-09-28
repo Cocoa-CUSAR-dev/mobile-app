@@ -75,9 +75,9 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _navigateToRegister(context),
         icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
-        label: const Text(
+        label: Text(
           "เพิ่มข้อมูลสถานีแปรรูป",
-          style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -110,10 +110,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 station.processingStationName ?? "ไม่มีชื่อสถานี",
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
             const SizedBox(height: 16),

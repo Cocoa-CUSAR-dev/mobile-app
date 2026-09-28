@@ -36,16 +36,16 @@ class _LiffLoginSuccessPageState extends State<LiffLoginSuccessPage> {
             children: [
               Icon(Icons.check_circle, color: Colors.green.shade600, size: 64),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'เชื่อมบัญชี LINE สำเร็จ!',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'พร้อมใช้งานแล้ว กำลังปิดหน้าต่างนี้...',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
               ),
             ],
           ),
