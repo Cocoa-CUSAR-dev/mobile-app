@@ -249,9 +249,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
                             const SizedBox(height: 32),
                             Text(
                               'บันทึกข้อมูล',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 color: AppColors.primary
                               ),
                               textAlign: TextAlign.center,
@@ -281,7 +279,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
     if (totalSteps <= 1) return const SizedBox.shrink();
     return Column(
       children: [
-        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: const TextStyle(fontSize: 16)),
+        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -326,7 +324,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             ),
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(isLastStep ? 'บันทึกข้อมูล' : 'ถัดไป', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                : Text(isLastStep ? 'บันทึกข้อมูล' : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
           const SizedBox(height: 12),
           // ร่างกรอกยังไม่ครบก็เก็บได้ จึงไม่ต้องผ่าน validate
@@ -337,7 +335,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               side: const BorderSide(color: Color(0xFF794c46)),
             ),
-            child: const Text('บันทึกแบบร่าง', style: TextStyle(fontSize: 18, color: Color(0xFF794c46))),
+            child: Text('บันทึกแบบร่าง', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFF794c46))),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
@@ -355,7 +353,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             ),
             child: Text(
               _currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก',
-              style: const TextStyle(fontSize: 18, color: Colors.black87)
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87)
             ),
           ),
         ],

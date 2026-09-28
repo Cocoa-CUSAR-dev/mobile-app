@@ -43,13 +43,13 @@ class DropdownInput<T, V> extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel(label, isRequired),
+            _buildLabel(context, label, isRequired),
             const SizedBox(height: 8),
-            
+
             // ส่วนแสดงผลหลัก
-            shouldShowDropdown 
-                ? _buildDropdownMenu(state, hasError) 
-                : _buildFullWidthChips(state, hasError),
+            shouldShowDropdown
+                ? _buildDropdownMenu(context, state, hasError)
+                : _buildFullWidthChips(context, state, hasError),
             
             // แสดงข้อความ Error สีแดงใต้ Input
             if (hasError)
@@ -57,7 +57,7 @@ class DropdownInput<T, V> extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8, left: 4),
                 child: Text(
                   state.errorText ?? '',
-                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red),
                 ),
               ),
             const SizedBox(height: 16),
@@ -68,7 +68,7 @@ class DropdownInput<T, V> extends StatelessWidget {
   }
 
   /// 🔽 ปรับปรุง DropdownMenu ให้แสดงขอบสีแดงเมื่อ Error
-  Widget _buildDropdownMenu(FormFieldState<V> state, bool hasError) {
+  Widget _buildDropdownMenu(BuildContext context, FormFieldState<V> state, bool hasError) {
     // หา Label ของค่าที่เลือกอยู่ในปัจจุบัน
     String currentLabel = "กรุณาเลือกรายการ";
     try {
@@ -98,8 +98,7 @@ class DropdownInput<T, V> extends StatelessWidget {
             Expanded(
               child: Text(
                 currentLabel,
-                style: TextStyle(
-                  fontSize: 18, 
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: value == null ? Colors.grey : Colors.black87
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -221,11 +220,11 @@ class DropdownInput<T, V> extends StatelessWidget {
   }
   
   /// 🔽 ปรับปรุง Chips ให้แสดงขอบสีแดงเมื่อ Error
-  Widget _buildFullWidthChips(FormFieldState<V> state, bool hasError) {
+  Widget _buildFullWidthChips(BuildContext context, FormFieldState<V> state, bool hasError) {
     if (items.isEmpty && !isDropdown) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.0),
-        child: Text("ไม่มีข้อมูลให้เลือก", style: TextStyle(color: Colors.grey, fontSize: 20)),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text("ไม่มีข้อมูลให้เลือก", style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey)),
       );
     }
     return Column(
@@ -260,10 +259,9 @@ class DropdownInput<T, V> extends StatelessWidget {
               children: [
                 Text(
                   itemLabelBuilder(item),
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: isSelected ? Colors.white : Colors.black87,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 18,
                   ),
                 ),
                 Icon(
@@ -279,11 +277,11 @@ class DropdownInput<T, V> extends StatelessWidget {
     );
   }
 
-  Widget _buildLabel(String label, bool isRequired) {
+  Widget _buildLabel(BuildContext context, String label, bool isRequired) {
     return Text.rich(
       TextSpan(
         text: label,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         children: [
           if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
         ],
