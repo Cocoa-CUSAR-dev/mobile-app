@@ -1,13 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:cocoa_supply/bloc/bloc.dart';
+import 'package:cocoa_supply/config/sentry_config.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cocoa_supply/services/url_strategy.dart';
 import 'package:cocoa_supply/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   // path-based routing (/liff-link แทน #/liff-link) — จำเป็นสำหรับ LIFF
   // เพราะ LINE ต่อ query string (?liff.state=...) เข้ากับ Endpoint URL ตอน
   // redirect กลับจาก login ซึ่งใช้กับ URL ที่มี #fragment ไม่ได้ (query หลัง
@@ -24,7 +26,20 @@ void main() {
   // dart:ui_web, which isn't available on the VM test target or native
   // builds, so it can't be called/imported unconditionally here.
   configureUrlStrategy();
-  runApp(const MyApp());
+
+  // X-2d: error tracking. Empty sentryDsn (the default) disables the SDK
+  // entirely -- SentryFlutter.init still calls appRunner normally in that
+  // case, so this is safe to leave blank in local dev/CI builds.
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = sentryDsn;
+      options.environment = sentryEnvironment;
+      // Traces cost quota on Sentry's free tier; only error capture is
+      // needed right now.
+      options.tracesSampleRate = 0.0;
+    },
+    appRunner: () => runApp(const MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
