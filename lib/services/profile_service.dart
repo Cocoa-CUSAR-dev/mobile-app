@@ -1,4 +1,5 @@
 import 'package:cocoa_supply/models/profile_model.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:http/http.dart' as http;
 
@@ -28,6 +29,8 @@ class AuthService {
 
   /// แถม: ฟังก์ชันสำหรับ Clear Cache ตอน Logout
   Future<void> logout() async {
-   
+    // DynamicApiService caches province/district/subdistrict in a static
+    // map that would otherwise survive into the next account's session.
+    DynamicApiService.clearConstantsCache();
   }
 }

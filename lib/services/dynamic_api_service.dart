@@ -76,6 +76,16 @@ class DynamicApiService {
   // normally.
   static final Map<String, List<Map<String, dynamic>>> _constantsCache = {};
 
+  /// Drops everything cached by fetchConstants.
+  ///
+  /// The cache is static, so it outlives any one screen and any one signed-in
+  /// user. Today it only ever holds public reference data (province, district,
+  /// subdistrict), but fetchConstants takes an arbitrary `key` -- the day
+  /// someone points it at something user-scoped, that data would follow the
+  /// previous account into the next session. Called from AuthService.logout()
+  /// so that cannot happen quietly.
+  static void clearConstantsCache() => _constantsCache.clear();
+
   String _constantsCacheKey(String key, Map<String, dynamic>? queryParams) {
     if (queryParams == null || queryParams.isEmpty) return key;
     final sortedEntries = queryParams.entries.toList()
@@ -106,7 +116,10 @@ class DynamicApiService {
         (json) => json, // creator: รับ json map มาแล้วคืนค่าออกไปเลย
         queryParams: queryParams,
       );
-      _constantsCache[cacheKey] = results;
+      // Deliberately not caching an empty list: a backend that answers 200
+      // with [] during a deploy would otherwise leave that dropdown empty
+      // for the rest of the session, with no way for the user to retry.
+      if (results.isNotEmpty) _constantsCache[cacheKey] = results;
       return results;
     } catch (e) {
       print('Error fetching constants for $key: $e');

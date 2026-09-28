@@ -252,8 +252,14 @@ class _RootScaffoldState extends State<RootScaffold> {
               icon: Icons.location_on_outlined,
               title: "ที่อยู่",
               rows: [
-                _infoRow(null, "ตำบล", _userProfile!.subdistrictName),
-                _infoRow(null, "อำเภอ", _userProfile!.districtName),
+                // APP-11: Bangkok uses เขต/แขวง. The register pages already
+                // switch these labels, so without this a Bangkok farmer
+                // types their address under one set of words and reads it
+                // back under another. Derived from provinceName, which is
+                // already on the profile -- no need for the cached province
+                // list DynamicApiService.isBangkokProvinceId depends on.
+                _infoRow(null, _isBangkokAddress ? "แขวง" : "ตำบล", _userProfile!.subdistrictName),
+                _infoRow(null, _isBangkokAddress ? "เขต" : "อำเภอ", _userProfile!.districtName),
                 _infoRow(null, "จังหวัด", "${_userProfile!.provinceName} ${_userProfile!.zipCode}"),
               ],
             ),
@@ -277,6 +283,9 @@ class _RootScaffoldState extends State<RootScaffold> {
       ),
     );
   }
+
+  bool get _isBangkokAddress =>
+      (_userProfile?.provinceName ?? '').contains('กรุงเทพ');
 
   Widget _buildProfileHeader() {
     final roleLabel = _userProfile!.roles?.join(', ') ?? 'ทั่วไป';
