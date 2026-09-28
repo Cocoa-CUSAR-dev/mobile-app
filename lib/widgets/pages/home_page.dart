@@ -178,9 +178,9 @@ class _HomeTabContentState extends State<HomeTabContent> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "สิ่งที่ต้องทำ",
-                  style: TextStyle(fontSize: 18, color: Colors.black),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
                 ),
                 const SizedBox(height: 12),
 
@@ -305,10 +305,7 @@ class _TaskCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         Icon(_statusIcon, color: statusColor, size: 22),
@@ -322,7 +319,7 @@ class _TaskCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             'ครบกำหนด ${dueDate!.day} ${_thaiMonthsAbbr[dueDate!.month - 1]}',
-                            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
                           ),
                         ],
                       ),
@@ -330,8 +327,7 @@ class _TaskCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       detail,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.black87,
                         height: 1.4,
                       ),
@@ -355,9 +351,8 @@ class _TaskCard extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               statusText,
-                              style: const TextStyle(
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: Colors.white,
-                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
