@@ -14,9 +14,12 @@
 // frames once the spinner is gone) — every test flushes it explicitly
 // afterwards so the framework doesn't report "A Timer is still pending".
 
+import 'dart:convert';
+
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/pages/dynamic_register_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -109,6 +112,56 @@ void main() {
 
     expect(find.byType(ThreeDotsLoading), findsNothing);
     expect(find.byType(TextFormField), findsNothing);
+  });
+
+  // Step 5 checklist: save a draft twice, reopen -> the LATER draft shows.
+  // A draft needn't pass validation (the required field is left empty on
+  // the first save) and never goes to the server (the client 404s
+  // everything but the form).
+  testWidgets('"บันทึกแบบร่าง" keeps only the latest draft and reopening restores it', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final client = _formClient(_formWith([
+      {'fieldName': 'notes', 'label': 'หมายเหตุ', 'inputType': 'VARCHAR', 'isMandatory': true, 'isActive': true, 'sortOrder': 1},
+      {'fieldName': 'extra', 'label': 'อื่นๆ', 'inputType': 'VARCHAR', 'isMandatory': false, 'isActive': true, 'sortOrder': 2},
+    ]));
+
+    await tester.pumpWidget(wrapPage(
+      Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const DynamicRegisterPage(handler: 'farm_activity', taskId: 't1', status: 'NOT_STARTED'),
+            ),
+          ),
+          child: const Text('open'),
+        ),
+      ),
+      client: client,
+    ));
+
+    Future<void> saveDraft(String notes) async {
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await _flushPendingTimers(tester);
+      await tester.enterText(find.byType(TextFormField).first, notes);
+      await tester.tap(find.text('บันทึกแบบร่าง'));
+      await tester.pumpAndSettle();
+      await _flushPendingTimers(tester);
+    }
+
+    await saveDraft('draft 1');
+    expect(find.text('open'), findsOneWidget, reason: 'saving a draft closes the form');
+    await saveDraft('draft 2');
+
+    final queue = jsonDecode((await const FlutterSecureStorage().read(key: 'pending_task_queue'))!) as List;
+    expect(queue, hasLength(1));
+    expect(queue.single['status'], 'DRAFT');
+    expect(queue.single['answer']['notes'], 'draft 2');
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await _flushPendingTimers(tester);
+    expect(find.widgetWithText(TextFormField, 'draft 2'), findsOneWidget);
   });
 
   testWidgets('back button (ยกเลิก) on step 1 pops the page', (tester) async {
