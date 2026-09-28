@@ -7,6 +7,8 @@ import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
 class RegisterRolePage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
@@ -158,7 +160,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
 
       await registerService.postData(payload);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ ลงทะเบียนสำเร็จ')));
+        AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
 
         // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
         // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
@@ -168,7 +170,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red));
+      if (mounted) AppSnackBar.show(context, 'Error: $e', type: AppSnackBarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -270,7 +272,12 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               })
             );
           case 'district_id':
-            return _buildFilteredDropdown('district_id', 'อำเภอ', isReq: isReq,
+            return _buildFilteredDropdown(
+              'district_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'เขต'
+                  : 'อำเภอ',
+              isReq: isReq,
               filterId: _currentFormData['province_id']?.toString(),
               filterKey: 'province_id',
               onChanged: (val) => setState(() {
@@ -279,7 +286,12 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               })
             );
           case 'subdistrict_id':
-            return _buildFilteredDropdown('subdistrict_id', 'ตำบล', isReq: isReq,
+            return _buildFilteredDropdown(
+              'subdistrict_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'แขวง'
+                  : 'ตำบล',
+              isReq: isReq,
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
@@ -424,6 +436,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         _selectedRole = roleValue;
         _currentStep = 0;
       }),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class HubPage extends StatefulWidget {
   const HubPage({super.key});
@@ -56,23 +57,7 @@ class _HubPageState extends State<HubPage> {
             final hubs = state.hubs;
 
             if (hubs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 80,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'ไม่พบข้อมูลหน่วยรวบรวม',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
+              return const EmptyStateView(message: 'ไม่พบข้อมูลหน่วยรวบรวม');
             }
 
             return ListView.builder(

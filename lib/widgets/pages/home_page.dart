@@ -4,6 +4,11 @@ import 'package:cocoa_supply/bloc/home/home_state.dart';
 import 'package:cocoa_supply/models/task_item_model.dart';
 import 'package:cocoa_supply/services/util_service.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
+import 'package:cocoa_supply/widgets/components/date_strip.dart';
+import 'package:cocoa_supply/theme/app_text_theme.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
@@ -41,13 +46,7 @@ class _HomePageState extends State<HomePage> {
     return BlocConsumer<HomeBloc, HomeState>(
       listener: (context, state) {
         if (state is HomeLoadFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('เกิดข้อผิดพลาด: ${state.error}'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnackBar.show(context, 'เกิดข้อผิดพลาด: ${state.error}', type: AppSnackBarType.error);
         }
       },
       builder: (context, state) {
@@ -79,6 +78,21 @@ class HomeTabContent extends StatefulWidget {
 }
 
 class _HomeTabContentState extends State<HomeTabContent> {
+  // Owned here (not inside DateStrip) because HomeTabContent swaps this
+  // whole subtree for a loading spinner between date changes, unmounting
+  // and remounting DateStrip -- this State object is what actually
+  // survives that cycle. Starts at today; _ensureAnchorCovers moves it
+  // only when the calendar picker jumps somewhere the strip doesn't reach.
+  late DateTime _stripAnchor = _normalizeDate(DateTime.now());
+
+  DateTime _normalizeDate(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  void _ensureAnchorCovers(DateTime date) {
+    final diff = date.difference(_stripAnchor).inDays;
+    if (diff < -DateStrip.daysBefore || diff > DateStrip.daysAfter) {
+      _stripAnchor = _normalizeDate(date);
+    }
+  }
 
   // จัดการการเปลี่ยนหน้าและรับผลลัพธ์กลับมา
   Future<void> _navigateToDetail(BuildContext context, TaskItem task) async {
@@ -97,6 +111,34 @@ class _HomeTabContentState extends State<HomeTabContent> {
     }
   }
 
+  // เปิดปฏิทินแบบเต็ม (เลือกเดือน/ปี แล้วแตะวันได้ตรงๆ) -- ทำเป็นทางเลือกคู่กับ
+  // DateStrip ด้านบน สำหรับตอนต้องการกระโดดข้ามหลายเดือนทีเดียว
+  Future<void> _openCalendarPicker(BuildContext context, DateTime selectedDate) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(selectedDate.year - 5),
+      lastDate: DateTime(selectedDate.year + 5),
+      helpText: 'เลือกวันที่',
+      cancelText: 'ยกเลิก',
+      confirmText: 'ตกลง',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && context.mounted) {
+      context.read<HomeBloc>().add(HomeDataRequested(selectedDate: picked));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<HomeBloc, HomeState>(
@@ -105,6 +147,7 @@ class _HomeTabContentState extends State<HomeTabContent> {
           return const Center(child: ThreeDotsLoading());
         }
         if (state is HomeLoaded) {
+          _ensureAnchorCovers(state.selectedDate);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -113,35 +156,26 @@ class _HomeTabContentState extends State<HomeTabContent> {
                 // ส่วนหัวเรื่องและตัวเลือกวันที่
                 Row(
                   children: [
-                    Text(
-                      'วันที่ ${UtilService.formatThaiDate(state.selectedDate)}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left, size: 30),
-                      onPressed: () => context.read<HomeBloc>().add(
-                        HomeDataRequested(
-                          selectedDate: state.selectedDate.subtract(
-                            const Duration(days: 1),
-                          ),
-                        ),
+                    Expanded(
+                      child: Text(
+                        'วันที่ ${UtilService.formatThaiDate(state.selectedDate)}',
+                        style: AppTextTheme.scale.titleLarge,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.chevron_right, size: 30),
-                      onPressed: () => context.read<HomeBloc>().add(
-                        HomeDataRequested(
-                          selectedDate: state.selectedDate.add(
-                            const Duration(days: 1),
-                          ),
-                        ),
-                      ),
+                      icon: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
+                      tooltip: 'เปิดปฏิทิน',
+                      onPressed: () => _openCalendarPicker(context, state.selectedDate),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                DateStrip(
+                  anchorDate: _stripAnchor,
+                  selectedDate: state.selectedDate,
+                  onDateSelected: (date) => context.read<HomeBloc>().add(
+                    HomeDataRequested(selectedDate: date),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -151,15 +185,26 @@ class _HomeTabContentState extends State<HomeTabContent> {
                 const SizedBox(height: 12),
 
                 // รายการ Task Cards
-                ...state.dailyTasks.map(
-                  (task) => _TaskCard(
-                    title: task.title,
-                    detail: task.description,
-                    statusText: task.statusText,
-                    statusColor: task.statusColor,
-                    onTap: () => _navigateToDetail(context, task),
+                if (state.dailyTasks.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: EmptyStateView(
+                      icon: Icons.check_circle_outline,
+                      message: "ไม่มีสิ่งที่ต้องทำวันนี้",
+                    ),
+                  )
+                else
+                  ...state.dailyTasks.map(
+                    (task) => _TaskCard(
+                      title: task.title,
+                      detail: task.description,
+                      status: task.status,
+                      statusText: task.statusText,
+                      statusColor: task.statusColor,
+                      dueDate: task.closeAt,
+                      onTap: () => _navigateToDetail(context, task),
+                    ),
                   ),
-                ),
 
                 const SizedBox(height: 40),
               ],
@@ -176,17 +221,40 @@ class _HomeTabContentState extends State<HomeTabContent> {
 class _TaskCard extends StatelessWidget {
   final String title;
   final String detail;
+  final String status;
   final String statusText;
   final Color statusColor;
+  final DateTime? dueDate;
   final VoidCallback onTap;
 
   const _TaskCard({
     required this.title,
     required this.detail,
+    required this.status,
     required this.statusText,
     required this.statusColor,
+    required this.dueDate,
     required this.onTap,
   });
+
+  IconData get _statusIcon {
+    switch (status) {
+      case 'COMPLETED':
+        return Icons.check_circle;
+      case 'PENDING':
+        return Icons.sync;
+      case 'OVERDUE':
+        return Icons.error;
+      case 'NOT_STARTED':
+      default:
+        return Icons.schedule;
+    }
+  }
+
+  static const _thaiMonthsAbbr = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -231,13 +299,34 @@ class _TaskCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Icon(_statusIcon, color: statusColor, size: 22),
+                      ],
                     ),
+                    if (dueDate != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.event_outlined, size: 16, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ครบกำหนด ${dueDate!.day} ${_thaiMonthsAbbr[dueDate!.month - 1]}',
+                            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Text(
                       detail,
@@ -259,13 +348,20 @@ class _TaskCard extends StatelessWidget {
                           color: statusColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          statusText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_statusIcon, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              statusText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

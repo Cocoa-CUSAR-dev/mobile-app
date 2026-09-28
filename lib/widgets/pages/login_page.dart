@@ -6,6 +6,7 @@ import 'package:cocoa_supply/bloc/login/login_event.dart';
 import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -79,13 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                   state.next_page == "HOME" ? AppRoute.home : AppRoute.roleRegister,
                 );
               } else if (state is LoginFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.error),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                AppSnackBar.show(context, state.error, type: AppSnackBarType.error);
               }
             },
             child: SafeArea(

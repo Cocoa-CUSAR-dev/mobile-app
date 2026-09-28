@@ -5,8 +5,10 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart'; // ตรวจสอบชื่อไฟล์ให้ถูกต้อง
 import 'package:cocoa_supply/theme/app_colors.dart';
 
@@ -116,11 +118,11 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
 
       await registerService.postData(payload);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ ลงทะเบียนฟาร์มสำเร็จ')));
+        AppSnackBar.show(context, 'ลงทะเบียนฟาร์มสำเร็จ', type: AppSnackBarType.success);
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+      if (mounted) AppSnackBar.show(context, 'Error: $e', type: AppSnackBarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -192,7 +194,12 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                 _currentFormData['subdistrict_id'] = null;
               })
             ),
-            _buildFilteredDropdown('district_id', 'อำเภอ', isReq: true, 
+            _buildFilteredDropdown(
+              'district_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'เขต'
+                  : 'อำเภอ',
+              isReq: true,
               filterId: _currentFormData['province_id']?.toString(),
               filterKey: 'province_id',
               onChanged: (val) => setState(() {
@@ -200,7 +207,12 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
                 _currentFormData['subdistrict_id'] = null;
               })
             ),
-            _buildFilteredDropdown('subdistrict_id', 'ตำบล', isReq: true,
+            _buildFilteredDropdown(
+              'subdistrict_id',
+              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+                  ? 'แขวง'
+                  : 'ตำบล',
+              isReq: true,
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),

@@ -11,6 +11,8 @@ import 'package:cocoa_supply/widgets/components/dropdown_input.dart';
 import 'package:cocoa_supply/widgets/components/gis_input.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
+import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
 class ProcessingStationRegisterPage extends StatefulWidget {
   const ProcessingStationRegisterPage({super.key});
@@ -93,16 +95,12 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
       await registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ ลงทะเบียนสถานีแปรรูปสำเร็จ'), behavior: SnackBarBehavior.floating),
-        );
+        AppSnackBar.show(context, 'ลงทะเบียนสถานีแปรรูปสำเร็จ', type: AppSnackBarType.success);
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ ข้อผิดพลาด: ${e.toString()}'), backgroundColor: Colors.red),
-        );
+        AppSnackBar.show(context, 'ข้อผิดพลาด: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -117,8 +115,16 @@ class _ProcessingStationRegisterPageState extends State<ProcessingStationRegiste
       _date('found_date', 'วันที่ก่อตั้ง'),
       _input('address_detail', 'ที่ตั้ง/บ้านเลขที่'),
       _dropdown('province_id', 'จังหวัด', isReq: true),
-      _dropdown('district_id', 'อำเภอ', isReq: true),
-      _dropdown('subdistrict_id', 'ตำบล', isReq: true),
+      _dropdown(
+        'district_id',
+        DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString()) ? 'เขต' : 'อำเภอ',
+        isReq: true,
+      ),
+      _dropdown(
+        'subdistrict_id',
+        DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString()) ? 'แขวง' : 'ตำบล',
+        isReq: true,
+      ),
       _input('zip_code', 'รหัสไปรษณีย์'),
       _input('contact_name', 'ชื่อผู้ติดต่อ'),
       _phoneInput('phone_number', 'เบอร์โทรศัพท์'),
