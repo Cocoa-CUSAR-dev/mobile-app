@@ -42,11 +42,7 @@ class UploadInput extends StatelessWidget {
             // Label ด้านบน
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 18,
-                fontFamily: 'NotoSansThaiLooped',
-                color: Colors.black87,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87),
             ),
             const SizedBox(height: 8),
 
@@ -76,11 +72,7 @@ class UploadInput extends StatelessWidget {
                         controller.hasFile
                             ? controller.value!.name
                             : "เลือกไฟล์...",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontFamily: 'NotoSansThaiLooped',
-                          color: Colors.grey.shade600,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
                         overflow: TextOverflow.ellipsis, // กันชื่อไฟล์ยาวเกิน
                       ),
                     ),
