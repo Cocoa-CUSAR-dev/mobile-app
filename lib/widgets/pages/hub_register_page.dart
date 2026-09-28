@@ -165,13 +165,9 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
                   children: [
                     _buildStepIndicator(_totalSteps),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'ข้อมูลหน่วยรวบรวม (Hub)',
-                      style: TextStyle(
-                        fontSize: 22, 
-                        fontWeight: FontWeight.bold, 
-                        color: AppColors.primary
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                     ),
                     const SizedBox(height: 24),
                     _buildCurrentStepFields(),
@@ -333,7 +329,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
   Widget _buildStepIndicator(int totalSteps) {
     return Column(
       children: [
-        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -379,7 +375,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
             ),
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(isLastStep ? 'บันทึกข้อมูล' : 'ถัดไป', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                : Text(isLastStep ? 'บันทึกข้อมูล' : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
           const SizedBox(height: 12),
           TextButton(
@@ -392,7 +388,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
             },
             child: Text(
               _currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก', 
-              style: const TextStyle(fontSize: 18, color: Colors.grey)
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey)
             ),
           ),
         ],
