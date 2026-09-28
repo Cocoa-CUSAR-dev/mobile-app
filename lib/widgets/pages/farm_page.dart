@@ -75,10 +75,7 @@ class _FarmPageState extends State<FarmPage> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                           child: Text(
                             farm.farmName ?? "",
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -101,7 +98,7 @@ class _FarmPageState extends State<FarmPage> {
                             borderRadius: const BorderRadius.all(Radius.circular(4)),
                             cardColor: const Color(0xFFF3F3F3),
                             itemBuilder: (context, item) =>
-                                Text(item.plotName ?? "", style:TextStyle(fontSize:18)),
+                                Text(item.plotName ?? "", style: Theme.of(context).textTheme.bodyLarge),
                             onAddData: () async {
                               final result = await Navigator.of(context).pushNamed(
                                 AppRoute.plotRegister,
@@ -130,9 +127,9 @@ class _FarmPageState extends State<FarmPage> {
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _navigateToRegister(context),
         icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
-        label: const Text(
+        label: Text(
           "เพิ่มข้อมูลฟาร์ม",
-          style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
