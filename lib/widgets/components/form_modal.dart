@@ -32,8 +32,7 @@ class FormModal extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 22,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.normal,
                   color: AppColors.primary,
                 ),
@@ -56,10 +55,7 @@ class FormModal extends StatelessWidget {
                       ),
                       child: Text(
                         saveButtonText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
                       ),
                     ),
                   ),
@@ -74,12 +70,9 @@ class FormModal extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'ย้อนกลับ',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary),
                       ),
                     ),
                   ),
