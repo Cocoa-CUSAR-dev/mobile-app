@@ -82,11 +82,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                       : 'เชื่อมบัญชีเดิมกับ LINE';
                   return Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.black87),
                   );
                 },
               ),
@@ -187,9 +183,9 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'เชื่อมบัญชีกับ LINE',
-                                  style: TextStyle(color: Colors.white, fontSize: 18),
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
                                 ),
                         ),
                       ],
@@ -221,19 +217,19 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 32),
         ElevatedButton.icon(
           onPressed: () =>
               context.read<LiffLoginBloc>().add(LiffHasAccountPressed()),
           icon: const Icon(Icons.login_rounded, color: Colors.white, size: 22),
-          label: const Text(
+          label: Text(
             'มีบัญชีผู้ใช้แล้ว',
-            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryColor,
@@ -251,9 +247,9 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             backgroundColor: Colors.white,
           ),
-          child: const Text(
+          child: Text(
             'ยังไม่มีบัญชีผู้ใช้',
-            style: TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -273,7 +269,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
         children: [
           Text(
             '❌ เชื่อมต่อกับ LINE ไม่สำเร็จ',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red.shade900),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.red.shade900),
           ),
           const SizedBox(height: 8),
           Text(state.error, style: TextStyle(color: Colors.red.shade900)),
@@ -304,10 +300,10 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
         children: [
           Icon(Icons.check_circle, color: Colors.green.shade600, size: 48),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'ทำการผูกบัญชี Line สำเร็จ',
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),

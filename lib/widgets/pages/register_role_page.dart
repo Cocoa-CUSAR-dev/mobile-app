@@ -192,9 +192,9 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 80),
-          const Text('ลงทะเบียนเข้าใช้งาน', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+          Text('ลงทะเบียนเข้าใช้งาน', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          const Text('กรุณาเลือกประเภทสมาชิก', style: TextStyle(fontSize: 16, color: Colors.black54)),
+          Text('กรุณาเลือกประเภทสมาชิก', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54)),
           const SizedBox(height: 40),
           _roleCard('เกษตรกร', 'farmer', Icons.agriculture),
           const SizedBox(height: 16),
@@ -220,7 +220,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   const SizedBox(height: 32),
                   Text(
                     'ข้อมูล${_roleConfigs[_selectedRole!]['title']}',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                   ),
                   const SizedBox(height: 24),
                   _buildCurrentStepFields(),
@@ -358,7 +358,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     if (totalSteps <= 1) return const SizedBox.shrink();
     return Column(
       children: [
-        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: const TextStyle(fontSize: 16)),
+        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -403,7 +403,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
             ),
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(isLastStep ? 'ยืนยันลงทะเบียน' : 'ถัดไป', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                : Text(isLastStep ? 'ยืนยันลงทะเบียน' : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
@@ -420,8 +420,8 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               side: BorderSide(color: Colors.grey.shade400),
             ),
             child: Text(
-              _currentStep > 0 ? 'ย้อนกลับ' : 'เปลี่ยนประเภทสมาชิก', 
-              style: const TextStyle(fontSize: 18, color: Colors.black87)
+              _currentStep > 0 ? 'ย้อนกลับ' : 'เปลี่ยนประเภทสมาชิก',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87)
             ),
           ),
           
@@ -452,7 +452,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               child: Icon(icon, color: AppColors.primary),
             ),
             const SizedBox(width: 16),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
             const Spacer(),
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
