@@ -110,37 +110,30 @@ class _DataRecordContainerState<TItem>
                 separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final item = itemsToShow[index];
-                  return Row(
-                    children: [
-                      // ส่วนของข้อมูล (Item Builder)
-                      Expanded(
-                        flex: 3,
-                        child: widget.itemBuilder(context, item),
-                      ),
-                      
-                      
-                      // เส้นคั่นกลาง (แก้ไขปัญหา Infinite Width)
-                      const Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Divider(color: Colors.black12),
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        // ส่วนของข้อมูล (Item Builder)
+                        Expanded(
+                          child: widget.itemBuilder(context, item),
                         ),
-                      ),
 
-                      // ส่วนของปุ่ม Actions
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (widget.onEdit != null)
-                            IconButton(
-                              onPressed: () => widget.onEdit!(item),
-                              constraints: const BoxConstraints(), // ลดพื้นที่ว่างรอบไอคอน
-                              padding: const EdgeInsets.all(4),
-                              icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
-                            ),
-                        ],
-                      ),
-                    ],
+                        // ส่วนของปุ่ม Actions
+                        if (widget.onEdit != null)
+                          IconButton(
+                            onPressed: () => widget.onEdit!(item),
+                            constraints: const BoxConstraints(), // ลดพื้นที่ว่างรอบไอคอน
+                            padding: const EdgeInsets.all(4),
+                            icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                          ),
+                      ],
+                    ),
                   );
                 },
               ),
