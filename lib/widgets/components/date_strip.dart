@@ -180,87 +180,76 @@ class _DateStripState extends State<DateStrip> {
     );
   }
 
-  // This app's real target is a phone screen -- on a wide desktop
-  // viewport (only reachable through the web test build), letting the
-  // strip fill the whole width crams ~19 chips edge-to-edge into one
-  // glance, which reads as visual noise rather than a scrollable strip.
-  // Capping the width keeps the same phone-sized chunk visible
-  // everywhere; it's a no-op on an actual phone-width viewport.
-  static const double _maxStripWidth = 420;
-
   @override
   Widget build(BuildContext context) {
     final totalDays = DateStrip.daysBefore + DateStrip.daysAfter + 1;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: _maxStripWidth),
-      child: SizedBox(
-        height: 68,
-        child: Stack(
-          children: [
-            ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: _edgeReserve - 4),
-              itemCount: totalDays,
-              itemBuilder: (context, index) {
-                final date = widget.anchorDate.add(
-                  Duration(days: index - DateStrip.daysBefore),
-                );
-                final isSelected = _isSameDay(date, widget.selectedDate);
-                return Padding(
-                  padding: const EdgeInsets.only(right: _itemGap),
-                  child: GestureDetector(
-                    onTap: () => widget.onDateSelected(date),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: _itemWidth,
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
+    return SizedBox(
+      height: 68,
+      child: Stack(
+        children: [
+          ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: _edgeReserve - 4),
+            itemCount: totalDays,
+            itemBuilder: (context, index) {
+              final date = widget.anchorDate.add(
+                Duration(days: index - DateStrip.daysBefore),
+              );
+              final isSelected = _isSameDay(date, widget.selectedDate);
+              return Padding(
+                padding: const EdgeInsets.only(right: _itemGap),
+                child: GestureDetector(
+                  onTap: () => widget.onDateSelected(date),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: _itemWidth,
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : Colors.grey.shade200,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
                           color: isSelected
-                              ? AppColors.primary
-                              : Colors.grey.shade200,
+                              ? AppColors.primary.withValues(alpha: 0.35)
+                              : Colors.black.withValues(alpha: 0.04),
+                          blurRadius: isSelected ? 10 : 6,
+                          offset: const Offset(0, 3),
                         ),
-                        boxShadow: [
-                          BoxShadow(
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _thaiWeekdayAbbr[date.weekday - 1],
+                          style: AppTextTheme.scale.labelSmall?.copyWith(
                             color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.35)
-                                : Colors.black.withValues(alpha: 0.04),
-                            blurRadius: isSelected ? 10 : 6,
-                            offset: const Offset(0, 3),
+                                ? Colors.white70
+                                : Colors.grey.shade600,
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _thaiWeekdayAbbr[date.weekday - 1],
-                            style: AppTextTheme.scale.labelSmall?.copyWith(
-                              color: isSelected
-                                  ? Colors.white70
-                                  : Colors.grey.shade600,
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${date.day}',
+                          style: AppTextTheme.scale.titleMedium?.copyWith(
+                            color: isSelected ? Colors.white : Colors.black87,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${date.day}',
-                            style: AppTextTheme.scale.titleMedium?.copyWith(
-                              color: isSelected ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-            _edgeFade(alignLeft: true, onTap: () => _nudge(-3)),
-            _edgeFade(alignLeft: false, onTap: () => _nudge(3)),
-          ],
-        ),
+                ),
+              );
+            },
+          ),
+          _edgeFade(alignLeft: true, onTap: () => _nudge(-3)),
+          _edgeFade(alignLeft: false, onTap: () => _nudge(3)),
+        ],
       ),
     );
   }
