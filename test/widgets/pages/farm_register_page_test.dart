@@ -37,18 +37,27 @@ void main() {
     expect(find.text('ชื่อฟาร์ม *', findRichText: true), findsOneWidget);
   });
 
-  testWidgets('M-FARM-02 — "ถัดไป" is disabled until farm_name is filled', (tester) async {
+  testWidgets('M-FARM-02 — "ถัดไป" is disabled until the required step-1 fields are filled', (tester) async {
     await tester.pumpWidget(wrapPage(const FarmRegisterPage()));
     await tester.pumpAndSettle();
 
     ElevatedButton nextButton() => tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ถัดไป'));
     expect(nextButton().onPressed, isNull);
 
-    await tester.enterText(find.byType(TextFormField).first, 'ไร่โกโก้พรีเมียม');
+    final textFields = find.byType(TextFormField);
+    await tester.enterText(textFields.at(0), 'ไร่โกโก้พรีเมียม'); // farm_name
+    await tester.pump();
+    expect(nextButton().onPressed, isNull); // contact_name/phone_number still empty
+
+    await tester.enterText(textFields.at(1), 'สมชาย ใจดี'); // contact_name
+    await tester.pump();
+    await tester.enterText(textFields.at(2), '0812345678'); // phone_number
     await tester.pump();
 
     // Documented bug (see file header): found_date's is_required is
-    // silently ignored, so the button enables from farm_name alone.
+    // silently ignored, so the button enables without it once the
+    // required *string*-typed fields (farm_name, contact_name,
+    // phone_number) are filled.
     expect(nextButton().onPressed, isNotNull);
   });
 
