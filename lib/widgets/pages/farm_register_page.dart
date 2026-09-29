@@ -29,6 +29,9 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
   final Map<String, TextEditingController> _controllers = {
     'farm_name': TextEditingController(),
     'found_date': TextEditingController(),
+    'contact_name': TextEditingController(),
+    'phone_number': TextEditingController(),
+    'zip_code': TextEditingController(),
   };
 
   final Map<String, FileUploadController> _fileControllers = {
@@ -75,12 +78,15 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
         return [
           const MapEntry('farm_name', {'type': 'string', 'is_required': true}),
           const MapEntry('found_date', {'type': 'date', 'is_required': true}),
+          const MapEntry('contact_name', {'type': 'string', 'is_required': true}),
+          const MapEntry('phone_number', {'type': 'string', 'is_required': true}),
         ];
       case 1:
         return [
           const MapEntry('province_id', {'type': 'id', 'is_required': true}),
           const MapEntry('district_id', {'type': 'id', 'is_required': true}),
           const MapEntry('subdistrict_id', {'type': 'id', 'is_required': true}),
+          const MapEntry('zip_code', {'type': 'string', 'is_required': true}),
         ];
       case 2:
         return [
@@ -182,6 +188,20 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
               controller: _controllers['found_date']!,
               isReq: true,
             ),
+            FormHelper.buildInput(
+              label: 'ชื่อผู้ติดต่อ',
+              controller: _controllers['contact_name']!,
+              hintText: 'กรุณากรอกชื่อผู้ติดต่อ',
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
+            FormHelper.buildInput(
+              label: 'เบอร์โทรศัพท์',
+              controller: _controllers['phone_number']!,
+              hintText: 'กรุณากรอกเบอร์โทรศัพท์',
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
           ],
         );
       case 1:
@@ -216,6 +236,13 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
+            ),
+            FormHelper.buildInput(
+              label: 'รหัสไปรษณีย์',
+              controller: _controllers['zip_code']!,
+              hintText: 'กรุณากรอกรหัสไปรษณีย์',
+              isReq: true,
+              onChanged: () => setState(() {}),
             ),
           ],
         );
