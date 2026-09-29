@@ -50,11 +50,16 @@ jobs:
       # the backend URL can change without editing this file. No trailing
       # slash in the secret's value -- service_provider.dart concatenates it
       # directly with endpoints that already start with "/".
+      #
+      # SENTRY_DSN (X-2d) -- same pattern, optional repo secret. Empty/unset
+      # is fine: config/sentry_config.dart defaults to '', which disables
+      # the SDK entirely, so this test build works with or without it set.
       - name: Build web
         run: |
           flutter build web \
             --base-href /mobile-app/ \
-            --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }}
+            --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }} \
+            --dart-define=SENTRY_DSN=${{ secrets.SENTRY_DSN }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

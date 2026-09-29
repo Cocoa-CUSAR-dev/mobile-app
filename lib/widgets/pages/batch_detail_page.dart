@@ -90,7 +90,10 @@ class _BatchDetailPageState extends State<BatchDetailPage> {
                           Text('${"กิจกรรม"} ${item['recordedAt'] ?? ""}', 
                                style: const TextStyle(fontWeight: FontWeight.bold)),
                           if (item['tempMorningOutside'] != null)
-                            Text('อุณหภูมินอกถัง ${item['tempMorningOutside']} องศาเซลเซียส', 
+                            // #45: kept hardcoded on purpose -- a dense per-record
+                            // data reading, smaller than AppTextTheme's smallest
+                            // role (labelSmall, 13).
+                            Text('อุณหภูมินอกถัง ${item['tempMorningOutside']} องศาเซลเซียส',
                                  style: const TextStyle(color: Colors.green, fontSize: 12)),
                         ],
                       );

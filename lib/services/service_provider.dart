@@ -308,6 +308,46 @@ class ServiceProvider<T> {
     return null;
   }
 
+  /// Fetch Single Data (GET) at the endpoint's own path, e.g. /auth/me --
+  /// unlike fetchOne(id), nothing is appended after `endpoint`, so this
+  /// never produces a trailing-slash URL for endpoints with no id segment.
+  Future<Map<String, dynamic>> fetchSelf() async {
+    if (isRealApi) {
+      final uri = Uri.parse('$baseUrl$endpoint');
+      try {
+        // RootScaffold leaves _isLoading true until this future settles,
+        // and while it is true the whole screen is a bare spinner -- no
+        // nav bar, no retry. A connection that stalls without erroring
+        // (weak signal out on a farm) would hang the app until force
+        // quit, so this has to fail rather than wait. Same 10s as
+        // isLoggedIn() and fetchAll().
+        final response = await _client
+            .get(uri, headers: await _getHeaders())
+            .timeout(const Duration(seconds: 10));
+        final decoded = await _updateToken(response);
+
+        if (response.statusCode == 200) {
+          // _updateToken returns null when the body is not JSON at all, so
+          // a bare cast would throw an opaque TypeError here -- and
+          // RootScaffold's catch swallows it, leaving the same silently
+          // empty profile page this endpoint was just fixed to stop
+          // producing. Fail with something readable instead.
+          if (decoded is! Map<String, dynamic>) {
+            throw "รูปแบบข้อมูลโปรไฟล์ไม่ถูกต้อง";
+          }
+          return decoded;
+        } else {
+          throw (decoded is Map ? decoded['error'] : null) ?? "Fetch Self Error";
+        }
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _simulateNetworkDelay();
+      return {};
+    }
+  }
+
   /// Fetch Single Data (GET) - สำหรับ /tasks/:taskId
   Future<Map<String, dynamic>> fetchOne(String id) async {
     if (isRealApi) {
@@ -373,6 +413,13 @@ class ServiceProvider<T> {
       await _simulateNetworkDelay();
       return true;
     }
+  }
+
+  /// Overwrite the local list under [storageKey] in one write -- for the
+  /// offline queue, which removes individual items by rebuilding the list
+  /// (deleteData is a no-op in local mode, so it can't remove anything).
+  Future<void> replaceLocal(List<Map<String, dynamic>> items) async {
+    await _storage.write(key: storageKey, value: jsonEncode(items));
   }
 
   Future<void> deleteAll() async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DateInput extends StatefulWidget {
   final String label;
@@ -147,7 +148,7 @@ class _DateInputState extends State<DateInput> {
       flex: flex,
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+          Text(label, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           _stepBtn(Icons.add, () => _changeValue(type, 1), isTop: true),
           Container(
@@ -164,7 +165,7 @@ class _DateInputState extends State<DateInput> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: onChanged,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
@@ -176,7 +177,7 @@ class _DateInputState extends State<DateInput> {
                   child: Text(
                     displayValue ?? "", 
                     textAlign: TextAlign.center, 
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)
                   ),
                 ),
           ),
@@ -187,19 +188,21 @@ class _DateInputState extends State<DateInput> {
   }
 
   Widget _stepBtn(IconData icon, VoidCallback onTap, {required bool isTop}) {
+    final radius = isTop
+        ? const BorderRadius.vertical(top: Radius.circular(8))
+        : const BorderRadius.vertical(bottom: Radius.circular(8));
     return InkWell(
       onTap: onTap,
+      borderRadius: radius,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey.shade300),
-          borderRadius: isTop 
-            ? const BorderRadius.vertical(top: Radius.circular(8)) 
-            : const BorderRadius.vertical(bottom: Radius.circular(8)),
+          borderRadius: radius,
         ),
-        child: Icon(icon, size: 20, color: const Color(0xFF794c46)),
+        child: Icon(icon, size: 20, color: AppColors.primary),
       ),
     );
   }
@@ -213,7 +216,7 @@ class _DateInputState extends State<DateInput> {
     return RichText(
       text: TextSpan(
         text: label,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         children: [if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red))],
       ),
     );

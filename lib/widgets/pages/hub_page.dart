@@ -8,6 +8,8 @@ import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class HubPage extends StatefulWidget {
   const HubPage({super.key});
@@ -40,7 +42,7 @@ class _HubPageState extends State<HubPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<HubBloc, HubState>(
         builder: (context, state) {
           if (state is HubLoading || state is HubInitial) {
@@ -55,23 +57,7 @@ class _HubPageState extends State<HubPage> {
             final hubs = state.hubs;
 
             if (hubs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 80,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'ไม่พบข้อมูลหน่วยรวบรวม',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
+              return const EmptyStateView(message: 'ไม่พบข้อมูลหน่วยรวบรวม');
             }
 
             return ListView.builder(
@@ -97,10 +83,7 @@ class _HubPageState extends State<HubPage> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                           child: Text(
                             hub.hubName ?? "หน่วยรวบรวม",
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -174,12 +157,12 @@ class _HubPageState extends State<HubPage> {
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _navigateToRegister(context),
         icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
-        label: const Text(
+        label: Text(
           "เพิ่มข้อมูลหน่วยรวบรวม",
-          style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF794c46),
+          backgroundColor: AppColors.primary,
         ),
       ),
     );

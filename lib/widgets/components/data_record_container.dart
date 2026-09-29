@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// Container for displaying a block of related data (e.g., activity records)
 class DataRecordContainer<TItem> extends StatefulWidget {
@@ -71,18 +72,12 @@ class _DataRecordContainerState<TItem>
                     children: [
                       Text(
                         widget.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       if (widget.subtitle != null)
                         Text(
                           widget.subtitle!,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                         ),
                     ],
                   ),
@@ -92,7 +87,7 @@ class _DataRecordContainerState<TItem>
                     onPressed: _toggleShowAll,
                     child: Text(
                       _showAll ? 'ย่อ' : 'อ่านเพิ่มเติม',
-                      style: const TextStyle(color: Color(0xFF794c46)),
+                      style: const TextStyle(color: AppColors.primary),
                     ),
                   ),
               ],
@@ -141,7 +136,7 @@ class _DataRecordContainerState<TItem>
                               onPressed: () => widget.onEdit!(item),
                               constraints: const BoxConstraints(), // ลดพื้นที่ว่างรอบไอคอน
                               padding: const EdgeInsets.all(4),
-                              icon: const Icon(Icons.edit, color: Color(0xFF794c46), size: 20),
+                              icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
                             ),
                         ],
                       ),
@@ -159,13 +154,13 @@ class _DataRecordContainerState<TItem>
                 child: ElevatedButton(
                   onPressed: widget.onAddData,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF794c46),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('ใส่ข้อมูล', style: TextStyle(fontFamily: 'NotoSansThaiLooped', fontSize:18)),
+                  child: Text('ใส่ข้อมูล', style: Theme.of(context).textTheme.bodyLarge),
                 ),
               ),
           ],

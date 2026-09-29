@@ -12,6 +12,8 @@ import 'package:cocoa_supply/widgets/components/dropdown_input.dart';
 import 'package:cocoa_supply/widgets/components/gis_input.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/checkbox_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class PlotRegisterPage extends StatefulWidget {
   final String farmId; // รับ farmId เข้ามาโดยตรง
@@ -93,22 +95,12 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
       await registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ ลงทะเบียนแปลงปลูกสำเร็จ'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.show(context, 'ลงทะเบียนแปลงปลูกสำเร็จ', type: AppSnackBarType.success);
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ เกิดข้อผิดพลาด: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.show(context, 'เกิดข้อผิดพลาด: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -159,13 +151,9 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                   children: [
                     _buildStepIndicator(totalSteps),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'ข้อมูลแปลงปลูกโกโก้',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF794c46),
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                     ),
                     const SizedBox(height: 24),
                     allFields[_currentStep],
@@ -287,7 +275,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
       children: [
         Text(
           "หน้า ${_currentStep + 1} จาก $totalSteps",
-          style: const TextStyle(fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
         const SizedBox(height: 8),
         Row(
@@ -301,7 +289,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
                 color: _currentStep == i
-                    ? const Color(0xFF794c46)
+                    ? AppColors.primary
                     : Colors.grey.shade300,
               ),
             ),
@@ -329,16 +317,11 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                         setState(() => _currentStep++);
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("กรุณากรอกข้อมูลให้ครบถ้วน"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
+                      AppSnackBar.show(context, "กรุณากรอกข้อมูลให้ครบถ้วน", type: AppSnackBarType.error);
                     }
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF794c46),
+              backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -355,7 +338,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
                   )
                 : Text(
                     isLastStep ? 'บันทึกข้อมูลแปลง' : 'ต่อไป',
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
                   ),
           ),
           const SizedBox(height: 12),
@@ -375,7 +358,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
             ),
             child: Text(
               _currentStep > 0 ? 'ย้อนกลับ' : 'ยกเลิก',
-              style: const TextStyle(fontSize: 18, color: Colors.black),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
             ),
           ),
         ],

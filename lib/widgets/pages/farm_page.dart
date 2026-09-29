@@ -7,6 +7,8 @@ import 'package:cocoa_supply/widgets/components/data_record_container.dart';
 import 'package:cocoa_supply/bloc/farm/farm_bloc.dart';
 import 'package:cocoa_supply/bloc/farm/farm_event.dart';
 import 'package:cocoa_supply/bloc/farm/farm_state.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class FarmPage extends StatefulWidget {
   const FarmPage({super.key});
@@ -36,7 +38,7 @@ class _FarmPageState extends State<FarmPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<FarmBloc, FarmState>(
         builder: (context, state) {
           if (state is FarmLoading || state is FarmInitial) {
@@ -45,26 +47,7 @@ class _FarmPageState extends State<FarmPage> {
             final farms = state.farms;
             
             if (farms.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 80,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'ไม่พบข้อมูล',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return const EmptyStateView(message: 'ไม่พบข้อมูล');
             }
 
             return ListView.builder(
@@ -92,10 +75,7 @@ class _FarmPageState extends State<FarmPage> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                           child: Text(
                             farm.farmName ?? "",
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -118,7 +98,7 @@ class _FarmPageState extends State<FarmPage> {
                             borderRadius: const BorderRadius.all(Radius.circular(4)),
                             cardColor: const Color(0xFFF3F3F3),
                             itemBuilder: (context, item) =>
-                                Text(item.plotName ?? "", style:TextStyle(fontSize:18)),
+                                Text(item.plotName ?? "", style: Theme.of(context).textTheme.bodyLarge),
                             onAddData: () async {
                               final result = await Navigator.of(context).pushNamed(
                                 AppRoute.plotRegister,
@@ -147,12 +127,12 @@ class _FarmPageState extends State<FarmPage> {
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _navigateToRegister(context),
         icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
-        label: const Text(
+        label: Text(
           "เพิ่มข้อมูลฟาร์ม",
-          style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF794c46),
+          backgroundColor: AppColors.primary,
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class CheckboxInput extends StatefulWidget {
   final String label;
@@ -65,7 +66,7 @@ class _CheckboxInputState extends State<CheckboxInput> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final primaryColor = const Color(0x88794c46);
+    final primaryColor = AppColors.primaryMuted;
     
     return InkWell(
       onTap: onTap,
@@ -92,11 +93,9 @@ class _CheckboxInputState extends State<CheckboxInput> {
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 18,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected ? Colors.white : Colors.black87,
-                fontFamily: 'NotoSansThaiLooped',
               ),
             ),
           ],
@@ -116,11 +115,9 @@ class _CheckboxInputState extends State<CheckboxInput> {
     return RichText(
       text: TextSpan(
         text: widget.label,
-        style: const TextStyle(
-          fontSize: 18,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.bold,
           color: Colors.black87,
-          fontFamily: 'NotoSansThaiLooped',
         ),
         children: [
           if (widget.isRequired)

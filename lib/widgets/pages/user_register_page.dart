@@ -3,6 +3,8 @@ import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class UserRegisterPage extends StatefulWidget {
   /// true = มาจากปุ่ม "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing — สมัครเสร็จแล้วให้
@@ -64,11 +66,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       await _registerService.postData(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('ลงทะเบียนสำเร็จ'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ));
+        AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
         if (widget.fromLiff) {
           // สมัครมาจากหน้า LIFF landing — ไปฟอร์ม login/link ของ LiffLinkPage
           // ต่อเลย เพื่อ login + เชื่อมบัญชี LINE ให้อัตโนมัติในขั้นตอนเดียว
@@ -82,13 +80,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ ลงทะเบียนไม่สำเร็จ: ${e.toString()}'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.show(context, 'ลงทะเบียนไม่สำเร็จ: ${e.toString()}', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -106,18 +98,14 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'ลงทะเบียนผู้ใช้งานใหม่',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF794c46),
-                ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'กรุณากรอกข้อมูลเพื่อเข้าใช้งานระบบ',
-                style: TextStyle(fontSize: 18),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
 
@@ -152,7 +140,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF794c46),
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -167,9 +155,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'ยืนยันการลงทะเบียน',
-                        style: TextStyle(color: Colors.white, fontSize: 20),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
                       ),
               ),
             ],

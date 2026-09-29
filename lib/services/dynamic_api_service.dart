@@ -67,8 +67,39 @@ class DynamicApiService {
     }
   }
 
+  // APP-10: province/district/subdistrict never change during a session,
+  // but every dropdown open called fetchConstants() again -- re-hitting
+  // the network for the exact same list each time (confirmed live: opening
+  // the same province/district dropdown twice logged two identical
+  // fetches). In-memory cache keyed by key+queryParams so the same list is
+  // only ever fetched once per session; a fresh app launch still fetches
+  // normally.
+  static final Map<String, List<Map<String, dynamic>>> _constantsCache = {};
+
+  /// Drops everything cached by fetchConstants.
+  ///
+  /// The cache is static, so it outlives any one screen and any one signed-in
+  /// user. Today it only ever holds public reference data (province, district,
+  /// subdistrict), but fetchConstants takes an arbitrary `key` -- the day
+  /// someone points it at something user-scoped, that data would follow the
+  /// previous account into the next session. Called from AuthService.logout()
+  /// so that cannot happen quietly.
+  static void clearConstantsCache() => _constantsCache.clear();
+
+  String _constantsCacheKey(String key, Map<String, dynamic>? queryParams) {
+    if (queryParams == null || queryParams.isEmpty) return key;
+    final sortedEntries = queryParams.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final paramsPart = sortedEntries.map((e) => '${e.key}=${e.value}').join(',');
+    return '$key?$paramsPart';
+  }
+
   Future<List<Map<String, dynamic>>> fetchConstants(String key,
       {Map<String, dynamic>? queryParams}) async {
+    final cacheKey = _constantsCacheKey(key, queryParams);
+    final cached = _constantsCache[cacheKey];
+    if (cached != null) return cached;
+
     // 1. สร้าง Instance ของ ServiceProvider สำหรับ Constants
     // ปรับ endpoint ให้เป็นแบบ dynamic ตาม key ที่ส่งมา
     final service = ServiceProvider<Map<String, dynamic>>(
@@ -85,15 +116,39 @@ class DynamicApiService {
         (json) => json, // creator: รับ json map มาแล้วคืนค่าออกไปเลย
         queryParams: queryParams,
       );
-      print(key);
-      print(results);
+      // Deliberately not caching an empty list: a backend that answers 200
+      // with [] during a deploy would otherwise leave that dropdown empty
+      // for the rest of the session, with no way for the user to retry.
+      if (results.isNotEmpty) _constantsCache[cacheKey] = results;
       return results;
     } catch (e) {
       print('Error fetching constants for $key: $e');
-      
-      // 3. Fallback: กรณี Error หรือ Server ล่ม 
+
+      // 3. Fallback: กรณี Error หรือ Server ล่ม
       // คุณสามารถเลือกได้ว่าจะคืนค่าว่าง [] หรือจะเอา Mock Data เดิมมาใส่ไว้ที่นี่
-      return []; 
+      return [];
     }
+  }
+
+  // APP-11: กรุงเทพมหานครใช้ "เขต"/"แขวง" ไม่ใช่ "อำเภอ"/"ตำบล" -- หน้าลงทะเบียน
+  // ต้องรู้ชื่อจังหวัดที่เลือกอยู่ (ไม่ใช่แค่ id) เพื่อสลับ label ให้ถูก แต่
+  // onChanged ของ dropdown จังหวัดส่งมาแค่ id เท่านั้น เลยต้องมีตัวช่วยย้อนดูชื่อ
+  // จาก cache ของ fetchConstants('province') ที่โหลดไว้แล้วตอนเปิด dropdown
+  // จังหวัด (ไม่ต้อง fetch ซ้ำ)
+  static String? lookupCachedProvinceName(String? provinceId) {
+    if (provinceId == null) return null;
+    final cached = _constantsCache['province'];
+    if (cached == null) return null;
+    for (final row in cached) {
+      if (row['province_id']?.toString() == provinceId) {
+        return row['province_name_th']?.toString();
+      }
+    }
+    return null;
+  }
+
+  static bool isBangkokProvinceId(String? provinceId) {
+    final name = lookupCachedProvinceName(provinceId);
+    return name != null && name.contains('กรุงเทพ');
   }
 }

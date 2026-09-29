@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class FileUploadController extends ChangeNotifier {
   PlatformFile? _value;
@@ -41,11 +42,7 @@ class UploadInput extends StatelessWidget {
             // Label ด้านบน
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 18,
-                fontFamily: 'NotoSansThaiLooped',
-                color: Colors.black87,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87),
             ),
             const SizedBox(height: 8),
 
@@ -65,7 +62,7 @@ class UploadInput extends StatelessWidget {
                     color: Colors.grey.shade300,
                   ),
                   borderRadius: BorderRadius.circular(8),
-                  color: Color(0xFFF8F8F8),
+                  color: AppColors.surface,
                 ),
                 child: Row(
                   children: [
@@ -75,20 +72,16 @@ class UploadInput extends StatelessWidget {
                         controller.hasFile
                             ? controller.value!.name
                             : "เลือกไฟล์...",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontFamily: 'NotoSansThaiLooped',
-                          color: Colors.grey.shade600,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
                         overflow: TextOverflow.ellipsis, // กันชื่อไฟล์ยาวเกิน
                       ),
                     ),
 
                     // ไอคอนด้านขวา (เปลี่ยนตามสถานะไฟล์)
                     if (controller.hasFile)
-                      GestureDetector(
-                        onTap: () => controller.clear(),
-                        child: const Icon(
+                      IconButton(
+                        onPressed: () => controller.clear(),
+                        icon: const Icon(
                           Icons.cancel,
                           color: Colors.redAccent,
                           size: 20,

@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/widgets/components/data_record_container.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 
 class ProcessingStationPage extends StatefulWidget {
   const ProcessingStationPage({super.key});
@@ -40,7 +42,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: BlocBuilder<ProcessingStationBloc, ProcessingStationState>(
         builder: (context, state) {
           if (state is ProcessingStationLoading ||
@@ -73,12 +75,12 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _navigateToRegister(context),
         icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
-        label: const Text(
+        label: Text(
           "เพิ่มข้อมูลสถานีแปรรูป",
-          style: TextStyle(color: Color(0xFFF3F3F3), fontSize: 18),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF794c46),
+          backgroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),
@@ -86,23 +88,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'ไม่พบข้อมูลสถานีแปรรูป',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+    return const EmptyStateView(message: 'ไม่พบข้อมูลสถานีแปรรูป');
   }
 
   Widget _buildProcessingStationCard(
@@ -124,10 +110,7 @@ class _ProcessingStationPageState extends State<ProcessingStationPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 station.processingStationName ?? "ไม่มีชื่อสถานี",
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
             const SizedBox(height: 16),

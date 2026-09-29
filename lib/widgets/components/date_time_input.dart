@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DateTimeInput extends StatefulWidget {
   final String label;
@@ -131,9 +132,9 @@ class _DateTimeInputState extends State<DateTimeInput> {
           children: [
             const Spacer(),
             _buildPicker("ชม.", _hourCtrl, (v) => hour = int.tryParse(v) ?? hour, 'hour'),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(8, 24, 8, 0),
-              child: Text(":", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 24, 8, 0),
+              child: Text(":", style: Theme.of(context).textTheme.headlineSmall),
             ),
             _buildPicker("นาที", _minCtrl, (v) => minute = int.tryParse(v) ?? minute, 'minute'),
             const Spacer(),
@@ -149,7 +150,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
     return Expanded(
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           _stepBtn(Icons.add, () => _handleBtnClick(type, 1), isTop: true),
           Container(
@@ -162,7 +163,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
               onChanged: (v) {
                 onChanged(v);
                 _saveToMainController(); // บันทึกทันทีที่พิมพ์แต่ไม่ทับ text ใน ctrl
@@ -190,7 +191,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
       flex: flex,
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           _stepBtn(Icons.add, () => _handleBtnClick(type, 1), isTop: true),
           Container(
@@ -200,7 +201,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
               color: Colors.grey.shade50,
               border: Border.symmetric(vertical: BorderSide(color: Colors.grey.shade300)),
             ),
-            child: Text(value, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(value, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
           ),
           _stepBtn(Icons.remove, () => _handleBtnClick(type, -1), isTop: false),
         ],
@@ -209,17 +210,21 @@ class _DateTimeInputState extends State<DateTimeInput> {
   }
 
   Widget _stepBtn(IconData icon, VoidCallback onTap, {required bool isTop}) {
+    final radius = isTop
+        ? const BorderRadius.vertical(top: Radius.circular(8))
+        : const BorderRadius.vertical(bottom: Radius.circular(8));
     return InkWell(
       onTap: onTap,
+      borderRadius: radius,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey.shade300),
-          borderRadius: isTop ? const BorderRadius.vertical(top: Radius.circular(8)) : const BorderRadius.vertical(bottom: Radius.circular(8)),
+          borderRadius: radius,
         ),
-        child: Icon(icon, size: 20, color: const Color(0xFF794c46)),
+        child: Icon(icon, size: 20, color: AppColors.primary),
       ),
     );
   }
@@ -233,7 +238,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
     return RichText(
       text: TextSpan(
         text: widget.label,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         children: [if (widget.isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red))],
       ),
     );

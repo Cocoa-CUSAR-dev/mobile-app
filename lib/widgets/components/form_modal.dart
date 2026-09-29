@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// Modal สำหรับเป็นฟอร์มแสดงและแก้ไขข้อมูล
 class FormModal extends StatelessWidget {
@@ -31,10 +32,9 @@ class FormModal extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 22,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.normal,
-                  color: Color(0xFF794c46),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -47,7 +47,7 @@ class FormModal extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: onSave,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF794c46),
+                        backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -55,10 +55,7 @@ class FormModal extends StatelessWidget {
                       ),
                       child: Text(
                         saveButtonText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
                       ),
                     ),
                   ),
@@ -68,17 +65,14 @@ class FormModal extends StatelessWidget {
                       onPressed: onCancel ?? () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(color: Color(0xFF794c46)),
+                        side: const BorderSide(color: AppColors.primary),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'ย้อนกลับ',
-                        style: TextStyle(
-                          color: Color(0xFF794c46),
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.primary),
                       ),
                     ),
                   ),

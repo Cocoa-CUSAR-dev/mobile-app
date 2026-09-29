@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// Component สำหรับ Form Input ที่นำมาใช้ซ้ำได้
 class FormInput extends StatelessWidget {
@@ -46,17 +47,15 @@ class FormInput extends StatelessWidget {
             child: RichText(
               text: TextSpan(
                 text: label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'NotoSansThaiLooped',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
                 children: [
                   if (isRequired)
-                    const TextSpan(
+                    TextSpan(
                       text: ' *',
-                      style: TextStyle(color: Colors.red, fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red),
                     ),
                 ],
               ),
@@ -79,10 +78,7 @@ class FormInput extends StatelessWidget {
             minLines: isTextArea ? textAreaLines : 1,
             maxLines: isTextArea ? textAreaLines : 1,
 
-            style: const TextStyle(
-              fontSize: 18,
-              fontFamily: 'NotoSansThaiLooped',
-            ),
+            style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: hintText,
               contentPadding:
@@ -90,7 +86,7 @@ class FormInput extends StatelessWidget {
               filled: true,
               hintStyle: TextStyle(color: Colors.grey.shade500),
               fillColor:
-                  readOnly ? Colors.grey.shade50 : Color(0xFFF8F8F8),
+                  readOnly ? Colors.grey.shade50 : AppColors.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide:
@@ -104,7 +100,7 @@ class FormInput extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
                 borderSide: const BorderSide(
-                    color: Color(0xFF794c46), width: 2),
+                    color: AppColors.primary, width: 2),
               ),
               suffixIcon: suffixIcon,
             ),

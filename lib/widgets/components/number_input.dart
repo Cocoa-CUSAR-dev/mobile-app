@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class NumberInput extends StatefulWidget {
   final String label;
@@ -70,11 +71,7 @@ class _NumberInputState extends State<NumberInput> {
           child: TextField(
             controller: widget.controller,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 24, 
-              fontWeight: FontWeight.bold, 
-              color: Color(0xFF794c46)
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
             keyboardType: TextInputType.numberWithOptions(decimal: !widget.isInt),
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -123,11 +120,7 @@ class _NumberInputState extends State<NumberInput> {
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -137,11 +130,7 @@ class _NumberInputState extends State<NumberInput> {
     return RichText(
       text: TextSpan(
         text: label,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         children: [
           if (isRequired)
             const TextSpan(

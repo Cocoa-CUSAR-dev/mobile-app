@@ -5,6 +5,8 @@ import 'package:cocoa_supply/bloc/login/login_bloc.dart';
 import 'package:cocoa_supply/bloc/login/login_event.dart';
 import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   // โทนสีตามธีมเดิม
-  final Color primaryColor = const Color(0xFF794c46);
+  final Color primaryColor = AppColors.primary;
 
   @override
   void initState() {
@@ -58,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // --- พื้นหลังเดิม (Positioned + Image.asset) ---
@@ -78,13 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                   state.next_page == "HOME" ? AppRoute.home : AppRoute.roleRegister,
                 );
               } else if (state is LoginFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.error),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                AppSnackBar.show(context, state.error, type: AppSnackBarType.error);
               }
             },
             child: SafeArea(
@@ -97,10 +93,9 @@ class _LoginPageState extends State<LoginPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'ยินดีต้อนรับเข้าสู่แอปพลิเคชัน',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
@@ -132,12 +127,9 @@ class _LoginPageState extends State<LoginPage> {
       key: const ValueKey(1),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 32),
         _buildMainButton(
@@ -185,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.red),
                 ),
               ),
             const SizedBox(height: 24),
@@ -245,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
               )
             : Text(
                 label,
-                style: TextStyle(fontSize: 18, color: textColor, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: textColor, fontWeight: FontWeight.bold),
               ),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
@@ -270,7 +262,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.w500),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
       ),
     );
   }

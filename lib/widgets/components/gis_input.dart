@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
+import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 
 class PolygonData {
   final List<LatLng> points;
@@ -61,10 +63,11 @@ class GISInput extends StatelessWidget {
       children: [
         Text(
           "$label ${isRequired ? '*' : ''}",
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         InkWell(
+          borderRadius: BorderRadius.circular(12),
           onTap: () async {
             final PolygonData? result = await Navigator.push(
               context,
@@ -75,13 +78,13 @@ class GISInput extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: hasData ? const Color(0xFF794c46) : Colors.grey.shade300),
+              border: Border.all(color: hasData ? AppColors.primary : Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              color: hasData ? const Color(0x1A794C46) : Colors.grey.shade50,
+              color: hasData ? AppColors.primaryFaint : Colors.grey.shade50,
             ),
             child: Row(
               children: [
-                Icon(Icons.map_rounded, color: hasData ? const Color(0xFF794c46) : Colors.grey),
+                Icon(Icons.map_rounded, color: hasData ? AppColors.primary : Colors.grey),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -89,19 +92,18 @@ class GISInput extends StatelessWidget {
                     children: [
                       Text(
                         ThaiAreaUtils.format(data.areaM2, data.points.length, data.points),
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: hasData ? Colors.black87 : Colors.grey.shade600,
-                          fontSize: 18,
                           fontWeight: hasData ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                       if (hasData)
                         Text(data.points.length < 3 ? "ส่งค่าเป็น: พิกัด (1 จุด)" : "ส่งค่าเป็น: พื้นที่ (${data.points.length} จุด)",
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF794c46))),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.primary)),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: hasData ? const Color(0xFF794c46) : Colors.grey),
+                Icon(Icons.chevron_right, color: hasData ? AppColors.primary : Colors.grey),
               ],
             ),
           ),
@@ -208,7 +210,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF794c46),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         toolbarHeight: 64,
         title: Text(_points.length < 3 ? "ระบุตำแหน่ง (1 จุด)" : "ระบุพื้นที่ (3 จุดขึ้นไป)"),
@@ -216,15 +218,17 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
           TextButton.icon(
             onPressed: () {
               if (_points.length == 2) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("กรุณาปักเพิ่มอีก 1 จุดเพื่อเป็นพื้นที่ หรือลบให้เหลือ 1 จุดเพื่อเป็นพิกัด"))
+                AppSnackBar.show(
+                  context,
+                  "กรุณาปักเพิ่มอีก 1 จุดเพื่อเป็นพื้นที่ หรือลบให้เหลือ 1 จุดเพื่อเป็นพิกัด",
+                  type: AppSnackBarType.error,
                 );
                 return;
               }
               Navigator.pop(context, PolygonData(points: _points, areaM2: _areaM2));
             },
             icon: const Icon(Icons.save, color: Colors.white),
-            label: const Text("บันทึก", style: TextStyle(color: Colors.white, fontSize: 16)),
+            label: Text("บันทึก", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
           )
         ],
       ),
@@ -269,7 +273,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
           //   const Center(
           //     child: Padding(
           //       padding: EdgeInsetsGeometry.all(40),
-          //       child: Icon(Icons.add_location_alt_outlined, size: 40, color: Color(0xFF794c46)),
+          //       child: Icon(Icons.add_location_alt_outlined, size: 40, color: AppColors.primary),
           //     ),
           //   ),
 
@@ -288,11 +292,11 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
                 children: [
                   Text(
                     ThaiAreaUtils.format(_areaM2, _points.length, _points),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF794c46)),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.primary),
                   ),
                   Text(
                     "กรุณาเลื่อนแผนที่ไปยังบริเวณที่ต้องการแล้วกดบนแผนที่เพื่อระบุตำแหน่ง หากต้องการระบุเพียงตำแหน่ง ให้ปัก 1 จุด แต่กรณีต้องการระบุพื้นที่กรุณาปัก 3 จุดขึ้นไป",
-                    style: const TextStyle(fontSize: 16),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   
                   // if (_points.isNotEmpty)
@@ -312,12 +316,12 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
                   heroTag: "gps",
                   backgroundColor: Colors.white,
                   onPressed: _goToCurrentLocation,
-                  child: const Icon(Icons.my_location, color: Color(0xFF794c46)),
+                  child: const Icon(Icons.my_location, color: AppColors.primary),
                 ),
                 const SizedBox(height: 12),
                 FloatingActionButton(
                   heroTag: "undo",
-                  backgroundColor: const Color(0xFF794c46),
+                  backgroundColor: AppColors.primary,
                   onPressed: () {
                     if (_points.isNotEmpty) {
                       _points.removeLast();

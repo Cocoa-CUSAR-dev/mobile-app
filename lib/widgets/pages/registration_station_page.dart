@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/theme/app_colors.dart';
 
 class RegistrationSelectionPage extends StatelessWidget {
   const RegistrationSelectionPage({super.key});
@@ -23,21 +24,18 @@ class RegistrationSelectionPage extends StatelessWidget {
             children: [
               const SizedBox(height: 40),
               // ส่วนหัวข้อ
-              const Text(
+              Text(
                 'คุณยังไม่ได้ลงทะเบียนเป็น\nเกษตรกร หรือ ผู้แปรรูป',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.black87,
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'กรุณาเลือกประเภทบัญชีที่คุณต้องการเริ่มต้นใช้งาน',
-                style: TextStyle(
-                  fontSize: 16,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.black54,
                 ),
                 textAlign: TextAlign.center,
@@ -103,8 +101,8 @@ class RegistrationSelectionPage extends StatelessWidget {
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF794c46),
-        side: const BorderSide(color: Color(0xFF794c46), width: 2),
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary, width: 2),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
@@ -120,10 +118,7 @@ class RegistrationSelectionPage extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
