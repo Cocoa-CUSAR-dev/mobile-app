@@ -55,7 +55,10 @@ class _DataRecordContainerState<TItem>
       shape: RoundedRectangleBorder(
         borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
       ),
-      elevation: 1,
+      // Flat, not elevated -- this now nests inside pages' own
+      // soft-shadow cards (e.g. farm_page's), where a second Material
+      // shadow just muddies the edge instead of adding depth.
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -92,7 +95,7 @@ class _DataRecordContainerState<TItem>
                   ),
               ],
             ),
-            const Divider(height: 24, color: Colors.black26),
+            Divider(height: 24, color: Colors.grey.shade300),
 
             // --- Content Section ---
             if (widget.items.isEmpty)
@@ -110,37 +113,30 @@ class _DataRecordContainerState<TItem>
                 separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final item = itemsToShow[index];
-                  return Row(
-                    children: [
-                      // ส่วนของข้อมูล (Item Builder)
-                      Expanded(
-                        flex: 3,
-                        child: widget.itemBuilder(context, item),
-                      ),
-                      
-                      
-                      // เส้นคั่นกลาง (แก้ไขปัญหา Infinite Width)
-                      const Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Divider(color: Colors.black12),
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        // ส่วนของข้อมูล (Item Builder)
+                        Expanded(
+                          child: widget.itemBuilder(context, item),
                         ),
-                      ),
 
-                      // ส่วนของปุ่ม Actions
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (widget.onEdit != null)
-                            IconButton(
-                              onPressed: () => widget.onEdit!(item),
-                              constraints: const BoxConstraints(), // ลดพื้นที่ว่างรอบไอคอน
-                              padding: const EdgeInsets.all(4),
-                              icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
-                            ),
-                        ],
-                      ),
-                    ],
+                        // ส่วนของปุ่ม Actions
+                        if (widget.onEdit != null)
+                          IconButton(
+                            onPressed: () => widget.onEdit!(item),
+                            constraints: const BoxConstraints(), // ลดพื้นที่ว่างรอบไอคอน
+                            padding: const EdgeInsets.all(4),
+                            icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                          ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -156,11 +152,24 @@ class _DataRecordContainerState<TItem>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Text('ใส่ข้อมูล', style: Theme.of(context).textTheme.bodyLarge),
+                  child: Text(
+                    'ใส่ข้อมูล',
+                    // bodyLarge has no color of its own, so it was inheriting
+                    // the theme's default (dark) text color here -- which
+                    // overrides the button's own foregroundColor: Colors.white
+                    // above, since an explicit style on the child Text wins.
+                    // Same bug existed before this button's redesign too.
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
               ),
           ],
