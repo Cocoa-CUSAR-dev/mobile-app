@@ -112,7 +112,10 @@ class _DateStripState extends State<DateStrip> {
     final index =
         widget.selectedDate.difference(widget.anchorDate).inDays +
         DateStrip.daysBefore;
-    final itemStart = index * (_itemWidth + _itemGap);
+    // The ListView's own leading padding (see the padding: below) shifts
+    // every chip's real on-screen position by that much -- omitting it
+    // here made every "centered" chip sit that far left of true center.
+    final itemStart = (_edgeReserve - 4) + index * (_itemWidth + _itemGap);
     // Center the selected chip in the viewport rather than nudging it in
     // from the left edge -- on a wide (desktop) viewport a fixed nudge
     // left it stuck near the left edge instead of showing days on both
