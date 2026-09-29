@@ -55,7 +55,10 @@ class _DataRecordContainerState<TItem>
       shape: RoundedRectangleBorder(
         borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
       ),
-      elevation: 1,
+      // Flat, not elevated -- this now nests inside pages' own
+      // soft-shadow cards (e.g. farm_page's), where a second Material
+      // shadow just muddies the edge instead of adding depth.
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -92,7 +95,7 @@ class _DataRecordContainerState<TItem>
                   ),
               ],
             ),
-            const Divider(height: 24, color: Colors.black26),
+            Divider(height: 24, color: Colors.grey.shade300),
 
             // --- Content Section ---
             if (widget.items.isEmpty)
@@ -149,11 +152,16 @@ class _DataRecordContainerState<TItem>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Text('ใส่ข้อมูล', style: Theme.of(context).textTheme.bodyLarge),
+                  child: Text(
+                    'ใส่ข้อมูล',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
           ],
