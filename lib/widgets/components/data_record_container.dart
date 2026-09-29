@@ -160,7 +160,15 @@ class _DataRecordContainerState<TItem>
                   ),
                   child: Text(
                     'ใส่ข้อมูล',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                    // bodyLarge has no color of its own, so it was inheriting
+                    // the theme's default (dark) text color here -- which
+                    // overrides the button's own foregroundColor: Colors.white
+                    // above, since an explicit style on the child Text wins.
+                    // Same bug existed before this button's redesign too.
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ),
