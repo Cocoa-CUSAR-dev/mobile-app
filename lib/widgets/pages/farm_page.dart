@@ -82,12 +82,7 @@ class _FarmPageState extends State<FarmPage> {
                       // of how bright the photo underneath is.
                       Stack(
                         children: [
-                          Image.asset(
-                            'assets/images/farm.jpg',
-                            height: 180,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                          _FarmPhoto(url: farm.imageUrl),
                           Positioned(
                             left: 0,
                             right: 0,
@@ -160,6 +155,44 @@ class _FarmPageState extends State<FarmPage> {
           backgroundColor: AppColors.primary,
         ),
       ),
+    );
+  }
+}
+class _FarmPhoto extends StatelessWidget {
+  const _FarmPhoto({required this.url});
+
+  final String? url;
+
+  static const double _height = 180;
+
+  // Also the fallback when the presigned URL has expired, e.g. a farm list
+  // served from the offline cache well after it was fetched.
+  Widget _defaultPhoto() => Image.asset(
+        'assets/images/farm.jpg',
+        height: _height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final url = this.url;
+    if (url == null || url.isEmpty) return _defaultPhoto();
+
+    return Image.network(
+      url,
+      height: _height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) => progress == null
+          ? child
+          : Container(
+              height: _height,
+              color: Colors.grey.shade200,
+              alignment: Alignment.center,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            ),
+      errorBuilder: (context, error, stackTrace) => _defaultPhoto(),
     );
   }
 }

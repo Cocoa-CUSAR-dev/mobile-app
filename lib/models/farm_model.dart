@@ -17,6 +17,9 @@ class Farm {
   final String? facebook;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  // Short-lived presigned URL from GET /farms; null when the farm has no
+  // photo (the card then shows the bundled default).
+  final String? imageUrl;
   List<Plot>? plots; // คงไว้ตามโครงสร้างเดิม
 
   Farm({
@@ -36,6 +39,7 @@ class Farm {
     this.facebook,
     this.createdAt,
     this.updatedAt,
+    this.imageUrl,
     this.plots,
   });
 
@@ -56,6 +60,7 @@ class Farm {
     facebook: json['facebook'],
     createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
     updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
+    imageUrl: json['image_url'],
     // ✅ แก้ไขตรงนี้: ดึงข้อมูล plots มาแปลงเป็น List<Plot>
     plots: json['plots'] != null 
         ? (json['plots'] as List).map((i) => Plot.fromJson(i)).toList() 
@@ -79,6 +84,7 @@ class Farm {
     'facebook': facebook,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),
+    'image_url': imageUrl,
     // ✅ เพิ่มการส่งค่า plots กลับเป็น JSON ถ้าต้องการ
     if (plots != null) 'plots': plots!.map((v) => v.toJson()).toList(),
   };
