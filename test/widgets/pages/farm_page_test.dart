@@ -2,6 +2,7 @@
 
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/pages/farm_page.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,6 +44,37 @@ void main() {
 
     expect(find.text('ไร่โกโก้พรีเมียม'), findsOneWidget);
     expect(find.text('แปลง 1'), findsOneWidget);
+  });
+
+  testWidgets("the card loads the farm's own photo when image_url is set", (tester) async {
+    final client = MockClient((request) async => jsonResponse([
+      {'farm_id': 1, 'farm_name': 'มีรูป', 'image_url': 'https://r2.test/farms/1/a.jpg'},
+    ], 200));
+
+    await tester.pumpWidget(wrapPage(const FarmPage(), client: client));
+    await tester.pumpAndSettle();
+
+    final providers = tester.widgetList<Image>(find.byType(Image)).map((i) => i.image);
+    expect(
+      providers.whereType<NetworkImage>().map((p) => p.url),
+      contains('https://r2.test/farms/1/a.jpg'),
+    );
+  });
+
+  testWidgets('the card falls back to the default photo when the farm has none', (tester) async {
+    final client = MockClient((request) async => jsonResponse([
+      {'farm_id': 2, 'farm_name': 'ไม่มีรูป', 'image_url': null},
+    ], 200));
+
+    await tester.pumpWidget(wrapPage(const FarmPage(), client: client));
+    await tester.pumpAndSettle();
+
+    final providers = tester.widgetList<Image>(find.byType(Image)).map((i) => i.image);
+    expect(providers.whereType<NetworkImage>(), isEmpty);
+    expect(
+      providers.whereType<AssetImage>().map((p) => p.assetName),
+      contains('assets/images/farm.jpg'),
+    );
   });
 
   testWidgets('M-FARM-01 — the "เพิ่มข้อมูลฟาร์ม" button navigates to the register page', (tester) async {

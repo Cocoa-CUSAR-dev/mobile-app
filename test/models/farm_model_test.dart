@@ -38,6 +38,17 @@ void main() {
       expect(farm.farmId, isNull);
       expect(farm.totalArea, isNull);
       expect(farm.plots, isNull);
+      expect(farm.imageUrl, isNull);
+    });
+
+    test('reads the presigned image_url', () {
+      final farm = Farm.fromJson({'farm_id': 1, 'image_url': 'https://r2.test/farms/1/a.jpg?sig=x'});
+      expect(farm.imageUrl, 'https://r2.test/farms/1/a.jpg?sig=x');
+    });
+
+    test('image_url null means the farm has no photo', () {
+      final farm = Farm.fromJson({'farm_id': 1, 'image_url': null});
+      expect(farm.imageUrl, isNull);
     });
   });
 
@@ -56,6 +67,11 @@ void main() {
       expect(roundTripped.farmName, original.farmName);
       expect(roundTripped.totalArea, original.totalArea);
       expect(roundTripped.foundDate, original.foundDate);
+    });
+
+    test('round-trips imageUrl, so cached farm lists keep their photo', () {
+      final roundTripped = Farm.fromJson(Farm(farmId: '1', imageUrl: 'https://r2.test/x.jpg').toJson());
+      expect(roundTripped.imageUrl, 'https://r2.test/x.jpg');
     });
 
     test('omits the plots key when plots is null', () {
