@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
@@ -122,12 +123,14 @@ class FormHelper {
   static Widget buildUpload({
     required String label,
     required FileUploadController controller,
+    Future<FilePickerResult?> Function()? pickFiles,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: UploadInput(
-        label: label, 
+        label: label,
         controller: controller,
+        pickFiles: pickFiles,
       ),
     );
   }

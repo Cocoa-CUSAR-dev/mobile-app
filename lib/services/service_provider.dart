@@ -255,6 +255,31 @@ class ServiceProvider<T> {
     }
   }
 
+  /// Upload one file as multipart/form-data to `endpoint/pathSuffix`, e.g.
+  /// /farms/{farmId}/image. Takes bytes rather than a path because the web
+  /// build (LIFF) has no file path to read from.
+  Future<dynamic> uploadFile(
+    String pathSuffix, {
+    required String field,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint/$pathSuffix'));
+    final String? token = await _storage.read(key: _tokenKey);
+    request.headers['Accept'] = 'application/json';
+    if (token != null && useCookie) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+
+    final streamed = await _client.send(request).timeout(const Duration(seconds: 60));
+    final response = await http.Response.fromStream(streamed);
+    final decoded = await _updateToken(response);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return decoded;
+    }
+    throw (decoded is Map ? decoded['error'] : null) ?? 'Upload Error (${response.statusCode})';
+  }
+
   /// Fetch a single object (GET) with local cache fallback, for endpoints
   /// keyed by more than a bare id (e.g. /tasks/:taskId/form). Mirrors
   /// fetchData's cache-then-serve behaviour, but for one JSON object
