@@ -333,7 +333,7 @@ void main() {
         );
         // What gets applied is the raw values (ids), and only this form's fields.
         expect(offer.answer, {'description': 'ฉีดพ่นรอบโคน', 'plot_id': 'plot-a', 'is_quality_damage': false});
-        expect(offer.submittedAt, DateTime.utc(2026, 9, 30, 8, 12).toLocal());
+        expect(offer.submittedAt, DateTime.utc(2026, 9, 30, 8, 12));
       },
     );
 
@@ -348,6 +348,21 @@ void main() {
       wait: const Duration(milliseconds: 100),
       expect: () => [isA<DynamicLoading>(), plainForm, offered, plainForm],
     );
+  });
+
+  group('AutofillOffer.submittedAt', () {
+    test('an evening submission keeps its own date -- no +7h shift to the next day', () {
+      // 21:33 Bangkok wall-clock, serialized by Go with a "Z".
+      final offer = AutofillOffer.fromResponse(
+        {'submitted_at': '2026-10-03T21:33:42.894107Z', 'answer': {'notes': '-'}},
+        {
+          'sections': [
+            {'questions': [{'fieldName': 'notes', 'label': 'หมายเหตุ', 'inputType': 'VARCHAR'}]},
+          ],
+        },
+      )!;
+      expect(formatThaiShortDate(offer.submittedAt!), '3 ต.ค. 2569');
+    });
   });
 
   group('formatThaiShortDate', () {
