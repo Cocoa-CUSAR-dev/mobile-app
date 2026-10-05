@@ -116,7 +116,11 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
       // editable, and anything the farmer already typed is kept.
       if (accepted) _applyPrefill(offer.answer, onlyEmpty: true);
     });
-    dynamicBloc.add(AutofillOfferHandled());
+    // Only USING the offer is final. "เริ่มใหม่" or just closing the sheet
+    // leaves the form blank but keeps the offer in the banner, so a farmer
+    // who changes their mind halfway through can still take it -- the
+    // banner's ✕ is the way to drop it for good.
+    if (accepted) dynamicBloc.add(AutofillOfferHandled());
   }
 
   // --- Logic เช็คความครบถ้วนของข้อมูลเพื่อเปิดปุ่ม 'ถัดไป' ---

@@ -5,12 +5,12 @@ import 'package:cocoa_supply/theme/app_colors.dart';
 
 /// US2-5: a standing reminder that last time's answers can still be used.
 ///
-/// The offer arrives a moment after the form opens (it waits on the network,
-/// on purpose -- the form never does). If the farmer has already started
-/// filling the form by then, a popup jumping in front of them would be in the
-/// way, but silently throwing the offer away would make it easy to miss
-/// entirely. So it stays here, at the top of every page of the form, until
-/// they open it or close it.
+/// Shown whenever there is an offer and the popup isn't open: when it arrived
+/// after the farmer had already started filling the form (a popup jumping in
+/// front of them would be in the way), and after they said "เริ่มใหม่" or
+/// closed the popup (they may change their mind halfway through). It stays at
+/// the top of every page of the form until the offer is used or dropped with
+/// the ✕.
 class AutofillOfferBanner extends StatelessWidget {
   final AutofillOffer offer;
   final VoidCallback onOpen;

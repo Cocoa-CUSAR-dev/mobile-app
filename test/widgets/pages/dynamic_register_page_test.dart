@@ -276,7 +276,7 @@ void main() {
       await _flushPendingTimers(tester);
     });
 
-    testWidgets('"เริ่มใหม่" leaves the form blank', (tester) async {
+    testWidgets('"เริ่มใหม่" leaves the form blank -- but keeps the offer in the banner', (tester) async {
       await openPage(tester, client(autofill: offer));
 
       await tester.tap(find.text('เริ่มใหม่'));
@@ -284,10 +284,11 @@ void main() {
 
       expect(selectedPlot(tester), isNull);
       expect(nextButton(tester).onPressed, isNull, reason: 'the required OPTION is still empty');
+      expect(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'), findsOneWidget, reason: 'in case they change their mind');
       await _flushPendingTimers(tester);
     });
 
-    testWidgets('dismissing the sheet counts as เริ่มใหม่', (tester) async {
+    testWidgets('closing the sheet (tap outside) also keeps the offer in the banner', (tester) async {
       await openPage(tester, client(autofill: offer));
 
       await tester.tapAt(const Offset(10, 10)); // the barrier above the sheet
@@ -295,6 +296,22 @@ void main() {
 
       expect(find.text('ใช้ข้อมูลเดิมจากครั้งล่าสุด?'), findsNothing);
       expect(selectedPlot(tester), isNull);
+      expect(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'), findsOneWidget);
+      await _flushPendingTimers(tester);
+    });
+
+    testWidgets('changing your mind: close it, then use it from the banner', (tester) async {
+      await openPage(tester, client(autofill: offer));
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ใช้ข้อมูลเดิม'));
+      await tester.pumpAndSettle();
+
+      expect(selectedPlot(tester), 'plot-a');
+      expect(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'), findsNothing, reason: 'used -> gone');
       await _flushPendingTimers(tester);
     });
 
