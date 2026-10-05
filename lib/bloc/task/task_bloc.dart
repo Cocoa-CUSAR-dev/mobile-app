@@ -22,6 +22,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     (task) => task.taskId == taskId && task.isMultipleSubmit,
   );
 
+  /// มีอะไรของงานนี้ค้างอยู่ในคิวในเครื่องไหม -- ร่าง หรือแถวที่ส่งแล้วรอ sync
+  ///
+  /// ใช้ตัดสินข้อเสนอ "ใช้ข้อมูลเดิม" (US2-5) ก่อนยิง network ใดๆ: ร่างต้องชนะเสมอ
+  /// และแถวที่รอ sync แปลว่างานนี้มีคำตอบแล้ว (single-submit = โหมดแก้ไข,
+  /// multi-submit = ไม่ใช่แถวแรก) ทั้งสองกรณีไม่เสนอ -- คิวเป็นของ TaskBloc
+  /// จึงถามผ่านที่นี่แทนการให้ bloc อื่นเปิดอ่าน storage เอง
+  Future<bool> hasQueuedItemFor(String taskId) async {
+    final queue = await _queueService.fetchData((json) => json);
+    return queue.any((item) => item['task_id'] == taskId);
+  }
+
   TaskBloc({TaskService? taskService})
     : _taskService = taskService ?? TaskService(),
       super(TaskState()) {
