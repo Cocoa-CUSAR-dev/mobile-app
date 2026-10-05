@@ -306,4 +306,146 @@ void main() {
       await _flushPendingTimers(tester);
     });
   });
+
+  // The page used to close the moment the answer was handed over, before it
+  // was sent. It now shows what really happened.
+  group('after submitting', () {
+    final oneQuestion = _formWith([
+      {'fieldName': 'notes', 'label': 'หมายเหตุ', 'inputType': 'VARCHAR', 'isMandatory': true, 'isActive': true, 'sortOrder': 1},
+    ]);
+
+    http.Client clientAnsweringSubmitWith(Future<http.Response> Function() submit) =>
+        MockClient((request) async {
+          if (request.method == 'POST') return submit();
+          if (request.url.path.endsWith('/form')) return jsonResponse({'form': oneQuestion}, 200);
+          return http.Response('', 404);
+        });
+
+    Future<void> submitNotes(WidgetTester tester, http.Client client) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      await tester.pumpWidget(wrapPage(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const DynamicRegisterPage(handler: 'farm_activity', taskId: 't1', status: 'NOT_STARTED'),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+        client: client,
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await _flushPendingTimers(tester);
+      await tester.enterText(find.byType(TextFormField).first, 'ฝนตก');
+      await tester.pump();
+      await tester.tap(find.text('บันทึกข้อมูล').last);
+      await tester.pump();
+      // the send, then the local queue write (500ms simulated delay)
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('sent -> "บันทึกสำเร็จ", and the button goes back to the task list', (tester) async {
+      await submitNotes(tester, clientAnsweringSubmitWith(() async => jsonResponse({}, 201)));
+
+      expect(find.text('บันทึกสำเร็จ'), findsOneWidget);
+      await tester.tap(find.text('กลับหน้ารายการงาน'));
+      await tester.pumpAndSettle();
+      expect(find.text('open'), findsOneWidget);
+      await _flushPendingTimers(tester);
+    });
+
+    testWidgets('offline -> "ส่งไม่สำเร็จ", and says the answer is kept on the phone', (tester) async {
+      await submitNotes(
+        tester,
+        clientAnsweringSubmitWith(() async => throw http.ClientException('no network')),
+      );
+
+      expect(find.text('ส่งไม่สำเร็จ'), findsOneWidget);
+      expect(find.textContaining('บันทึกไว้ในเครื่องแล้ว'), findsOneWidget);
+      await _flushPendingTimers(tester);
+    });
+
+    testWidgets('the server says no -> "ส่งไม่สำเร็จ" with the server\'s reason', (tester) async {
+      await submitNotes(
+        tester,
+        clientAnsweringSubmitWith(() async => jsonResponse({'error': 'ข้อมูลไม่ผ่านการตรวจสอบ'}, 400)),
+      );
+
+      expect(find.text('ส่งไม่สำเร็จ'), findsOneWidget);
+      expect(find.text('เหตุผลจากระบบ: ข้อมูลไม่ผ่านการตรวจสอบ'), findsOneWidget);
+      await _flushPendingTimers(tester);
+    });
+  });
+
+  // An offer that arrives after the farmer has started filling the form is
+  // not thrown away: it waits in a banner instead of popping up over them.
+  group('a late autofill offer', () {
+    final form = _formWith([
+      {'fieldName': 'notes', 'label': 'หมายเหตุ', 'inputType': 'VARCHAR', 'isMandatory': true, 'isActive': true, 'sortOrder': 1},
+      {'fieldName': 'method', 'label': 'วิธีการ', 'inputType': 'VARCHAR', 'isMandatory': false, 'isActive': true, 'sortOrder': 2},
+    ]);
+    final client = MockClient((request) async {
+      if (request.url.path.endsWith('/form')) return jsonResponse({'form': form}, 200);
+      if (request.url.path.endsWith('/autofill')) {
+        return jsonResponse({
+          'submitted_at': '2026-10-03T21:33:00Z',
+          'answer': {'notes': 'จากครั้งก่อน', 'method': 'ฉีดพ่น'},
+        }, 200);
+      }
+      return http.Response('', 404);
+    });
+
+    Future<void> startTypingBeforeTheOfferArrives(WidgetTester tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      await tester.pumpWidget(wrapPage(
+        const DynamicRegisterPage(handler: 'farm_activity', taskId: 't1', status: 'NOT_STARTED'),
+        client: client,
+      ));
+      await tester.pumpAndSettle();
+      // Typed while the offer is still on its way (the queue check alone
+      // takes 500ms first).
+      await tester.enterText(find.byType(TextFormField).first, 'พิมพ์เอง');
+      await tester.pump();
+      await _flushPendingTimers(tester);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows a banner instead of popping up over the farmer', (tester) async {
+      await startTypingBeforeTheOfferArrives(tester);
+
+      expect(find.text('ใช้ข้อมูลเดิมจากครั้งล่าสุด?'), findsNothing);
+      expect(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'), findsOneWidget);
+      expect(find.text('บันทึกเมื่อ 3 ต.ค. 2569 — กดเพื่อดู'), findsOneWidget);
+    });
+
+    testWidgets('using it from the banner fills only the empty fields -- typing is kept', (tester) async {
+      await startTypingBeforeTheOfferArrives(tester);
+
+      await tester.tap(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ใช้ข้อมูลเดิม'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, 'พิมพ์เอง'), findsOneWidget, reason: 'never overwritten');
+      expect(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'), findsNothing, reason: 'handled -> banner gone');
+
+      await tester.tap(find.text('ถัดไป'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextFormField, 'ฉีดพ่น'), findsOneWidget, reason: 'the empty one is filled');
+    });
+
+    testWidgets('closing the banner (x) drops the offer', (tester) async {
+      await startTypingBeforeTheOfferArrives(tester);
+
+      await tester.tap(find.byTooltip('ปิด'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('มีข้อมูลเดิมจากครั้งล่าสุด'), findsNothing);
+      expect(find.widgetWithText(TextFormField, 'พิมพ์เอง'), findsOneWidget);
+    });
+  });
 }

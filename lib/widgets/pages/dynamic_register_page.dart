@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 // Blocs
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
+import 'package:cocoa_supply/bloc/dynamic/autofill_offer.dart';
 import 'package:cocoa_supply/bloc/dynamic/form_questions.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_state.dart';
@@ -14,6 +15,8 @@ import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/autofill_offer_sheet.dart';
+import 'package:cocoa_supply/widgets/components/autofill_offer_banner.dart';
+import 'package:cocoa_supply/widgets/components/submit_result_view.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DynamicRegisterPage extends StatefulWidget {
@@ -41,8 +44,10 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
   final int _fieldsPerPage = 1;
   bool _isDataInitialized = false;
   bool _isLoading = false;
-  // US2-5: the "ใช้ข้อมูลเดิม?" sheet is shown at most once per opening.
+  // US2-5: the "ใช้ข้อมูลเดิม?" sheet pops up by itself at most once per
+  // opening; after that the offer waits in a banner until handled.
   bool _autofillOfferSeen = false;
+  bool _autofillSheetOpen = false;
 
   @override
   void initState() {
@@ -59,14 +64,27 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
   // ใส่คำตอบที่มีอยู่แล้วลงฟอร์ม -- ทางเดียวที่ใช้ทั้งตอนเปิดแก้ไขงานเดิม/ร่าง
   // (TaskBloc ส่งคำตอบเก่ามา) และตอนกด "ใช้ข้อมูลเดิม" (US2-5) จึงแปลง/ใส่ค่า
   // แบบเดียวกันเสมอ ไม่มีทางที่สองที่ใส่ค่าไม่เหมือนกัน
-  void _applyPrefill(Map<String, dynamic> answer) {
-    _currentFormData.addAll(answer);
+  //
+  // onlyEmpty: ใส่เฉพาะช่องที่ยังว่าง -- ใช้กับข้อเสนอ "ใช้ข้อมูลเดิม" ที่อาจกดจาก
+  // แบนเนอร์หลังเกษตรกรเริ่มกรอกไปแล้ว สิ่งที่พิมพ์เองต้องไม่ถูกทับ
+  void _applyPrefill(Map<String, dynamic> answer, {bool onlyEmpty = false}) {
+    final toApply = onlyEmpty
+        ? {for (final e in answer.entries) if (_isEmptyField(e.key)) e.key: e.value}
+        : answer;
+    _currentFormData.addAll(toApply);
     // The form usually renders before the saved answer arrives,
     // so text controllers already exist (empty) -- fill them too.
-    answer.forEach((k, v) {
+    toApply.forEach((k, v) {
       if (v != null) _controllers[k]?.text = v.toString();
     });
     _isDataInitialized = true;
+  }
+
+  bool _isEmptyField(String key) {
+    final controller = _controllers[key];
+    if (controller != null && controller.text.trim().isNotEmpty) return false;
+    final value = _currentFormData[key];
+    return value == null || (value is String && value.isEmpty) || (value is List && value.isEmpty);
   }
 
   // ยังไม่ได้เริ่มกรอกอะไรเลย -- ข้อเสนอที่มาช้า (เน็ตช้า) ต้องไม่ไปทับสิ่งที่
@@ -76,17 +94,28 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
       _currentFormData.isEmpty &&
       _controllers.values.every((c) => c.text.trim().isEmpty);
 
-  Future<void> _maybeOfferAutofill(DynamicReady state) async {
+  // The offer can arrive a moment after the form opens. If the farmer hasn't
+  // touched anything yet it pops up straight away; if they have, a popup
+  // jumping in front of them would be in the way, so it waits in a banner
+  // at the top of the form instead (AutofillOfferBanner) -- never discarded.
+  void _maybeOfferAutofill(DynamicReady state) {
     final offer = state.autofillOffer;
     if (offer == null || _autofillOfferSeen) return;
     _autofillOfferSeen = true;
-    final dynamicBloc = context.read<DynamicBloc>();
+    if (_formIsUntouched) _openAutofillOffer(offer);
+  }
 
-    if (_formIsUntouched && await AutofillOfferSheet.show(context, offer)) {
-      // Only fills the form -- nothing is submitted, and every field stays
-      // editable exactly like any other prefilled answer.
-      if (mounted) setState(() => _applyPrefill(offer.answer));
-    }
+  Future<void> _openAutofillOffer(AutofillOffer offer) async {
+    final dynamicBloc = context.read<DynamicBloc>();
+    setState(() => _autofillSheetOpen = true);
+    final accepted = await AutofillOfferSheet.show(context, offer);
+    if (!mounted) return;
+    setState(() {
+      _autofillSheetOpen = false;
+      // Only fills the form -- nothing is submitted, every field stays
+      // editable, and anything the farmer already typed is kept.
+      if (accepted) _applyPrefill(offer.answer, onlyEmpty: true);
+    });
     dynamicBloc.add(AutofillOfferHandled());
   }
 
@@ -234,7 +263,15 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
         child: BlocBuilder<DynamicBloc, DynamicState>(
           builder: (context, state) {
             if (state is DynamicError) return Center(child: Text(state.message));
-            if (state is DynamicLoading && !_isDataInitialized) return const Center(child: ThreeDotsLoading());
+            // Also while a submission is being sent -- it used to render
+            // nothing here once a prefilled form was submitting.
+            if (state is DynamicLoading) return const Center(child: ThreeDotsLoading());
+            if (state is DynamicSubmitted) {
+              return SubmitResultView(
+                result: state.result,
+                onDone: () => Navigator.pop(context, true),
+              );
+            }
 
             if (state is DynamicReady) {
               final displayQuestions = flattenActiveQuestions(state.form);
@@ -255,6 +292,14 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
                         key: _formKey,
                         child: Column(
                           children: [
+                            if (state.autofillOffer != null && !_autofillSheetOpen) ...[
+                              AutofillOfferBanner(
+                                offer: state.autofillOffer!,
+                                onOpen: () => _openAutofillOffer(state.autofillOffer!),
+                                onDismiss: () => context.read<DynamicBloc>().add(AutofillOfferHandled()),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
                             _buildStepIndicator(totalSteps),
                             const SizedBox(height: 32),
                             Text(

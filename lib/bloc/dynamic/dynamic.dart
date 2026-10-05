@@ -1,4 +1,6 @@
 // lib/bloc/dynamic/dynamic_bloc.dart
+import 'dart:async';
+
 import 'package:cocoa_supply/bloc/dynamic/autofill_offer.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/services/task_service.dart';
@@ -51,7 +53,15 @@ class DynamicReady extends DynamicState {
   DynamicReady(this.form, {this.autofillOffer});
 }
 
+// A draft was saved on this device -- the page just closes, as before.
 class DynamicSuccess extends DynamicState {}
+
+// A real submission finished, one way or the other. The page shows
+// สำเร็จ / ไม่สำเร็จ from this instead of closing before anything was known.
+class DynamicSubmitted extends DynamicState {
+  final SubmitResult result;
+  DynamicSubmitted(this.result);
+}
 
 class DynamicError extends DynamicState {
   final String message;
@@ -137,7 +147,9 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
           }
         }
 
-        // ส่งงานผ่าน TaskBloc
+        // ส่งงานผ่าน TaskBloc แล้วรอผลจริง -- เดิม emit สำเร็จทันทีที่ส่งต่อให้
+        // TaskBloc ทั้งที่ยังไม่ได้ส่งขึ้น server เลย หน้าฟอร์มจึงปิดไปก่อนรู้ผล
+        final submitted = Completer<SubmitResult>();
         taskBloc.add(
           SubmitTaskAction(
             event.taskId,
@@ -145,10 +157,14 @@ class DynamicBloc extends Bloc<DynamicEvent, DynamicState> {
             payload,
             isDraft: event.isDraft,
             isEdit: event.isEdit,
+            result: submitted,
           ),
         );
+        final submitResult = await submitted.future;
 
-        emit(DynamicSuccess());
+        emit(event.isDraft && submitResult.outcome == SubmitOutcome.draftSaved
+            ? DynamicSuccess()
+            : DynamicSubmitted(submitResult));
       } catch (e) {
         emit(DynamicError(e.toString()));
       }

@@ -152,15 +152,33 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
             .toList();
       }
 
+      void report(SubmitResult result) {
+        final completer = event.result;
+        if (completer != null && !completer.isCompleted) completer.complete(result);
+      }
+
       // ถ้าเป็น draft เอาเข้่าคิวเพื่อรอแก้พอ ยังไม่ส่ง
       if (event.isDraft) {
-        await _queueService.replaceLocal([
-          ...await queueWithoutDraft(),
-          queueItem,
-        ]);
+        try {
+          await _queueService.replaceLocal([
+            ...await queueWithoutDraft(),
+            queueItem,
+          ]);
+          report(const SubmitResult(SubmitOutcome.draftSaved));
+        } catch (e) {
+          report(const SubmitResult(SubmitOutcome.failed));
+        }
         return;
       }
+
       // พยายามส่งขึ้น Server ทันที (Optimistic Update)
+      //
+      // The send and the queue bookkeeping are kept apart on purpose. They
+      // used to share one try/catch, so if the send SUCCEEDED but the
+      // follow-up queue write threw, the catch queued the row as PENDING and
+      // it would later be sent a second time.
+      var sent = false;
+      String? serverError;
       try {
         // ถ้าเป็นงานที่มีอยู่แล้ว และจะ edit
         if (event.isEdit) {
@@ -169,14 +187,33 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         } else {
           await _taskService.submitTask(event.taskId, event.payload);
         }
-        await _queueService.replaceLocal(await queueWithoutDraft());
+        sent = true;
       } catch (e) {
         print("Network failed, stay in queue as PENDING");
-        // เอายัดเข้า queue รอ -- appended, never replacing another row
+        // ServiceProvider throws the server's own error text as a String for
+        // a non-2xx answer; anything else is the network itself.
+        if (e is String) serverError = e;
+      }
+
+      if (sent) {
+        report(const SubmitResult(SubmitOutcome.sent));
+        // Clearing this task's draft is housekeeping -- the answer is already
+        // saved, so a failure here must not turn into a resend.
+        try {
+          await _queueService.replaceLocal(await queueWithoutDraft());
+        } catch (_) {}
+        return;
+      }
+
+      // เอายัดเข้า queue รอ -- appended, never replacing another row
+      try {
         await _queueService.replaceLocal([
           ...await queueWithoutDraft(),
           queueItem,
         ]);
+        report(SubmitResult(SubmitOutcome.savedOffline, serverError: serverError));
+      } catch (_) {
+        report(SubmitResult(SubmitOutcome.failed, serverError: serverError));
       }
     });
     // 4. Trigger Pending Queue เข้า database

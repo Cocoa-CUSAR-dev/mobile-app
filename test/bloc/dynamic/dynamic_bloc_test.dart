@@ -14,6 +14,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:cocoa_supply/bloc/dynamic/autofill_offer.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
+import 'package:cocoa_supply/bloc/task/task_event.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/services/task_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -140,7 +141,7 @@ void main() {
 
   group('SubmitForm', () {
     blocTest<DynamicBloc, DynamicState>(
-      'parses field types per the fetched form and emits DynamicSuccess',
+      'parses field types per the fetched form, waits for the real send, and reports it sent',
       build: () {
         final client = MockClient((request) async => jsonResponse({
           'form': formWith([
@@ -158,7 +159,7 @@ void main() {
       wait: const Duration(milliseconds: 1200),
       expect: () => [
         isA<DynamicLoading>(),
-        isA<DynamicSuccess>(),
+        isA<DynamicSubmitted>().having((s) => s.result.outcome, 'outcome', SubmitOutcome.sent),
       ],
     );
 
@@ -370,5 +371,70 @@ void main() {
       expect(formatThaiShortDate(DateTime(2026, 9, 30)), '30 ก.ย. 2569');
       expect(formatThaiShortDate(DateTime(2027, 1, 2)), '2 ม.ค. 2570');
     });
+  });
+
+  // The form used to report success the moment it handed the answer to
+  // TaskBloc, before anything was sent. It now waits for what really
+  // happened, so the page can show สำเร็จ / ไม่สำเร็จ truthfully.
+  group('SubmitForm reports the real outcome', () {
+    // The send, then the local queue write (500ms simulated delay).
+    const settle = Duration(milliseconds: 1500);
+    final oneField = {
+      'form': {
+        'sections': [
+          {'questions': [{'fieldName': 'notes', 'inputType': 'VARCHAR', 'isActive': true}]},
+        ],
+      },
+    };
+
+    DynamicBloc withSubmitAnswer(Future<http.Response> Function() submit) {
+      final client = MockClient((request) async {
+        if (request.method == 'POST') return submit();
+        return jsonResponse(oneField, 200);
+      });
+      return DynamicBloc(
+        taskBloc: TaskBloc(taskService: TaskService(client: client)),
+        apiOverride: DynamicApiService(client: client),
+        taskServiceOverride: TaskService(client: client),
+      );
+    }
+
+    setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+
+    blocTest<DynamicBloc, DynamicState>(
+      'the server rejects it -- not sent, kept on the phone, with the server\'s reason',
+      build: () => withSubmitAnswer(() async => jsonResponse({'error': 'ข้อมูลไม่ผ่านการตรวจสอบ'}, 400)),
+      act: (bloc) => bloc.add(SubmitForm(handler: 'farm_activity', taskId: 't1', data: {'notes': 'x'})),
+      wait: settle,
+      expect: () => [
+        isA<DynamicLoading>(),
+        isA<DynamicSubmitted>()
+            .having((s) => s.result.outcome, 'outcome', SubmitOutcome.savedOffline)
+            .having((s) => s.result.serverError, 'serverError', 'ข้อมูลไม่ผ่านการตรวจสอบ'),
+      ],
+    );
+
+    blocTest<DynamicBloc, DynamicState>(
+      'offline -- not sent, kept on the phone, no server reason',
+      build: () => withSubmitAnswer(() async => throw http.ClientException('no network')),
+      act: (bloc) => bloc.add(SubmitForm(handler: 'farm_activity', taskId: 't1', data: {'notes': 'x'})),
+      wait: settle,
+      expect: () => [
+        isA<DynamicLoading>(),
+        isA<DynamicSubmitted>()
+            .having((s) => s.result.outcome, 'outcome', SubmitOutcome.savedOffline)
+            .having((s) => s.result.serverError, 'serverError', isNull),
+      ],
+    );
+
+    blocTest<DynamicBloc, DynamicState>(
+      'a draft still just closes the form (DynamicSuccess), as before',
+      build: () => withSubmitAnswer(() async => fail('a draft must never be sent')),
+      act: (bloc) => bloc.add(
+        SubmitForm(handler: 'farm_activity', taskId: 't1', data: {'notes': 'x'}, isDraft: true),
+      ),
+      wait: settle,
+      expect: () => [isA<DynamicLoading>(), isA<DynamicSuccess>()],
+    );
   });
 }
