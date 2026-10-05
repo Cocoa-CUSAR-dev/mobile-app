@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 // Blocs
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
+import 'package:cocoa_supply/bloc/dynamic/form_questions.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_state.dart';
 
@@ -12,6 +13,7 @@ import 'package:cocoa_supply/bloc/task/task_state.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
+import 'package:cocoa_supply/widgets/components/autofill_offer_sheet.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 
 class DynamicRegisterPage extends StatefulWidget {
@@ -39,6 +41,8 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
   final int _fieldsPerPage = 1;
   bool _isDataInitialized = false;
   bool _isLoading = false;
+  // US2-5: the "ใช้ข้อมูลเดิม?" sheet is shown at most once per opening.
+  bool _autofillOfferSeen = false;
 
   @override
   void initState() {
@@ -52,25 +56,38 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
     super.dispose();
   }
 
-  // ไล่ sections[] -> questions[] ตาม sortOrder ให้เป็น list เดียว
-  // ข้าม section/question ที่ isActive == false (researcher ปิดการมองเห็นไว้)
-  List<Map<String, dynamic>> _flattenQuestions(Map<String, dynamic> form) {
-    final sections = ((form['sections'] as List<dynamic>?) ?? [])
-        .cast<Map<String, dynamic>>()
-        .where((s) => s['isActive'] != false)
-        .toList()
-      ..sort((a, b) => ((a['sortOrder'] ?? 0) as num).compareTo((b['sortOrder'] ?? 0) as num));
+  // ใส่คำตอบที่มีอยู่แล้วลงฟอร์ม -- ทางเดียวที่ใช้ทั้งตอนเปิดแก้ไขงานเดิม/ร่าง
+  // (TaskBloc ส่งคำตอบเก่ามา) และตอนกด "ใช้ข้อมูลเดิม" (US2-5) จึงแปลง/ใส่ค่า
+  // แบบเดียวกันเสมอ ไม่มีทางที่สองที่ใส่ค่าไม่เหมือนกัน
+  void _applyPrefill(Map<String, dynamic> answer) {
+    _currentFormData.addAll(answer);
+    // The form usually renders before the saved answer arrives,
+    // so text controllers already exist (empty) -- fill them too.
+    answer.forEach((k, v) {
+      if (v != null) _controllers[k]?.text = v.toString();
+    });
+    _isDataInitialized = true;
+  }
 
-    final questions = <Map<String, dynamic>>[];
-    for (final section in sections) {
-      final sectionQuestions = ((section['questions'] as List<dynamic>?) ?? [])
-          .cast<Map<String, dynamic>>()
-          .where((q) => q['isActive'] != false && q['fieldName'] != null)
-          .toList()
-        ..sort((a, b) => ((a['sortOrder'] ?? 0) as num).compareTo((b['sortOrder'] ?? 0) as num));
-      questions.addAll(sectionQuestions);
+  // ยังไม่ได้เริ่มกรอกอะไรเลย -- ข้อเสนอที่มาช้า (เน็ตช้า) ต้องไม่ไปทับสิ่งที่
+  // เกษตรกรเริ่มพิมพ์ไปแล้ว ถ้าเริ่มแล้วก็ไม่ต้องถาม
+  bool get _formIsUntouched =>
+      _currentStep == 0 &&
+      _currentFormData.isEmpty &&
+      _controllers.values.every((c) => c.text.trim().isEmpty);
+
+  Future<void> _maybeOfferAutofill(DynamicReady state) async {
+    final offer = state.autofillOffer;
+    if (offer == null || _autofillOfferSeen) return;
+    _autofillOfferSeen = true;
+    final dynamicBloc = context.read<DynamicBloc>();
+
+    if (_formIsUntouched && await AutofillOfferSheet.show(context, offer)) {
+      // Only fills the form -- nothing is submitted, and every field stays
+      // editable exactly like any other prefilled answer.
+      if (mounted) setState(() => _applyPrefill(offer.answer));
     }
-    return questions;
+    dynamicBloc.add(AutofillOfferHandled());
   }
 
   // --- Logic เช็คความครบถ้วนของข้อมูลเพื่อเปิดปุ่ม 'ถัดไป' ---
@@ -203,20 +220,13 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             listener: (context, state) {
               if (state is DynamicSuccess) Navigator.pop(context, true);
               setState(() => _isLoading = state is DynamicLoading);
+              if (state is DynamicReady) _maybeOfferAutofill(state);
             },
           ),
           BlocListener<TaskBloc, TaskState>(
             listener: (context, state) {
               if (state.currentTaskResponse != null && !_isDataInitialized) {
-                setState(() {
-                  _currentFormData.addAll(state.currentTaskResponse!);
-                  // The form usually renders before the saved answer arrives,
-                  // so text controllers already exist (empty) -- fill them too.
-                  state.currentTaskResponse!.forEach((k, v) {
-                    if (v != null) _controllers[k]?.text = v.toString();
-                  });
-                  _isDataInitialized = true;
-                });
+                setState(() => _applyPrefill(state.currentTaskResponse!));
               }
             },
           ),
@@ -227,7 +237,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
             if (state is DynamicLoading && !_isDataInitialized) return const Center(child: ThreeDotsLoading());
 
             if (state is DynamicReady) {
-              final displayQuestions = _flattenQuestions(state.form);
+              final displayQuestions = flattenActiveQuestions(state.form);
 
               int totalSteps = (displayQuestions.length / _fieldsPerPage).ceil();
               int startIndex = _currentStep * _fieldsPerPage;
