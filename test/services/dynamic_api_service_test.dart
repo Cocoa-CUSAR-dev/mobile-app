@@ -12,7 +12,9 @@
 // fixed to confirm.
 
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -170,6 +172,58 @@ void main() {
       expect(DynamicApiService.isBangkokProvinceId('1'), isTrue);
       expect(DynamicApiService.isBangkokProvinceId('22'), isFalse);
       expect(DynamicApiService.isBangkokProvinceId(null), isFalse);
+    });
+  });
+
+  // US2-5: "use last time's answers". Every failure mode must come back as
+  // null (= no offer, blank form), because opening a form must never wait
+  // on, or break because of, this call.
+  group('fetchAutofill', () {
+    test('GETs /tasks/<taskId>/autofill with the farmer token and returns the offer', () async {
+      FlutterSecureStorage.setMockInitialValues({'auth_token': 'a.b.c'});
+      late http.Request seen;
+      final service = DynamicApiService(
+        client: MockClient((request) async {
+          seen = request;
+          return jsonResponse({
+            'submitted_at': '2026-09-30T08:12:00Z',
+            'answer': {'description': 'ฉีดพ่นรอบโคน'},
+          }, 200);
+        }),
+      );
+
+      final offer = await service.fetchAutofill('t1');
+
+      expect(seen.method, 'GET');
+      expect(seen.url.toString(), '$testBaseUrl/tasks/t1/autofill');
+      expect(seen.headers['Authorization'], 'Bearer a.b.c');
+      expect(offer?['answer'], {'description': 'ฉีดพ่นรอบโคน'});
+    });
+
+    test('204 (nothing to offer) is null', () async {
+      final service = DynamicApiService(client: MockClient((_) async => http.Response('', 204)));
+      expect(await service.fetchAutofill('t1'), isNull);
+    });
+
+    test('a server error is null, not a throw', () async {
+      final service = DynamicApiService(
+        client: MockClient((_) async => jsonResponse({'error': 'boom'}, 502)),
+      );
+      expect(await service.fetchAutofill('t1'), isNull);
+    });
+
+    test('offline (the request itself throws) is null', () async {
+      final service = DynamicApiService(
+        client: MockClient((_) async => throw http.ClientException('no network')),
+      );
+      expect(await service.fetchAutofill('t1'), isNull);
+    });
+
+    test('a 200 with an empty answer is null -- an offer of nothing is no offer', () async {
+      final service = DynamicApiService(
+        client: MockClient((_) async => jsonResponse({'answer': <String, dynamic>{}}, 200)),
+      );
+      expect(await service.fetchAutofill('t1'), isNull);
     });
   });
 }
