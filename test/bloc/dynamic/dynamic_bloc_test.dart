@@ -402,14 +402,16 @@ void main() {
     setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
     blocTest<DynamicBloc, DynamicState>(
-      'the server rejects it -- not sent, kept on the phone, with the server\'s reason',
+      // docs-and-plan#223: rejected, not "saved offline" -- resending it
+      // could never succeed.
+      'the server rejects it -- not sent, kept as a draft, with the server\'s reason',
       build: () => withSubmitAnswer(() async => jsonResponse({'error': 'ข้อมูลไม่ผ่านการตรวจสอบ'}, 400)),
       act: (bloc) => bloc.add(SubmitForm(handler: 'farm_activity', taskId: 't1', data: {'notes': 'x'})),
       wait: settle,
       expect: () => [
         isA<DynamicLoading>(),
         isA<DynamicSubmitted>()
-            .having((s) => s.result.outcome, 'outcome', SubmitOutcome.savedOffline)
+            .having((s) => s.result.outcome, 'outcome', SubmitOutcome.rejected)
             .having((s) => s.result.serverError, 'serverError', 'ข้อมูลไม่ผ่านการตรวจสอบ'),
       ],
     );

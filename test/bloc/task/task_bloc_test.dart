@@ -364,14 +364,41 @@ void main() {
       expect(stored == null ? <dynamic>[] : jsonDecode(stored) as List, isEmpty);
     });
 
-    test('the server says no -> savedOffline with its reason, kept in the queue', () async {
+    // docs-and-plan#223: a rejected answer used to be queued as PENDING and
+    // reported as "saved offline", then rejected again on every sync.
+    test('the server rejects the answer -> rejected with its reason, kept as a draft', () async {
       final result = await submitWith(
         MockClient((r) async => jsonResponse({'error': 'ข้อมูลไม่ผ่านการตรวจสอบ'}, 400)),
       );
-      expect(result.outcome, SubmitOutcome.savedOffline);
+      expect(result.outcome, SubmitOutcome.rejected);
       expect(result.serverError, 'ข้อมูลไม่ผ่านการตรวจสอบ');
       final queue = jsonDecode((await _secureStorage.read(key: 'pending_task_queue'))!) as List;
+      expect(queue.single['status'], 'DRAFT');
+      expect(queue.single['is_draft'], true);
+    });
+
+    test('a server-side failure (5xx) -> savedOffline, queued to retry', () async {
+      final result = await submitWith(
+        MockClient((r) async => jsonResponse({'error': 'internal'}, 500)),
+      );
+      expect(result.outcome, SubmitOutcome.savedOffline);
+      final queue = jsonDecode((await _secureStorage.read(key: 'pending_task_queue'))!) as List;
       expect(queue.single['status'], 'PENDING');
+    });
+
+    test('an expired session (401) -> savedOffline, retried after login', () async {
+      final result = await submitWith(
+        MockClient((r) async => jsonResponse({'error': 'Session expired'}, 401)),
+      );
+      expect(result.outcome, SubmitOutcome.savedOffline);
+    });
+
+    test('no network -> savedOffline, queued to retry', () async {
+      final result = await submitWith(
+        MockClient((r) async => throw http.ClientException('offline')),
+      );
+      expect(result.outcome, SubmitOutcome.savedOffline);
+      expect(result.serverError, isNull);
     });
 
     test('a draft -> draftSaved, never sent', () async {

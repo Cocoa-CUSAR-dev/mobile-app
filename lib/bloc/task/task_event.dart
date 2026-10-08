@@ -26,10 +26,16 @@ enum SubmitOutcome {
   // The server accepted it.
   sent,
   // Not sent, but kept in the local queue -- TriggerPendingQueueSync sends
-  // it later. Covers offline AND a server error.
+  // it later. Covers offline and a server-side failure (5xx), not a
+  // rejection of the answer (see `rejected`).
   savedOffline,
   // Saved as a draft on this device (never sent by design).
   draftSaved,
+  // The server rejected the answer itself (a 4xx such as a failed
+  // validation). Sending it again can't help, so it is NOT queued for a
+  // resend; it is kept as this task's draft for the farmer to fix
+  // (docs-and-plan#223).
+  rejected,
   // Neither sent nor saved locally -- the one case where the answer is lost
   // unless the farmer tries again.
   failed,

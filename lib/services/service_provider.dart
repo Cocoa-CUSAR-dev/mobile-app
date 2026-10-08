@@ -2,6 +2,29 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+/// The server answered, and said no (a non-2xx status with its own reason).
+///
+/// Thrown by postData/putData instead of a bare String so callers can tell
+/// "the server rejected this" from "the network failed" by the status code
+/// -- see TaskBloc's SubmitTaskAction, which must not queue a rejected answer
+/// for a resend that can never succeed (docs-and-plan#223). toString() is the
+/// server's message, so code that shows `'$e'` reads exactly as before.
+class ServerRejection implements Exception {
+  final int statusCode;
+  final String message;
+  const ServerRejection(this.statusCode, this.message);
+
+  /// Sending the same answer again cannot help: the server judged the answer
+  /// (or the farmer's right to send it) itself. 401 (session expired), 408
+  /// (timeout) and 429 (rate limit) are about the moment, not the answer,
+  /// so a later retry can still succeed.
+  bool get isPermanent =>
+      statusCode >= 400 && statusCode < 500 && statusCode != 401 && statusCode != 408 && statusCode != 429;
+
+  @override
+  String toString() => message;
+}
+
 class ServiceProvider<T> {
   final String storageKey;
   final String endpoint;
@@ -236,7 +259,7 @@ class ServiceProvider<T> {
             errorMessage = responseData['message'].toString();
           }
 
-          throw errorMessage;
+          throw ServerRejection(response.statusCode, errorMessage);
         }
       } catch (e) {
         // 4. จัดการ Error อื่นๆ เช่น No Internet หรือ Timeout
@@ -426,7 +449,10 @@ class ServiceProvider<T> {
         if (response.statusCode == 200) {
           return decoded;
         } else {
-          throw (decoded is Map ? decoded['error'] : null) ?? "Update Error";
+          throw ServerRejection(
+            response.statusCode,
+            ((decoded is Map ? decoded['error'] : null) ?? "Update Error").toString(),
+          );
         }
       } catch (e) {
         rethrow;

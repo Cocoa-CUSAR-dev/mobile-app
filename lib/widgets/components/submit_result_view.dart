@@ -32,6 +32,8 @@ class SubmitResultView extends StatelessWidget {
       message = 'ส่งข้อมูลเข้าระบบเรียบร้อยแล้ว';
     } else if (kept) {
       message = 'ข้อมูลบันทึกไว้ในเครื่องแล้ว ระบบจะส่งให้อีกครั้งเมื่อมีสัญญาณ ไม่ต้องกรอกใหม่';
+    } else if (result.outcome == SubmitOutcome.rejected) {
+      message = 'ระบบไม่รับคำตอบนี้ คำตอบเก็บไว้เป็นร่างแล้ว กรุณาเปิดงานนี้เพื่อแก้ไขแล้วส่งใหม่';
     } else {
       message = 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง';
     }
