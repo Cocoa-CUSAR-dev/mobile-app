@@ -53,14 +53,14 @@ class AutofillOffer {
     }
     if (answer.isEmpty) return null;
 
-    // Read as-is, NOT .toLocal(): the dev/prod DB stores Bangkok wall-clock
-    // time in a timestamp-without-time-zone column and Go serializes it with a
-    // "Z", so converting would add 7 hours -- an evening submission would show
-    // as the next day. Every other model in this app reads server timestamps
-    // the same way (see batch_model.dart, farm_model.dart, ...).
+    // submitted_at is UTC (mobile-backend pins its clock to UTC, and the
+    // column's now() default is UTC too -- docs-and-plan#224), sent with a
+    // "Z". Converted to the phone's zone so "บันทึกเมื่อ" shows the farmer's
+    // own date: read as-is, a submission made before 07:00 Bangkok time
+    // showed as the day before.
     final submittedAt = response['submitted_at'];
     return AutofillOffer(
-      submittedAt: submittedAt is String ? DateTime.tryParse(submittedAt) : null,
+      submittedAt: submittedAt is String ? DateTime.tryParse(submittedAt)?.toLocal() : null,
       answer: answer,
       preview: preview,
     );

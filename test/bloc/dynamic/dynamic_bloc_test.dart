@@ -334,7 +334,7 @@ void main() {
         );
         // What gets applied is the raw values (ids), and only this form's fields.
         expect(offer.answer, {'description': 'ฉีดพ่นรอบโคน', 'plot_id': 'plot-a', 'is_quality_damage': false});
-        expect(offer.submittedAt, DateTime.utc(2026, 9, 30, 8, 12));
+        expect(offer.submittedAt, DateTime.utc(2026, 9, 30, 8, 12).toLocal());
       },
     );
 
@@ -352,8 +352,11 @@ void main() {
   });
 
   group('AutofillOffer.submittedAt', () {
-    test('an evening submission keeps its own date -- no +7h shift to the next day', () {
-      // 21:33 Bangkok wall-clock, serialized by Go with a "Z".
+    // docs-and-plan#224: submitted_at is UTC with a "Z"; the offer shows it
+    // in the phone's own zone. Asserted against toLocal() so the test holds
+    // wherever it runs (a UTC CI runner as much as a phone in Bangkok).
+    test('UTC from the server is shown in the phone zone', () {
+      // 21:33 UTC on 3 Oct is 04:33 on 4 Oct in Bangkok.
       final offer = AutofillOffer.fromResponse(
         {'submitted_at': '2026-10-03T21:33:42.894107Z', 'answer': {'notes': '-'}},
         {
@@ -362,7 +365,10 @@ void main() {
           ],
         },
       )!;
-      expect(formatThaiShortDate(offer.submittedAt!), '3 ต.ค. 2569');
+      final expected = DateTime.utc(2026, 10, 3, 21, 33, 42, 894, 107).toLocal();
+      expect(offer.submittedAt!.isUtc, isFalse);
+      expect(offer.submittedAt, expected);
+      expect(formatThaiShortDate(offer.submittedAt!), formatThaiShortDate(expected));
     });
   });
 

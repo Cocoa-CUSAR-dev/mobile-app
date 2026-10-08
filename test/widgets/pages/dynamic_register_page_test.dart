@@ -409,7 +409,9 @@ void main() {
       if (request.url.path.endsWith('/form')) return jsonResponse({'form': form}, 200);
       if (request.url.path.endsWith('/autofill')) {
         return jsonResponse({
-          'submitted_at': '2026-10-03T21:33:00Z',
+          // 05:33 UTC is 12:33 in Bangkok: 3 Oct in both zones, so the banner's
+          // date doesn't depend on the zone the test runs in.
+          'submitted_at': '2026-10-03T05:33:00Z',
           'answer': {'notes': 'จากครั้งก่อน', 'method': 'ฉีดพ่น'},
         }, 200);
       }
