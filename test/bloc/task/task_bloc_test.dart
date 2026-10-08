@@ -9,6 +9,7 @@
 // so every test that touches it needs `wait:` long enough for that delay to
 // actually resolve.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bloc_test/bloc_test.dart';
@@ -341,5 +342,44 @@ void main() {
         expect(queue.single['queue_id'], isNotNull);
       },
     );
+  });
+
+  // SubmitTaskAction's result completer: the form shows สำเร็จ / ไม่สำเร็จ
+  // from it, so it must say what really happened.
+  group('SubmitTaskAction result', () {
+    Future<SubmitResult> submitWith(http.Client client, {bool isDraft = false}) async {
+      final bloc = TaskBloc(taskService: TaskService(client: client));
+      final result = Completer<SubmitResult>();
+      bloc.add(SubmitTaskAction('t1', 'activity', {'note': 'x'}, isDraft: isDraft, result: result));
+      return result.future.timeout(const Duration(seconds: 5));
+    }
+
+    setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+
+    test('accepted by the server -> sent, and nothing is left in the queue', () async {
+      final result = await submitWith(MockClient((r) async => jsonResponse({}, 201)));
+      expect(result.outcome, SubmitOutcome.sent);
+      await Future<void>.delayed(_queueDelay);
+      final stored = await _secureStorage.read(key: 'pending_task_queue');
+      expect(stored == null ? <dynamic>[] : jsonDecode(stored) as List, isEmpty);
+    });
+
+    test('the server says no -> savedOffline with its reason, kept in the queue', () async {
+      final result = await submitWith(
+        MockClient((r) async => jsonResponse({'error': 'ข้อมูลไม่ผ่านการตรวจสอบ'}, 400)),
+      );
+      expect(result.outcome, SubmitOutcome.savedOffline);
+      expect(result.serverError, 'ข้อมูลไม่ผ่านการตรวจสอบ');
+      final queue = jsonDecode((await _secureStorage.read(key: 'pending_task_queue'))!) as List;
+      expect(queue.single['status'], 'PENDING');
+    });
+
+    test('a draft -> draftSaved, never sent', () async {
+      final result = await submitWith(
+        MockClient((r) async => fail('a draft must never be sent')),
+        isDraft: true,
+      );
+      expect(result.outcome, SubmitOutcome.draftSaved);
+    });
   });
 }

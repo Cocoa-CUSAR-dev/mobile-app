@@ -387,6 +387,29 @@ class ServiceProvider<T> {
     }
   }
 
+  /// GET one object that may legitimately not exist -- returns null for any
+  /// non-200 (204 "nothing to offer", 404, 5xx) instead of throwing the way
+  /// fetchOne does. Same headers and token handling as every other call
+  /// here. Deliberately NOT cached: it is for answers that only make sense
+  /// fresh from the server (autofill), where a stale offline copy would be
+  /// worse than none. Network failure / timeout still throws, so the caller
+  /// decides what offline means for it.
+  Future<Map<String, dynamic>?> fetchOneOptional(
+    String pathSuffix, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (!isRealApi) return null;
+    final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
+    final response = await _client
+        .get(uri, headers: await _getHeaders())
+        .timeout(timeout);
+    final decoded = await _updateToken(response);
+    if (response.statusCode == 200 && decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    return null;
+  }
+
   /// Update Data (PUT) - ปรับแก้ให้ส่งเข้า /tasks ตรงๆ และ ID อยู่ใน Payload ตาม Go Backend
   Future<dynamic> putData(Map<String, dynamic> payload) async {
     if (isRealApi) {

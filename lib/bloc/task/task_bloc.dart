@@ -22,6 +22,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     (task) => task.taskId == taskId && task.isMultipleSubmit,
   );
 
+  /// มีอะไรของงานนี้ค้างอยู่ในคิวในเครื่องไหม -- ร่าง หรือแถวที่ส่งแล้วรอ sync
+  ///
+  /// ใช้ตัดสินข้อเสนอ "ใช้ข้อมูลเดิม" (US2-5) ก่อนยิง network ใดๆ: ร่างต้องชนะเสมอ
+  /// และแถวที่รอ sync แปลว่างานนี้มีคำตอบแล้ว (single-submit = โหมดแก้ไข,
+  /// multi-submit = ไม่ใช่แถวแรก) ทั้งสองกรณีไม่เสนอ -- คิวเป็นของ TaskBloc
+  /// จึงถามผ่านที่นี่แทนการให้ bloc อื่นเปิดอ่าน storage เอง
+  Future<bool> hasQueuedItemFor(String taskId) async {
+    final queue = await _queueService.fetchData((json) => json);
+    return queue.any((item) => item['task_id'] == taskId);
+  }
+
   TaskBloc({TaskService? taskService})
     : _taskService = taskService ?? TaskService(),
       super(TaskState()) {
@@ -141,15 +152,33 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
             .toList();
       }
 
+      void report(SubmitResult result) {
+        final completer = event.result;
+        if (completer != null && !completer.isCompleted) completer.complete(result);
+      }
+
       // ถ้าเป็น draft เอาเข้่าคิวเพื่อรอแก้พอ ยังไม่ส่ง
       if (event.isDraft) {
-        await _queueService.replaceLocal([
-          ...await queueWithoutDraft(),
-          queueItem,
-        ]);
+        try {
+          await _queueService.replaceLocal([
+            ...await queueWithoutDraft(),
+            queueItem,
+          ]);
+          report(const SubmitResult(SubmitOutcome.draftSaved));
+        } catch (e) {
+          report(const SubmitResult(SubmitOutcome.failed));
+        }
         return;
       }
+
       // พยายามส่งขึ้น Server ทันที (Optimistic Update)
+      //
+      // The send and the queue bookkeeping are kept apart on purpose. They
+      // used to share one try/catch, so if the send SUCCEEDED but the
+      // follow-up queue write threw, the catch queued the row as PENDING and
+      // it would later be sent a second time.
+      var sent = false;
+      String? serverError;
       try {
         // ถ้าเป็นงานที่มีอยู่แล้ว และจะ edit
         if (event.isEdit) {
@@ -158,14 +187,33 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         } else {
           await _taskService.submitTask(event.taskId, event.payload);
         }
-        await _queueService.replaceLocal(await queueWithoutDraft());
+        sent = true;
       } catch (e) {
         print("Network failed, stay in queue as PENDING");
-        // เอายัดเข้า queue รอ -- appended, never replacing another row
+        // ServiceProvider throws the server's own error text as a String for
+        // a non-2xx answer; anything else is the network itself.
+        if (e is String) serverError = e;
+      }
+
+      if (sent) {
+        report(const SubmitResult(SubmitOutcome.sent));
+        // Clearing this task's draft is housekeeping -- the answer is already
+        // saved, so a failure here must not turn into a resend.
+        try {
+          await _queueService.replaceLocal(await queueWithoutDraft());
+        } catch (_) {}
+        return;
+      }
+
+      // เอายัดเข้า queue รอ -- appended, never replacing another row
+      try {
         await _queueService.replaceLocal([
           ...await queueWithoutDraft(),
           queueItem,
         ]);
+        report(SubmitResult(SubmitOutcome.savedOffline, serverError: serverError));
+      } catch (_) {
+        report(SubmitResult(SubmitOutcome.failed, serverError: serverError));
       }
     });
     // 4. Trigger Pending Queue เข้า database
