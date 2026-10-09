@@ -179,6 +179,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       // it would later be sent a second time.
       var sent = false;
       String? serverError;
+      var rejected = false;
       try {
         // ถ้าเป็นงานที่มีอยู่แล้ว และจะ edit
         if (event.isEdit) {
@@ -189,10 +190,16 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         }
         sent = true;
       } catch (e) {
-        print("Network failed, stay in queue as PENDING");
-        // ServiceProvider throws the server's own error text as a String for
-        // a non-2xx answer; anything else is the network itself.
-        if (e is String) serverError = e;
+        print("Submit failed: $e");
+        // ServiceProvider throws ServerRejection when the server answered
+        // with an error; anything else is the network itself (or a body that
+        // wasn't JSON, thrown as a String).
+        if (e is ServerRejection) {
+          serverError = e.message;
+          rejected = e.isPermanent;
+        } else if (e is String) {
+          serverError = e;
+        }
       }
 
       if (sent) {
@@ -202,6 +209,23 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         try {
           await _queueService.replaceLocal(await queueWithoutDraft());
         } catch (_) {}
+        return;
+      }
+
+      // The server rejected the answer itself (docs-and-plan#223). Queueing
+      // it as PENDING used to tell the farmer "saved, will sync later" while
+      // TriggerPendingQueueSync resent it and it was rejected every time, so
+      // the record never landed. It becomes this task's draft instead: the
+      // farmer sees why it failed, and reopening the task brings their
+      // answers back to fix and send again.
+      if (rejected) {
+        try {
+          await _queueService.replaceLocal([
+            ...await queueWithoutDraft(),
+            {...queueItem, 'is_draft': true, 'status': 'DRAFT'},
+          ]);
+        } catch (_) {}
+        report(SubmitResult(SubmitOutcome.rejected, serverError: serverError));
         return;
       }
 
@@ -270,6 +294,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
           }
         } catch (e) {
           print("Failed to sync task ${item['task_id']}: $e");
+          // A row the server rejects (docs-and-plan#223) would be rejected
+          // again on every sync, forever. Turn it into the task's draft so
+          // the farmer can open it, fix it and send it -- unless the task
+          // already has a draft, since a task keeps at most one.
+          final hasDraft = pendingQueue.any(
+            (other) => other['task_id'] == item['task_id'] && other['is_draft'] == true,
+          );
+          if (e is ServerRejection && e.isPermanent && !hasDraft) {
+            item['is_draft'] = true;
+            item['status'] = 'DRAFT';
+          }
           remaining.add(item);
           continue;
         }
