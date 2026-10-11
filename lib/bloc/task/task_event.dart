@@ -1,3 +1,5 @@
+import 'dart:async';
+
 abstract class TaskEvent {}
 
 // ดึงรายการงานตามวันที่ และ Merge กับคิวในเครื่อง
@@ -17,15 +19,48 @@ class GetTaskResponseDetails extends TaskEvent {
   GetTaskResponseDetails(this.taskId, {this.onlyFields});
 }
 
+// What actually happened to a SubmitTaskAction -- so the form can show
+// สำเร็จ / ไม่สำเร็จ for what REALLY happened instead of closing the moment
+// the answer was handed over.
+enum SubmitOutcome {
+  // The server accepted it.
+  sent,
+  // Not sent, but kept in the local queue -- TriggerPendingQueueSync sends
+  // it later. Covers offline and a server-side failure (5xx), not a
+  // rejection of the answer (see `rejected`).
+  savedOffline,
+  // Saved as a draft on this device (never sent by design).
+  draftSaved,
+  // The server rejected the answer itself (a 4xx such as a failed
+  // validation). Sending it again can't help, so it is NOT queued for a
+  // resend; it is kept as this task's draft for the farmer to fix
+  // (docs-and-plan#223).
+  rejected,
+  // Neither sent nor saved locally -- the one case where the answer is lost
+  // unless the farmer tries again.
+  failed,
+}
+
+class SubmitResult {
+  final SubmitOutcome outcome;
+  // The server's own reason when it answered with an error (ServiceProvider
+  // throws the body's "error" text as a String); null for a network failure.
+  final String? serverError;
+  const SubmitResult(this.outcome, {this.serverError});
+}
+
 // ส่งงานหรือบันทึกร่าง
 class SubmitTaskAction extends TaskEvent {
   final String taskId;
   final String handler;
   final Map<String, dynamic> payload;
   final bool isDraft;
-  final bool isEdit; 
+  final bool isEdit;
+  // Completed exactly once with what happened. Optional: other callers can
+  // still fire and forget.
+  final Completer<SubmitResult>? result;
 
-  SubmitTaskAction(this.taskId, this.handler, this.payload, {this.isDraft = false, this.isEdit = false});
+  SubmitTaskAction(this.taskId, this.handler, this.payload, {this.isDraft = false, this.isEdit = false, this.result});
 }
 
 class TriggerPendingQueueSync extends TaskEvent {

@@ -55,7 +55,13 @@ List<BlocProvider> testBlocProviders({http.Client? client}) {
     BlocProvider<LoginBloc>(create: (_) => LoginBloc(client: c)),
     BlocProvider<TaskBloc>.value(value: taskBloc),
     BlocProvider<DynamicBloc>(
-      create: (ctx) => DynamicBloc(taskBloc: ctx.read<TaskBloc>(), apiOverride: DynamicApiService(client: c)),
+      // taskServiceOverride: a multi-submit form asks GET /tasks/:id to decide
+      // on the autofill offer (US2-5) -- keep that on the mock too.
+      create: (ctx) => DynamicBloc(
+        taskBloc: ctx.read<TaskBloc>(),
+        apiOverride: DynamicApiService(client: c),
+        taskServiceOverride: TaskService(client: c),
+      ),
     ),
     BlocProvider<HomeBloc>(create: (ctx) => HomeBloc(taskBloc: ctx.read<TaskBloc>())),
   ];

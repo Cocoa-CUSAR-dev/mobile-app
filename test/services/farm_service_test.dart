@@ -1,7 +1,10 @@
 // Unit tests for lib/services/farm_service.dart.
 
+import 'dart:convert';
+
 import 'package:cocoa_supply/models/farm_model.dart';
 import 'package:cocoa_supply/services/farm_service.dart';
+import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -107,6 +110,37 @@ void main() {
       await FarmService(client: client).saveFarm(Farm(farmId: '2', farmName: 'New'));
 
       expect(posted, isTrue);
+    });
+  });
+  group('ServiceProvider.uploadFile (farm photo)', () {
+    test('posts the bytes as multipart field "image" with the bearer token', () async {
+      FlutterSecureStorage.setMockInitialValues({'auth_token': 'aaa.bbb.ccc'});
+      late http.Request sent;
+      final client = MockClient((request) async {
+        sent = request;
+        return jsonResponse({'message': 'ok', 'image_url': 'https://r2.test/x.jpg'}, 200);
+      });
+      final provider = ServiceProvider(endpoint: '/farms', isRealApi: true, storageKey: 'farms', client: client);
+
+      final result = await provider.uploadFile('farm-1/image', field: 'image', bytes: [1, 2, 3], filename: 'farm.jpg');
+
+      expect(sent.method, 'POST');
+      expect(sent.url.toString(), '$testBaseUrl/farms/farm-1/image');
+      expect(sent.headers['Authorization'], 'Bearer aaa.bbb.ccc');
+      expect(sent.headers['content-type'], startsWith('multipart/form-data'));
+      final body = latin1.decode(sent.bodyBytes);
+      expect(body, contains('name="image"; filename="farm.jpg"'));
+      expect(result['image_url'], 'https://r2.test/x.jpg');
+    });
+
+    test("throws the server's own error message on rejection", () async {
+      final client = MockClient((request) async => jsonResponse({'error': 'รองรับเฉพาะไฟล์ JPG, PNG หรือ WEBP'}, 415));
+      final provider = ServiceProvider(endpoint: '/farms', isRealApi: true, storageKey: 'farms', client: client);
+
+      await expectLater(
+        provider.uploadFile('farm-1/image', field: 'image', bytes: [1], filename: 'x.gif'),
+        throwsA('รองรับเฉพาะไฟล์ JPG, PNG หรือ WEBP'),
+      );
     });
   });
 }

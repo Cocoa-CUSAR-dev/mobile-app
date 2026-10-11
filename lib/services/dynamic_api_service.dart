@@ -20,6 +20,30 @@ class DynamicApiService {
     return provider.fetchOneCached('$taskId/form');
   }
 
+  /// US2-5: คำตอบครั้งล่าสุดของงานประเภทเดียวกัน สำหรับเสนอ "ใช้ข้อมูลเดิม"
+  /// (GET /tasks/:taskId/autofill) -- คืน {submitted_at, answer} ที่ server
+  /// คัดกรองมาแล้วด้วยกฎเดียวกับแชทบอท
+  ///
+  /// คืน null ในทุกกรณีที่ไม่มีอะไรให้เสนอ: 204 (ไม่มีประวัติ / ตอบงานนี้ไปแล้ว /
+  /// ฟอร์มที่ต้องเลือกงานหลักก่อน), ออฟไลน์, timeout, error ใดๆ ก็ตาม เพราะ
+  /// การเปิดฟอร์มต้องไม่มีวันติดอยู่ที่ข้อเสนอนี้ -- ไม่มีข้อเสนอ = ฟอร์มว่างเหมือนเดิม
+  Future<Map<String, dynamic>?> fetchAutofill(String taskId) async {
+    final provider = ServiceProvider<Map<String, dynamic>>(
+      storageKey: 'task_autofill',
+      endpoint: '/tasks',
+      isRealApi: true,
+      client: _client,
+    );
+    try {
+      final result = await provider.fetchOneOptional('$taskId/autofill');
+      final answer = result?['answer'];
+      if (answer is! Map<String, dynamic> || answer.isEmpty) return null;
+      return result;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// ดึงข้อมูลตาม table
   // APP-6: was missing isRealApi: true (every other service in this app
   // sets it -- see batch_service.dart, harvest_service.dart, etc., and

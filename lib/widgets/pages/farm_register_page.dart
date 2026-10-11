@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -29,6 +30,9 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
   final Map<String, TextEditingController> _controllers = {
     'farm_name': TextEditingController(),
     'found_date': TextEditingController(),
+    'contact_name': TextEditingController(),
+    'phone_number': TextEditingController(),
+    'zip_code': TextEditingController(),
   };
 
   final Map<String, FileUploadController> _fileControllers = {
@@ -75,12 +79,15 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
         return [
           const MapEntry('farm_name', {'type': 'string', 'is_required': true}),
           const MapEntry('found_date', {'type': 'date', 'is_required': true}),
+          const MapEntry('contact_name', {'type': 'string', 'is_required': true}),
+          const MapEntry('phone_number', {'type': 'string', 'is_required': true}),
         ];
       case 1:
         return [
           const MapEntry('province_id', {'type': 'id', 'is_required': true}),
           const MapEntry('district_id', {'type': 'id', 'is_required': true}),
           const MapEntry('subdistrict_id', {'type': 'id', 'is_required': true}),
+          const MapEntry('zip_code', {'type': 'string', 'is_required': true}),
         ];
       case 2:
         return [
@@ -109,6 +116,28 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
     }
   }
 
+  // Mirrors mobile-backend's limit, so an oversized photo is refused at pick
+  // time instead of after the farm has already been created.
+  static const int _maxPhotoBytes = 5 * 1024 * 1024;
+
+  Future<FilePickerResult?> _pickFarmPhoto() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      // Native platforms only fill `bytes` when asked; web always does.
+      withData: true,
+    );
+    final file = result?.files.firstOrNull;
+    if (file == null) return null;
+    if (file.size > _maxPhotoBytes) {
+      if (mounted) {
+        AppSnackBar.show(context, 'รูปต้องมีขนาดไม่เกิน 5 MB', type: AppSnackBarType.error);
+      }
+      return null;
+    }
+    return result;
+  }
+
   Future<void> _handleRegister() async {
     setState(() => _isLoading = true);
     try {
@@ -116,9 +145,36 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
       final Map<String, dynamic> payload = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
       payload.addAll(_currentFormData);
 
-      await registerService.postData(payload);
+      final response = await registerService.postData(payload);
+
+      // The farm already exists at this point, so a failed photo upload is
+      // reported but doesn't undo the registration.
+      String? photoError;
+      final photo = _fileControllers['upload']!.value;
+      final farmId = response is Map ? response['farm_id']?.toString() : null;
+      if (photo?.bytes != null && farmId != null) {
+        try {
+          await registerService.uploadFile(
+            '$farmId/image',
+            field: 'image',
+            bytes: photo!.bytes!,
+            filename: photo.name,
+          );
+        } catch (e) {
+          photoError = '$e';
+        }
+      }
+
       if (mounted) {
-        AppSnackBar.show(context, 'ลงทะเบียนฟาร์มสำเร็จ', type: AppSnackBarType.success);
+        if (photoError == null) {
+          AppSnackBar.show(context, 'ลงทะเบียนฟาร์มสำเร็จ', type: AppSnackBarType.success);
+        } else {
+          AppSnackBar.show(
+            context,
+            'ลงทะเบียนฟาร์มสำเร็จ แต่อัปโหลดรูปไม่สำเร็จ: $photoError',
+            type: AppSnackBarType.info,
+          );
+        }
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
       }
     } catch (e) {
@@ -182,6 +238,20 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
               controller: _controllers['found_date']!,
               isReq: true,
             ),
+            FormHelper.buildInput(
+              label: 'ชื่อผู้ติดต่อ',
+              controller: _controllers['contact_name']!,
+              hintText: 'กรุณากรอกชื่อผู้ติดต่อ',
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
+            FormHelper.buildInput(
+              label: 'เบอร์โทรศัพท์',
+              controller: _controllers['phone_number']!,
+              hintText: 'กรุณากรอกเบอร์โทรศัพท์',
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
           ],
         );
       case 1:
@@ -217,6 +287,13 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
             ),
+            FormHelper.buildInput(
+              label: 'รหัสไปรษณีย์',
+              controller: _controllers['zip_code']!,
+              hintText: 'กรุณากรอกรหัสไปรษณีย์',
+              isReq: true,
+              onChanged: () => setState(() {}),
+            ),
           ],
         );
       case 2:
@@ -235,8 +312,9 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
             ),
             const SizedBox(height: 16),
             FormHelper.buildUpload(
-              label: 'แนบภาพประกอบ',
+              label: 'รูปฟาร์ม (JPG, PNG หรือ WEBP ไม่เกิน 5 MB)',
               controller: _fileControllers['upload']!,
+              pickFiles: _pickFarmPhoto,
             ),
           ],
         );

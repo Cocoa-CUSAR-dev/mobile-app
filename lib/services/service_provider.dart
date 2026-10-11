@@ -2,6 +2,29 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+/// The server answered, and said no (a non-2xx status with its own reason).
+///
+/// Thrown by postData/putData instead of a bare String so callers can tell
+/// "the server rejected this" from "the network failed" by the status code
+/// -- see TaskBloc's SubmitTaskAction, which must not queue a rejected answer
+/// for a resend that can never succeed (docs-and-plan#223). toString() is the
+/// server's message, so code that shows `'$e'` reads exactly as before.
+class ServerRejection implements Exception {
+  final int statusCode;
+  final String message;
+  const ServerRejection(this.statusCode, this.message);
+
+  /// Sending the same answer again cannot help: the server judged the answer
+  /// (or the farmer's right to send it) itself. 401 (session expired), 408
+  /// (timeout) and 429 (rate limit) are about the moment, not the answer,
+  /// so a later retry can still succeed.
+  bool get isPermanent =>
+      statusCode >= 400 && statusCode < 500 && statusCode != 401 && statusCode != 408 && statusCode != 429;
+
+  @override
+  String toString() => message;
+}
+
 class ServiceProvider<T> {
   final String storageKey;
   final String endpoint;
@@ -245,7 +268,7 @@ class ServiceProvider<T> {
             errorMessage = responseData['message'].toString();
           }
 
-          throw errorMessage;
+          throw ServerRejection(response.statusCode, errorMessage);
         }
       } catch (e) {
         // 4. จัดการ Error อื่นๆ เช่น No Internet หรือ Timeout
@@ -262,6 +285,31 @@ class ServiceProvider<T> {
       await _storage.write(key: storageKey, value: jsonEncode(existingData));
       return payload;
     }
+  }
+
+  /// Upload one file as multipart/form-data to `endpoint/pathSuffix`, e.g.
+  /// /farms/{farmId}/image. Takes bytes rather than a path because the web
+  /// build (LIFF) has no file path to read from.
+  Future<dynamic> uploadFile(
+    String pathSuffix, {
+    required String field,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint/$pathSuffix'));
+    final String? token = await _storage.read(key: _tokenKey);
+    request.headers['Accept'] = 'application/json';
+    if (token != null && useCookie) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+
+    final streamed = await _client.send(request).timeout(const Duration(seconds: 60));
+    final response = await http.Response.fromStream(streamed);
+    final decoded = await _updateToken(response);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return decoded;
+    }
+    throw (decoded is Map ? decoded['error'] : null) ?? 'Upload Error (${response.statusCode})';
   }
 
   /// Fetch a single object (GET) with local cache fallback, for endpoints
@@ -371,6 +419,29 @@ class ServiceProvider<T> {
     }
   }
 
+  /// GET one object that may legitimately not exist -- returns null for any
+  /// non-200 (204 "nothing to offer", 404, 5xx) instead of throwing the way
+  /// fetchOne does. Same headers and token handling as every other call
+  /// here. Deliberately NOT cached: it is for answers that only make sense
+  /// fresh from the server (autofill), where a stale offline copy would be
+  /// worse than none. Network failure / timeout still throws, so the caller
+  /// decides what offline means for it.
+  Future<Map<String, dynamic>?> fetchOneOptional(
+    String pathSuffix, {
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (!isRealApi) return null;
+    final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
+    final response = await _client
+        .get(uri, headers: await _getHeaders())
+        .timeout(timeout);
+    final decoded = await _updateToken(response);
+    if (response.statusCode == 200 && decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    return null;
+  }
+
   /// Update Data (PUT) - ปรับแก้ให้ส่งเข้า /tasks ตรงๆ และ ID อยู่ใน Payload ตาม Go Backend
   Future<dynamic> putData(Map<String, dynamic> payload) async {
     if (isRealApi) {
@@ -387,7 +458,10 @@ class ServiceProvider<T> {
         if (response.statusCode == 200) {
           return decoded;
         } else {
-          throw (decoded is Map ? decoded['error'] : null) ?? "Update Error";
+          throw ServerRejection(
+            response.statusCode,
+            ((decoded is Map ? decoded['error'] : null) ?? "Update Error").toString(),
+          );
         }
       } catch (e) {
         rethrow;
