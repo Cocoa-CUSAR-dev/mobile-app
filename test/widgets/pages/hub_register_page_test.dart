@@ -4,6 +4,7 @@
 // step indicator. Same GIS/map limitation as farm_register_page_test.dart
 // applies to step 3.
 
+import 'package:cocoa_supply/widgets/components/date_input.dart';
 import 'package:cocoa_supply/widgets/pages/hub_register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,6 +41,35 @@ void main() {
     await tester.enterText(find.byType(TextFormField).first, 'จุดรับซื้อกลาง');
     await tester.pump();
 
+    expect(nextButton().onPressed, isNull);
+  });
+
+  // APP-7 (mobile-app#25): an empty phone used to block "ถัดไป" only until the
+  // field had been filled once -- clearing it again let the farmer through.
+  // The gate must read the field's current value, not its history.
+  testWidgets('APP-7 — clearing a filled phone number disables "ถัดไป" again', (tester) async {
+    await tester.pumpWidget(wrapPage(const HubRegisterPage()));
+    await tester.pumpAndSettle();
+
+    ElevatedButton nextButton() => tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ถัดไป'));
+    // Step 1 text fields, in order: hub_name, contact_name, phone_number.
+    // found_date is a DateInput (a picker, not a text field): set it directly.
+    final fields = find.byType(TextFormField);
+    expect(fields, findsNWidgets(3));
+    tester.widget<DateInput>(find.byType(DateInput)).controller.text = '2026-01-01';
+    await tester.enterText(fields.at(0), 'จุดรับซื้อกลาง');
+    await tester.enterText(fields.at(1), 'สมชาย ใจดี');
+    await tester.enterText(fields.at(2), '0812345678');
+    await tester.pump();
+    expect(nextButton().onPressed, isNotNull);
+
+    await tester.enterText(fields.at(2), '');
+    await tester.pump();
+    expect(nextButton().onPressed, isNull);
+
+    // Whitespace alone counts as empty too.
+    await tester.enterText(fields.at(2), '   ');
+    await tester.pump();
     expect(nextButton().onPressed, isNull);
   });
 
