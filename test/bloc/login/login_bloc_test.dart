@@ -10,6 +10,8 @@ import 'package:http/testing.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:cocoa_supply/config/hub_config.dart';
+
 import '../../services/test_helpers.dart';
 
 void main() {
@@ -37,8 +39,8 @@ void main() {
       'a real user with an existing profile goes to HOME',
       build: () {
         final client = MockClient((request) async {
-          expect(request.url.toString(), '$testBaseUrl/public/login');
-          return jsonResponse({'has_profile': true}, 200);
+          expect(request.url.toString(), '$hubBaseUrl/api/v1/auth/login');
+          return jsonResponse(hubPair(roles: ['farmer']), 200);
         });
         return LoginBloc(client: client);
       },
@@ -52,7 +54,7 @@ void main() {
     blocTest<LoginBloc, LoginState>(
       'a real user without a profile goes to REGIS_ROLE',
       build: () {
-        final client = MockClient((request) async => jsonResponse({'has_profile': false}, 200));
+        final client = MockClient((request) async => jsonResponse(hubPair(roles: []), 200));
         return LoginBloc(client: client);
       },
       act: (bloc) => bloc.add(const LoginButtonPressed(username: '0812345678', password: 'cocoa1234')),
@@ -65,13 +67,16 @@ void main() {
     blocTest<LoginBloc, LoginState>(
       'a rejected login emits LoginFailure',
       build: () {
-        final client = MockClient((request) async => jsonResponse({'error': 'invalid credentials'}, 401));
+        final client = MockClient(
+          (request) async => jsonResponse({'detail': 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'}, 401),
+        );
         return LoginBloc(client: client);
       },
       act: (bloc) => bloc.add(const LoginButtonPressed(username: '0812345678', password: 'wrong')),
       expect: () => [
         isA<LoginLoading>(),
-        isA<LoginFailure>(),
+        // backend-hub's reason (`detail`) reaches the screen as-is.
+        isA<LoginFailure>().having((s) => s.error, 'error', contains('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')),
       ],
     );
   });

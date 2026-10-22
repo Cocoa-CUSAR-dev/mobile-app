@@ -13,9 +13,10 @@ import 'package:cocoa_supply/services/service_provider.dart';
 class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
   final _linkService = ServiceProvider(
     storageKey: 'liff_link',
-    endpoint: '/public/liff/link',
+    endpoint: '/api/v1/auth/line/link',
     isRealApi: true,
     useCookie: false,
+    useHub: true,
   );
 
   LiffLoginBloc() : super(LiffLoginInitial()) {
@@ -85,16 +86,20 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
 
     try {
       final response = await _linkService.postData({
-        'idToken': idToken,
+        'id_token': idToken,
         'username': event.username,
         'password': event.password,
       });
 
+      // backend-hub ตอบเป็น token pair แบบเดียวกับ login (ServiceProvider
+      // เก็บ token ให้แล้ว): user.roles ว่าง = ยังไม่มีโปรไฟล์
+      final user = response is Map ? response['user'] : null;
+      final List roles = user is Map ? (user['roles'] ?? []) : [];
       emit(LiffLoginSuccess(
-        userId: response['user_id']?.toString() ?? '',
-        lineUserId: response['line_user_id']?.toString() ?? '',
-        message: response['message']?.toString() ?? 'verify สำเร็จ และบันทึกการผูกบัญชี LINE เรียบร้อยแล้ว',
-        hasProfile: response['has_profile'] == true,
+        userId: user is Map ? user['user_id']?.toString() ?? '' : '',
+        lineUserId: '',
+        message: 'verify สำเร็จ และบันทึกการผูกบัญชี LINE เรียบร้อยแล้ว',
+        hasProfile: roles.isNotEmpty,
       ));
     } catch (e) {
       // แนบ idToken เดิมกลับไปด้วย — error นี้เกิดตอน submit (username/password

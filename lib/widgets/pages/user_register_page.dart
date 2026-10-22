@@ -22,10 +22,11 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _registerService = ServiceProvider<dynamic>(
-    endpoint: '/public/register',
+    endpoint: '/api/v1/auth/register',
     storageKey: 'user_register',
     isRealApi: true,
     useCookie: false,
+    useHub: true,
   );
 
   final Map<String, TextEditingController> _controllers = {

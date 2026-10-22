@@ -10,6 +10,49 @@ import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
+/// The profile body backend-hub expects for [role] (POST /api/v1/me/roles/{role}).
+///
+/// The form keeps one set of fields for every role; the hub accepts only the
+/// columns of that role's own profile table and rejects anything else, so
+/// send just this role's fields and leave out blanks (the DB keeps its
+/// defaults). `email` has no column anywhere, and hub collectors' date of
+/// birth column is spelled `birthdate`.
+Map<String, dynamic> rolePayload(String role, Map<String, dynamic> form) {
+  const shared = [
+    'first_name', 'last_name', 'nickname', 'id_card_number', 'phone_number', 'line',
+    'province_id', 'district_id', 'subdistrict_id', 'zip_code',
+  ];
+  final fields = <String>[
+    ...shared,
+    if (role == 'farmer') ...[
+      'birth_date', 'address_detail', 'salary_income', 'family_member_count',
+      'agri_worker_count', 'agri_experience',
+    ],
+    if (role == 'processor') ...['birth_date', 'address_detail'],
+    if (role == 'hub_collector') 'birth_date',
+  ];
+
+  final payload = <String, dynamic>{};
+  for (final key in fields) {
+    final value = form[key];
+    if (value == null || (value is String && value.isEmpty)) continue;
+    payload[role == 'hub_collector' && key == 'birth_date' ? 'birthdate' : key] = value;
+  }
+  if (role == 'farmer') {
+    final income = double.tryParse('${payload['salary_income'] ?? ''}');
+    final family = int.tryParse('${payload['family_member_count'] ?? ''}');
+    final workers = int.tryParse('${payload['agri_worker_count'] ?? ''}');
+    payload.remove('salary_income');
+    payload.remove('family_member_count');
+    payload.remove('agri_worker_count');
+    if (income != null) payload['salary_income'] = income;
+    // A household has at least one person; 0 means "not filled in".
+    if (family != null && family >= 1) payload['family_member_count'] = family;
+    if (workers != null && workers >= 0) payload['agri_worker_count'] = workers;
+  }
+  return payload;
+}
+
 class RegisterRolePage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
   /// บัญชี LINE ไปแล้วผ่าน LiffLinkPage) — ลงทะเบียนโปรไฟล์เสร็จให้ไปหน้า
@@ -48,9 +91,10 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   };
 
   final Map<String, dynamic> _roleConfigs = {
-    'farmer': {'endpoint': '/farmers', 'title': 'เกษตรกร'},
-    'processor': {'endpoint': '/processors', 'title': 'ผู้แปรรูป'},
-    'hub_collector': {'endpoint': '/hub_collectors', 'title': 'ผู้รวบรวม'},
+    // backend-hub: เพิ่ม role ให้ตัวเอง (คนเดียวมีได้หลาย role) พร้อมโปรไฟล์ของ role นั้น
+    'farmer': {'endpoint': '/api/v1/me/roles/farmer', 'title': 'เกษตรกร'},
+    'processor': {'endpoint': '/api/v1/me/roles/processor', 'title': 'ผู้แปรรูป'},
+    'hub_collector': {'endpoint': '/api/v1/me/roles/hub_collector', 'title': 'ผู้รวบรวม'},
   };
 
   @override
@@ -147,18 +191,18 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     setState(() => _isLoading = true);
     try {
       final String endpoint = _roleConfigs[_selectedRole!]['endpoint'];
-      final registerService = ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint);
+      final registerService =
+          ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint, useHub: true);
 
-      final Map<String, dynamic> payload = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
-      payload.addAll(_currentFormData);
-
-      if (_selectedRole == 'farmer') {
-        payload['salary_income'] = double.tryParse(payload['salary_income'].toString()) ?? 0.0;
-        payload['family_member_count'] = int.tryParse(payload['family_member_count'].toString()) ?? 0;
-        payload['agri_worker_count'] = int.tryParse(payload['agri_worker_count'].toString()) ?? 0;
-      }
-
-      await registerService.postData(payload);
+      // ส่ง (POST) ตอบกลับเป็น token pair ใหม่ที่มี role นี้แล้ว -- ServiceProvider
+      // เก็บให้เอง จึงใช้ role ใหม่ได้ทันทีโดยไม่ต้อง login ใหม่
+      await registerService.postData(rolePayload(
+        _selectedRole!,
+        {
+          for (final entry in _controllers.entries) entry.key: entry.value.text.trim(),
+          ..._currentFormData,
+        },
+      ));
       if (mounted) {
         AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
 

@@ -27,7 +27,9 @@ jobs:
         run: dart analyze lib test
 
       - name: Run tests
-        run: flutter test
+        # Tests need an absolute hub URL (lib/config/hub_config.dart); any host works,
+        # every request is answered by a MockClient.
+        run: flutter test --dart-define=HUB_BASE_URL=https://hub.test
 
   build-android:
     needs: deploy-check
@@ -52,7 +54,7 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=HUB_BASE_URL=${{ secrets.HUB_BASE_URL }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -77,7 +79,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --dart-define=HUB_BASE_URL=${{ secrets.HUB_BASE_URL }}
 
       - name: Upload iOS Build
         uses: actions/upload-artifact@v4

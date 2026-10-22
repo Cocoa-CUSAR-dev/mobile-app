@@ -11,9 +11,10 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final http.Client? _client;
   late final loginService = ServiceProvider(
     storageKey: 'token',
-    endpoint: '/public/login',
+    endpoint: '/api/v1/auth/login',
     isRealApi: true,
     useCookie: false,
+    useHub: true,
     client: _client,
   );
 
@@ -41,8 +42,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             'password': event.password,
           });
           print(response);
-          if (response["has_profile"] == true){
-            // ถ้าผ่านปุ๊บ Request ถัดไปที่ใช้ ServiceProvider ตัวอื่นจะแนบ Cookie ให้เองทันที!
+          // backend-hub: {access_token, refresh_token, user: {roles, ...}} --
+          // ServiceProvider เก็บ token ให้แล้ว request ถัดไปแนบ Bearer เอง
+          // ยังไม่มี role ใดเลย = ยังไม่มีโปรไฟล์ ต้องไปเลือก/ลงทะเบียน role ก่อน
+          final user = response is Map ? response['user'] : null;
+          final List roles = user is Map ? (user['roles'] ?? []) : [];
+          if (roles.isNotEmpty){
             emit(LoginSuccess(next_page: 'HOME')); //มีโปรไฟล์แล้ว
           }else{
             emit(LoginSuccess(next_page: 'REGIS_ROLE')); //ยังไม่มีโปรไฟล์ ต้องไป regis role ก่อน

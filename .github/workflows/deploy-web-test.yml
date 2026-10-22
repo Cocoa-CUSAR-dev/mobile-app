@@ -59,6 +59,7 @@ jobs:
           flutter build web \
             --base-href /mobile-app/ \
             --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }} \
+            --dart-define=HUB_BASE_URL=${{ secrets.HUB_BASE_URL }} \
             --dart-define=SENTRY_DSN=${{ secrets.SENTRY_DSN }}
 
       - name: Setup Pages
