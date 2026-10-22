@@ -2,13 +2,6 @@
 //
 // Profile has no toJson (it is a read-only view of the logged-in user), so
 // only fromJson is exercised here.
-//
-// KNOWN BUG (last test below is `skip`ped, not deleted): fullName is
-// built as `json['first_name'] + " " + json['last_name']` with no null
-// guard, so a payload missing either name throws a NoSuchMethodError
-// instead of degrading gracefully (e.g. falling back to whichever name is
-// present). The test asserts the graceful behavior a correct
-// implementation should have; remove the `skip:` once fixed to confirm.
 
 import 'package:cocoa_supply/models/profile_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,7 +41,53 @@ void main() {
         final profile = Profile.fromJson({'last_name': 'โกโก้ดี'});
         expect(profile.fullName, 'โกโก้ดี');
       },
-      skip: 'KNOWN BUG: fullName throws when first_name/last_name is null — see file header comment.',
     );
+
+    test('reads the shape of GET /api/v1/me: roles at the top, one profile per role', () {
+      final profile = Profile.fromJson({
+        'user_id': 'u-1',
+        'username': '0812345678',
+        'roles': ['hub_collector', 'farmer'],
+        'must_reset_password': false,
+        'profiles': {
+          'farmer': {'first_name': 'สมชาย', 'last_name': 'ใจดี', 'phone_number': '0812345678'},
+          'hub_collector': {'first_name': 'ไม่ใช่ชื่อนี้', 'last_name': 'x'},
+          'processor': null,
+          'researcher': null,
+        },
+      });
+
+      expect(profile.userId, 'u-1');
+      expect(profile.roles, ['hub_collector', 'farmer']);
+      expect(profile.fullName, 'สมชาย ใจดี');
+      expect(profile.phoneNumber, '0812345678');
+    });
+
+    test('falls back to the next role when the first has no profile', () {
+      final profile = Profile.fromJson({
+        'user_id': 'u-1',
+        'roles': ['processor'],
+        'profiles': {
+          'farmer': null,
+          'hub_collector': null,
+          'processor': {'first_name': 'มาลี', 'last_name': 'แปรรูป'},
+          'researcher': null,
+        },
+      });
+
+      expect(profile.fullName, 'มาลี แปรรูป');
+    });
+
+    test('an account with no profile yet has no name, and does not crash', () {
+      final profile = Profile.fromJson({
+        'user_id': 'u-1',
+        'roles': <String>[],
+        'profiles': {'farmer': null, 'hub_collector': null, 'processor': null, 'researcher': null},
+      });
+
+      expect(profile.fullName, isNull);
+      expect(profile.firstName, isNull);
+      expect(profile.roles, isEmpty);
+    });
   });
 }

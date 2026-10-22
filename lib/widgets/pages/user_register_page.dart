@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
@@ -22,7 +23,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _registerService = ServiceProvider<dynamic>(
-    endpoint: '/public/register',
+    endpoint: ApiEndpoints.authRegister,
     storageKey: 'user_register',
     isRealApi: true,
     useCookie: false,

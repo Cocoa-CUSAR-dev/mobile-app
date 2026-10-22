@@ -23,3 +23,19 @@ http.Response jsonResponse(dynamic data, int statusCode, {Map<String, String>? h
 /// itself rather than hardcoded, so tests asserting on request URLs don't
 /// go stale every time the deployed backend's default URL changes.
 final String testBaseUrl = ServiceProvider(storageKey: '_probe', endpoint: '').baseUrl;
+
+/// What every login-like endpoint of the backend answers with: the token pair
+/// and the account, whose [roles] are empty until the person adds a profile.
+/// The access token is shaped like a JWT, which is all the app checks.
+Map<String, dynamic> tokenPairJson({List<String> roles = const []}) => {
+      'access_token': 'aaa.bbb.ccc',
+      'refresh_token': 'refresh-1',
+      'token_type': 'bearer',
+      'expires_in': 3600,
+      'user': {
+        'user_id': 'u-1',
+        'username': '0812345678',
+        'roles': roles,
+        'must_reset_password': false,
+      },
+    };

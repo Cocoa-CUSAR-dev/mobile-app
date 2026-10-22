@@ -4,4 +4,7 @@
 // service_provider.dart and LIFF_ID above). Empty DSN (the default)
 // disables the SDK entirely -- safe for local dev/CI builds.
 const sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
-const sentryEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: 'local');
+const sentryEnvironment = String.fromEnvironment(
+  'SENTRY_ENVIRONMENT',
+  defaultValue: 'local',
+);

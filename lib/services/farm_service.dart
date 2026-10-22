@@ -1,12 +1,13 @@
 // lib/services/farm_service.dart
 
 import 'package:cocoa_supply/models/farm_model.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart'; // Assume this exists
 import 'package:http/http.dart' as http;
 
 class FarmService {
   static const String _storageKey = 'farm_data';
-  static const String _endpoint = '/farms'; // Mock endpoint
+  static const String _endpoint = ApiEndpoints.farms;
 
   FarmService({http.Client? client})
     : _provider = ServiceProvider<Farm>(

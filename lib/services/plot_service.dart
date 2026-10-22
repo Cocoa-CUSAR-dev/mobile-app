@@ -1,12 +1,13 @@
 // lib/services/plot_service.dart
 
 import 'package:cocoa_supply/models/plot_model.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart'; // Assume this exists
 import 'package:http/http.dart' as http;
 
 class PlotService {
   static const String _storageKey = 'plot_data';
-  static const String _endpoint = '/plots'; // Mock endpoint
+  static const String _endpoint = ApiEndpoints.plots;
 
   PlotService({http.Client? client})
     : _provider = ServiceProvider<Plot>(

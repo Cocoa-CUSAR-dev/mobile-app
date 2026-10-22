@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/bloc/login/login_event.dart';
@@ -11,7 +12,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final http.Client? _client;
   late final loginService = ServiceProvider(
     storageKey: 'token',
-    endpoint: '/public/login',
+    endpoint: ApiEndpoints.authLogin,
     isRealApi: true,
     useCookie: false,
     client: _client,
@@ -41,7 +42,11 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             'password': event.password,
           });
           print(response);
-          if (response["has_profile"] == true){
+          // The backend answers with the token pair and the roles the account
+          // holds. No role yet means no profile: that person registers one first.
+          final Object? user = response["user"];
+          final Object? roles = user is Map ? user["roles"] : null;
+          if (roles is List && roles.isNotEmpty){
             // ถ้าผ่านปุ๊บ Request ถัดไปที่ใช้ ServiceProvider ตัวอื่นจะแนบ Cookie ให้เองทันที!
             emit(LoginSuccess(next_page: 'HOME')); //มีโปรไฟล์แล้ว
           }else{

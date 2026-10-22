@@ -1,7 +1,7 @@
 // Unit tests for lib/services/batch_service.dart.
 //
 // BatchService wraps a ServiceProvider<Batch> configured with isRealApi:
-// true, so getBatches() normally hits `GET $testBaseUrl/batchs`.
+// true, so getBatches() normally hits `GET $testBaseUrl/api/v1/processing/batches`.
 // We inject a MockClient (from package:http/testing.dart) via the
 // `client` constructor param added to BatchService/ServiceProvider for
 // testability, so no real network call ever happens here.
@@ -26,7 +26,7 @@ void main() {
 
   test('getBatches returns parsed batches on a 200 response', () async {
     final client = MockClient((request) async {
-      expect(request.url.toString(), '$testBaseUrl/batchs');
+      expect(request.url.toString(), '$testBaseUrl/api/v1/processing/batches');
       return jsonResponse([
         {'batch_id': 1, 'origin': 'ริมรั้ว', 'quantity_kg': '5.0'},
       ], 200);
