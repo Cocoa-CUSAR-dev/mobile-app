@@ -91,7 +91,7 @@ class AuthSession {
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         await saveFrom(jsonDecode(utf8.decode(response.bodyBytes)));
-        return accessToken();
+        return await accessToken();
       }
       if (response.statusCode == 401) {
         await clear();
