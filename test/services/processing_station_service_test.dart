@@ -19,7 +19,7 @@ void main() {
   group('getStations', () {
     test('returns parsed stations on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), '$testBaseUrl/processing_stations');
+        expect(request.url.toString(), '$testBaseUrl/api/v1/processing/stations');
         return jsonResponse([
           {'processing_station_id': 1, 'processing_station_name': 'ศูนย์แปรรูปแม่จัน'},
         ], 200);

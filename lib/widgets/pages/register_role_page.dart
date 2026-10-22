@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/config/api_endpoints.dart';
+import 'package:cocoa_supply/services/role_profile_payload.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
@@ -49,9 +50,9 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   };
 
   final Map<String, dynamic> _roleConfigs = {
-    'farmer': {'endpoint': ApiEndpoints.farmers, 'title': 'เกษตรกร'},
-    'processor': {'endpoint': ApiEndpoints.processors, 'title': 'ผู้แปรรูป'},
-    'hub_collector': {'endpoint': ApiEndpoints.hubCollectors, 'title': 'ผู้รวบรวม'},
+    'farmer': {'endpoint': ApiEndpoints.meRole('farmer'), 'title': 'เกษตรกร'},
+    'processor': {'endpoint': ApiEndpoints.meRole('processor'), 'title': 'ผู้แปรรูป'},
+    'hub_collector': {'endpoint': ApiEndpoints.meRole('hub_collector'), 'title': 'ผู้รวบรวม'},
   };
 
   @override
@@ -150,16 +151,18 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       final String endpoint = _roleConfigs[_selectedRole!]['endpoint'];
       final registerService = ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint);
 
-      final Map<String, dynamic> payload = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
-      payload.addAll(_currentFormData);
+      final Map<String, dynamic> form = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
+      form.addAll(_currentFormData);
 
       if (_selectedRole == 'farmer') {
-        payload['salary_income'] = double.tryParse(payload['salary_income'].toString()) ?? 0.0;
-        payload['family_member_count'] = int.tryParse(payload['family_member_count'].toString()) ?? 0;
-        payload['agri_worker_count'] = int.tryParse(payload['agri_worker_count'].toString()) ?? 0;
+        form['salary_income'] = double.tryParse(form['salary_income'].toString()) ?? 0.0;
+        form['family_member_count'] = int.tryParse(form['family_member_count'].toString()) ?? 0;
+        form['agri_worker_count'] = int.tryParse(form['agri_worker_count'].toString()) ?? 0;
       }
 
-      await registerService.postData(payload);
+      // The backend takes exactly the fields of the role's profile, so the form's
+      // other fields and its blank answers are left out.
+      await registerService.postData(roleProfilePayload(_selectedRole!, form));
       if (mounted) {
         AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
 

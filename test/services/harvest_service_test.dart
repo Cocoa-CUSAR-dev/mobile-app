@@ -20,7 +20,7 @@ void main() {
   group('getHarvests', () {
     test('returns parsed harvests on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), '$testBaseUrl/harvests');
+        expect(request.url.toString(), '$testBaseUrl/api/v1/collection/harvests');
         return jsonResponse([
           {'harvest_id': 1, 'farm_name': 'ไร่โกโก้พรีเมียม'},
         ], 200);
@@ -73,7 +73,7 @@ void main() {
 
       await HarvestService(client: client).deleteHarvest('7');
 
-      expect(deletedPath, '/harvests/7');
+      expect(deletedPath, '/api/v1/collection/harvests/7');
     });
   });
 }

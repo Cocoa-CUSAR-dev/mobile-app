@@ -4,66 +4,73 @@ import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// The paths the backend serves today, written out in full. If one has to
-// change, change it here on purpose: this is the list of what the app asks
-// the backend for.
+// The paths of the merged backend (the After sheet of api-migration-map.xlsx),
+// written out in full. If one has to change, change it here on purpose: this is
+// the list of what the app asks the backend for.
 void main() {
   group('ApiEndpoints', () {
     test('paths are exactly what the backend serves', () {
-      expect(ApiEndpoints.authMe, '/auth/me');
-      expect(ApiEndpoints.publicLogin, '/public/login');
-      expect(ApiEndpoints.publicRegister, '/public/register');
-      expect(ApiEndpoints.publicLiffLink, '/public/liff/link');
-      expect(ApiEndpoints.tasks, '/tasks');
-      expect(ApiEndpoints.farms, '/farms');
-      expect(ApiEndpoints.plots, '/plots');
-      expect(ApiEndpoints.hubs, '/hubs');
-      // "batchs" is how the backend spells it.
-      expect(ApiEndpoints.batches, '/batchs');
-      expect(ApiEndpoints.harvests, '/harvests');
-      expect(ApiEndpoints.harvestGradeDetails, '/harvest_grade_details');
-      expect(ApiEndpoints.processingStations, '/processing_stations');
-      expect(ApiEndpoints.farmers, '/farmers');
-      expect(ApiEndpoints.processors, '/processors');
-      expect(ApiEndpoints.hubCollectors, '/hub_collectors');
+      expect(ApiEndpoints.authLogin, '/api/v1/auth/login');
+      expect(ApiEndpoints.authRegister, '/api/v1/auth/register');
+      expect(ApiEndpoints.authRefresh, '/api/v1/auth/refresh');
+      expect(ApiEndpoints.authLogout, '/api/v1/auth/logout');
+      expect(ApiEndpoints.authLineLink, '/api/v1/auth/line/link');
+      expect(ApiEndpoints.me, '/api/v1/me');
+      expect(ApiEndpoints.tasks, '/api/v1/tasks');
+      expect(ApiEndpoints.farms, '/api/v1/agriculture/farms');
+      expect(ApiEndpoints.plots, '/api/v1/agriculture/plots');
+      expect(ApiEndpoints.hubs, '/api/v1/collection/hubs');
+      expect(ApiEndpoints.harvests, '/api/v1/collection/harvests');
+      expect(ApiEndpoints.processingStations, '/api/v1/processing/stations');
+      expect(ApiEndpoints.batches, '/api/v1/processing/batches');
     });
 
     test('built paths keep their shape', () {
-      expect(ApiEndpoints.constants('province'), '/constants/province');
+      expect(ApiEndpoints.meRole('farmer'), '/api/v1/me/roles/farmer');
+      expect(
+        ApiEndpoints.meRole('hub_collector'),
+        '/api/v1/me/roles/hub_collector',
+      );
+      expect(ApiEndpoints.taskResponses('t1'), '/api/v1/tasks/t1/responses');
+      expect(
+        ApiEndpoints.taskResponse('t1', 'r1'),
+        '/api/v1/tasks/t1/responses/r1',
+      );
+      expect(
+        ApiEndpoints.constants('province'),
+        '/api/v1/ref/constants/province',
+      );
+    });
+
+    test('the two paths no backend serves are kept as they were', () {
+      expect(ApiEndpoints.harvestGradeDetails, '/harvest_grade_details');
       expect(ApiEndpoints.table('farm_activities'), '/farm_activities');
     });
   });
 
   group('apiGroupOf', () {
-    test('names the group from the first path segment', () {
-      expect(apiGroupOf(ApiEndpoints.authMe), ApiGroup.auth);
-      expect(apiGroupOf(ApiEndpoints.publicLogin), ApiGroup.auth);
-      expect(apiGroupOf(ApiEndpoints.publicLiffLink), ApiGroup.auth);
+    test('names the group from the first segment after /api/v1/', () {
+      expect(apiGroupOf(ApiEndpoints.authLogin), ApiGroup.auth);
+      expect(apiGroupOf(ApiEndpoints.authRefresh), ApiGroup.auth);
+      expect(apiGroupOf(ApiEndpoints.authLineLink), ApiGroup.auth);
+      expect(apiGroupOf(ApiEndpoints.me), ApiGroup.me);
+      expect(apiGroupOf(ApiEndpoints.meRole('farmer')), ApiGroup.me);
       expect(apiGroupOf(ApiEndpoints.tasks), ApiGroup.tasks);
-      expect(apiGroupOf('/tasks/t1/form'), ApiGroup.tasks);
-      expect(apiGroupOf(ApiEndpoints.farms), ApiGroup.farms);
-      expect(apiGroupOf(ApiEndpoints.plots), ApiGroup.plots);
-      expect(apiGroupOf(ApiEndpoints.hubs), ApiGroup.hubs);
-      expect(apiGroupOf(ApiEndpoints.batches), ApiGroup.batches);
-      expect(apiGroupOf(ApiEndpoints.harvests), ApiGroup.harvests);
-      expect(
-        apiGroupOf(ApiEndpoints.harvestGradeDetails),
-        ApiGroup.harvestGradeDetails,
-      );
-      expect(
-        apiGroupOf(ApiEndpoints.processingStations),
-        ApiGroup.processingStations,
-      );
-      expect(apiGroupOf(ApiEndpoints.farmers), ApiGroup.farmers);
-      expect(apiGroupOf(ApiEndpoints.processors), ApiGroup.processors);
-      expect(apiGroupOf(ApiEndpoints.hubCollectors), ApiGroup.hubCollectors);
-      expect(apiGroupOf(ApiEndpoints.constants('province')), ApiGroup.constants);
+      expect(apiGroupOf('/api/v1/tasks/t1/form'), ApiGroup.tasks);
+      expect(apiGroupOf(ApiEndpoints.farms), ApiGroup.agriculture);
+      expect(apiGroupOf(ApiEndpoints.plots), ApiGroup.agriculture);
+      expect(apiGroupOf(ApiEndpoints.hubs), ApiGroup.collection);
+      expect(apiGroupOf(ApiEndpoints.harvests), ApiGroup.collection);
+      expect(apiGroupOf(ApiEndpoints.processingStations), ApiGroup.processing);
+      expect(apiGroupOf(ApiEndpoints.batches), ApiGroup.processing);
+      expect(apiGroupOf(ApiEndpoints.constants('province')), ApiGroup.ref);
     });
 
-    test('puts anything else, or no path at all, in "other"', () {
+    test('puts anything outside /api/v1/, or no path at all, in "other"', () {
+      expect(apiGroupOf(ApiEndpoints.harvestGradeDetails), ApiGroup.other);
       expect(apiGroupOf(ApiEndpoints.table('farm_activities')), ApiGroup.other);
+      expect(apiGroupOf('/api/v1/unknown/x'), ApiGroup.other);
       expect(apiGroupOf(''), ApiGroup.other);
-      expect(apiGroupOf('/'), ApiGroup.other);
     });
   });
 
@@ -88,22 +95,28 @@ void main() {
         resolveApiBaseUrl(ApiGroup.tasks, overrides, fallback),
         'https://new.example',
       );
-      expect(resolveApiBaseUrl(ApiGroup.farms, overrides, fallback), fallback);
+      expect(
+        resolveApiBaseUrl(ApiGroup.agriculture, overrides, fallback),
+        fallback,
+      );
     });
   });
 
   group('ServiceProvider', () {
-    test('with no build-time overrides every group uses the default backend', () {
-      for (final endpoint in [
-        ApiEndpoints.tasks,
-        ApiEndpoints.authMe,
-        ApiEndpoints.farms,
-        ApiEndpoints.table('anything'),
-      ]) {
-        final provider = ServiceProvider(storageKey: 'k', endpoint: endpoint);
-        expect(provider.baseUrl, defaultApiBaseUrl);
-      }
-    });
+    test(
+      'with no build-time overrides every group uses the default backend',
+      () {
+        for (final endpoint in [
+          ApiEndpoints.tasks,
+          ApiEndpoints.me,
+          ApiEndpoints.farms,
+          ApiEndpoints.table('anything'),
+        ]) {
+          final provider = ServiceProvider(storageKey: 'k', endpoint: endpoint);
+          expect(provider.baseUrl, defaultApiBaseUrl);
+        }
+      },
+    );
   });
 
   // The map only helps if nothing goes around it.
@@ -112,7 +125,11 @@ void main() {
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'))
-        .where((f) => !f.path.replaceAll(r'\', '/').endsWith('lib/config/api_endpoints.dart'));
+        .where(
+          (f) => !f.path
+              .replaceAll(r'\', '/')
+              .endsWith('lib/config/api_endpoints.dart'),
+        );
 
     test('no service or page names an endpoint as a string', () {
       final literal = RegExp(r'''endpoint:\s*['"]/''');

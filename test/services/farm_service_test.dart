@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:cocoa_supply/models/farm_model.dart';
 import 'package:cocoa_supply/services/farm_service.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -23,7 +24,7 @@ void main() {
   group('getFarms', () {
     test('returns parsed farms on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), '$testBaseUrl/farms');
+        expect(request.url.toString(), '$testBaseUrl/api/v1/agriculture/farms');
         return jsonResponse([
           {'farm_id': 1, 'farm_name': 'ไร่โกโก้พรีเมียม'},
         ], 200);
@@ -120,12 +121,12 @@ void main() {
         sent = request;
         return jsonResponse({'message': 'ok', 'image_url': 'https://r2.test/x.jpg'}, 200);
       });
-      final provider = ServiceProvider(endpoint: '/farms', isRealApi: true, storageKey: 'farms', client: client);
+      final provider = ServiceProvider(endpoint: ApiEndpoints.farms, isRealApi: true, storageKey: 'farms', client: client);
 
       final result = await provider.uploadFile('farm-1/image', field: 'image', bytes: [1, 2, 3], filename: 'farm.jpg');
 
       expect(sent.method, 'POST');
-      expect(sent.url.toString(), '$testBaseUrl/farms/farm-1/image');
+      expect(sent.url.toString(), '$testBaseUrl/api/v1/agriculture/farms/farm-1/image');
       expect(sent.headers['Authorization'], 'Bearer aaa.bbb.ccc');
       expect(sent.headers['content-type'], startsWith('multipart/form-data'));
       final body = latin1.decode(sent.bodyBytes);
@@ -135,7 +136,7 @@ void main() {
 
     test("throws the server's own error message on rejection", () async {
       final client = MockClient((request) async => jsonResponse({'error': 'รองรับเฉพาะไฟล์ JPG, PNG หรือ WEBP'}, 415));
-      final provider = ServiceProvider(endpoint: '/farms', isRealApi: true, storageKey: 'farms', client: client);
+      final provider = ServiceProvider(endpoint: ApiEndpoints.farms, isRealApi: true, storageKey: 'farms', client: client);
 
       await expectLater(
         provider.uploadFile('farm-1/image', field: 'image', bytes: [1], filename: 'x.gif'),

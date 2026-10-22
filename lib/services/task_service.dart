@@ -42,24 +42,22 @@ class TaskService {
     }
   }
 
-  /// ส่งงานใหม่ (POST) - Payload ตรงตาม Go Struct: { "task_id": "...", "answer": {...} }
+  /// ส่งงานใหม่ (POST /tasks/:taskId/responses) -- task id อยู่ใน URL, body มีแค่ answer
   Future<void> submitTask(String taskId, Map<String, dynamic> answer) async {
-    final payload = {
-      'task_id': taskId,
-      'answer': answer,
-    };
-    await _provider.postData(payload);
+    await _provider.postData({'answer': answer}, pathSuffix: '$taskId/responses');
   }
 
-  /// แก้ไขงาน (PUT) - Payload ตรงตาม Go Struct: { "task_id": "...", "answer": {...} }
+  /// แก้ไขคำตอบล่าสุดของงานนี้ (PUT /tasks/:taskId/responses/:responseId)
+  ///
+  /// backend แก้ทีละคำตอบตาม id ส่วนแอปแก้ "คำตอบล่าสุด" จึงต้องถามก่อนว่าคำตอบ
+  /// ล่าสุดของงานนี้คืออันไหน (GET /tasks/:taskId/responses เรียงใหม่สุดก่อน)
   Future<void> updateTask(String taskId, Map<String, dynamic> answer) async {
-    final payload = {
-      'task_id': taskId,
-      'answer': answer,
-    };
-    // เรียก putData แบบใหม่ที่ไม่ต้องส่ง ID ใน URL
-    print('UPDATE TASK;!!');
-    await _provider.putData(payload);
+    final responses = await _provider.fetchListAt('$taskId/responses');
+    final Object? responseId = responses.isEmpty ? null : responses.first['response_id'];
+    if (responseId == null) {
+      throw ServerRejection(404, 'ไม่พบคำตอบเดิมของงานนี้ให้แก้ไข');
+    }
+    await _provider.putData({'answer': answer}, pathSuffix: '$taskId/responses/$responseId');
   }
 
   /// ลบข้อมูลงาน

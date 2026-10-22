@@ -8,7 +8,7 @@ class AuthService {
   AuthService({http.Client? client})
     : _provider = ServiceProvider<Profile>(
         storageKey: 'user_profile_data',
-        endpoint: ApiEndpoints.authMe,
+        endpoint: ApiEndpoints.me,
         isRealApi: true,
         client: client,
       );

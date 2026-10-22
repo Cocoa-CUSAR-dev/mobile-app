@@ -23,7 +23,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _registerService = ServiceProvider<dynamic>(
-    endpoint: ApiEndpoints.publicRegister,
+    endpoint: ApiEndpoints.authRegister,
     storageKey: 'user_register',
     isRealApi: true,
     useCookie: false,
