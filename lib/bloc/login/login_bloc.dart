@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/bloc/login/login_state.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/bloc/login/login_event.dart';
@@ -11,7 +12,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final http.Client? _client;
   late final loginService = ServiceProvider(
     storageKey: 'token',
-    endpoint: '/public/login',
+    endpoint: ApiEndpoints.publicLogin,
     isRealApi: true,
     useCookie: false,
     client: _client,

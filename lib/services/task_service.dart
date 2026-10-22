@@ -1,13 +1,14 @@
 // lib/services/task_service.dart
 
 import 'package:cocoa_supply/models/task_item_model.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class TaskService {
   static const String _storageKey = 'tasks_data';
-  static const String _endpoint = '/tasks';
+  static const String _endpoint = ApiEndpoints.tasks;
 
   TaskService({http.Client? client})
     : _provider = ServiceProvider<TaskItem>(

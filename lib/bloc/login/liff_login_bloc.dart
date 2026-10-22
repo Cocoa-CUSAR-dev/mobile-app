@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
 import 'package:cocoa_supply/config/liff_config.dart';
 import 'package:cocoa_supply/services/liff_service.dart';
@@ -13,7 +14,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
   final _linkService = ServiceProvider(
     storageKey: 'liff_link',
-    endpoint: '/public/liff/link',
+    endpoint: ApiEndpoints.publicLiffLink,
     isRealApi: true,
     useCookie: false,
   );

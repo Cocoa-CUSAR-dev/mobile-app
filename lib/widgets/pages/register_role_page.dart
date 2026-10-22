@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
@@ -48,9 +49,9 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   };
 
   final Map<String, dynamic> _roleConfigs = {
-    'farmer': {'endpoint': '/farmers', 'title': 'เกษตรกร'},
-    'processor': {'endpoint': '/processors', 'title': 'ผู้แปรรูป'},
-    'hub_collector': {'endpoint': '/hub_collectors', 'title': 'ผู้รวบรวม'},
+    'farmer': {'endpoint': ApiEndpoints.farmers, 'title': 'เกษตรกร'},
+    'processor': {'endpoint': ApiEndpoints.processors, 'title': 'ผู้แปรรูป'},
+    'hub_collector': {'endpoint': ApiEndpoints.hubCollectors, 'title': 'ผู้รวบรวม'},
   };
 
   @override

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,12 +31,11 @@ class ServiceProvider<T> {
   final String endpoint;
   final bool isRealApi;
   final bool useCookie;
-  // Overridable at build time via --dart-define=API_BASE_URL=...
-  // (e.g. the CI web build points this at the deployed backend).
-  final String baseUrl = const String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
-  );
+  // The backend this endpoint's group is served from. Overridable at build
+  // time via --dart-define=API_BASE_URL=... (e.g. the CI web build points
+  // this at the deployed backend), or for one group with
+  // API_BASE_URL_<GROUP> -- see lib/config/api_endpoints.dart.
+  late final String baseUrl = apiBaseUrlFor(apiGroupOf(endpoint));
   final http.Client _client;
 
   // เดิมเก็บเป็น "คุกกี้" (อ่านจาก response header set-cookie แล้วส่งกลับเป็น
@@ -70,7 +70,9 @@ class ServiceProvider<T> {
   }
 
   Future<bool> isLoggedIn() async {
-    final uri = Uri.parse('$baseUrl/auth/me');
+    final uri = Uri.parse(
+      '${apiBaseUrlFor(ApiGroup.auth)}${ApiEndpoints.authMe}',
+    );
     try {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
       final String? token = await _storage.read(key: _tokenKey);

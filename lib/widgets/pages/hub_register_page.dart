@@ -4,6 +4,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
@@ -125,7 +126,7 @@ class _HubRegisterPageState extends State<HubRegisterPage> {
     setState(() => _isLoading = true);
     try {
       final registerService = ServiceProvider(
-        endpoint: '/hubs', 
+        endpoint: ApiEndpoints.hubs,
         isRealApi: true, 
         storageKey: 'hubs'
       );
