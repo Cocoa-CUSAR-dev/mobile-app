@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
@@ -141,7 +142,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
   Future<void> _handleRegister() async {
     setState(() => _isLoading = true);
     try {
-      final registerService = ServiceProvider(endpoint: '/farms', isRealApi: true, storageKey: 'farms');
+      final registerService = ServiceProvider(endpoint: ApiEndpoints.farms, isRealApi: true, storageKey: 'farms');
       final Map<String, dynamic> payload = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
       payload.addAll(_currentFormData);
 

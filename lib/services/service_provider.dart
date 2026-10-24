@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,12 +31,11 @@ class ServiceProvider<T> {
   final String endpoint;
   final bool isRealApi;
   final bool useCookie;
-  // Overridable at build time via --dart-define=API_BASE_URL=...
-  // (e.g. the CI web build points this at the deployed backend).
-  final String baseUrl = const String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
-  );
+  // The backend this endpoint's group is served from. Overridable at build
+  // time via --dart-define=API_BASE_URL=... (e.g. the CI web build points
+  // this at the deployed backend), or for one group with
+  // API_BASE_URL_<GROUP> -- see lib/config/api_endpoints.dart.
+  late final String baseUrl = apiBaseUrlFor(apiGroupOf(endpoint));
   final http.Client _client;
 
   // เดิมเก็บเป็น "คุกกี้" (อ่านจาก response header set-cookie แล้วส่งกลับเป็น
@@ -46,6 +46,12 @@ class ServiceProvider<T> {
   // body แล้วส่งเป็น header Authorization: Bearer แทน — เป็น header ธรรมดา
   // ไม่ติดปัญหา SameSite/third-party-cookie ใด ๆ
   static const String _tokenKey = 'auth_token';
+  static const String _refreshKey = 'auth_refresh_token';
+
+  // One refresh at a time, whoever asks: the backend uses a refresh token up
+  // the first time it is presented, so two screens that both get a 401 at the
+  // same moment must share one refresh instead of each sending the token.
+  static Future<bool>? _refreshInFlight;
 
   // APP-2: was plain SharedPreferences (unencrypted on-device storage) for
   // both the session cookie and every cached API response -- backed by the
@@ -70,20 +76,13 @@ class ServiceProvider<T> {
   }
 
   Future<bool> isLoggedIn() async {
-    final uri = Uri.parse('$baseUrl/auth/me');
+    final uri = Uri.parse('${apiBaseUrlFor(ApiGroup.me)}${ApiEndpoints.me}');
     try {
       // เพิ่ม timeout เพื่อป้องกันกรณีเชื่อมต่อนานเกินไป
-      final String? token = await _storage.read(key: _tokenKey);
-      final response = await _client
-          .get(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await _authorized(
+        (headers) => _client.get(uri, headers: headers).timeout(const Duration(seconds: 10)),
+        forceAuth: true,
+      );
       if (response.statusCode == 401) {
         print('UNAUTHORIZED');
         await logout();
@@ -96,7 +95,9 @@ class ServiceProvider<T> {
           return false;
         }
       }
-      return token != null && token.isNotEmpty;
+      // อ่านใหม่: ถ้า token เพิ่งถูกต่ออายุตอนเช็ค ค่าที่อ่านไว้ก่อนหน้าเป็นของเก่า
+      final String? current = await _storage.read(key: _tokenKey);
+      return current != null && current.isNotEmpty;
     } catch (e) {
       print(e);
       return false;
@@ -104,12 +105,12 @@ class ServiceProvider<T> {
 
   }
 
-  Future<Map<String, String>> _getHeaders() async {
+  Future<Map<String, String>> _getHeaders({bool forceAuth = false}) async {
     final String? token = await _storage.read(key: _tokenKey);
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (token != null && useCookie) 'Authorization': 'Bearer $token',
+      if (token != null && (useCookie || forceAuth)) 'Authorization': 'Bearer $token',
     };
   }
 
@@ -122,8 +123,9 @@ class ServiceProvider<T> {
     return parts.length == 3 && parts.every((p) => p.isNotEmpty);
   }
 
-  // เก็บ session token จาก field "token" ใน response body (ไม่ใช่ header
-  // set-cookie อีกต่อไป — ดูคอมเมนต์ที่ _tokenKey) เรียกทุกครั้งหลัง request
+  // เก็บ session token จาก field "access_token" / "refresh_token" ใน response body
+  // (backend ส่งมาเป็นคู่ ไม่ใช่ header set-cookie — ดูคอมเมนต์ที่ _tokenKey)
+  // เรียกทุกครั้งหลัง request
   // ไม่ว่า useCookie จะเป็น true/false ก็ตาม (login/register ไม่ได้ "แนบ" token
   // ไปกับ request ขาออก แต่ยังต้องรับ token ที่ตอบกลับมา) — เผื่อ response
   // ไม่ใช่ JSON object (เช่น fetchData คืน list) จึงห่อด้วย try/catch
@@ -138,13 +140,74 @@ class ServiceProvider<T> {
       // response ไม่ใช่ JSON — ไม่มี token ให้เก็บ, ไม่มีอะไรให้คืนกลับ
       return null;
     }
-    if (decoded is Map && decoded['token'] is String) {
-      final String token = decoded['token'] as String;
+    if (decoded is Map && decoded['access_token'] is String) {
+      final String token = decoded['access_token'] as String;
       if (token.isNotEmpty && _looksLikeJwt(token)) {
         await _storage.write(key: _tokenKey, value: token);
+        // refresh token มาพร้อม access token เสมอ -- เก็บเฉพาะตอนที่ access token
+        // ผ่านเช็ค เพื่อไม่ให้ field ชื่อเดียวกันจาก endpoint อื่นมาทับ
+        final Object? refresh = decoded['refresh_token'];
+        if (refresh is String && refresh.isNotEmpty) {
+          await _storage.write(key: _refreshKey, value: refresh);
+        }
       }
     }
     return decoded;
+  }
+
+  /// ข้อความ error จาก response ที่ไม่สำเร็จ: backend ตอบ {"detail": "..."}
+  /// (ถ้า request ผิดรูปแบบ detail เป็น list -- ไม่มีข้อความเดียวให้โชว์)
+  String? _errorOf(dynamic decoded) {
+    if (decoded is! Map) return null;
+    for (final key in const ['detail', 'error', 'message']) {
+      final Object? value = decoded[key];
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  /// ส่ง request ที่ต้องแนบ token ถ้าได้ 401 ก็ลองขอ token ใหม่ด้วย refresh token
+  /// แล้วส่งซ้ำอีกครั้งเดียว (access token หมดอายุทุกชั่วโมง) -- request ที่ไม่แนบ
+  /// token (login, register) ไม่ผ่านทางนี้
+  Future<http.Response> _authorized(
+    Future<http.Response> Function(Map<String, String> headers) send, {
+    bool forceAuth = false,
+  }) async {
+    var response = await send(await _getHeaders(forceAuth: forceAuth));
+    if (response.statusCode == 401 &&
+        (useCookie || forceAuth) &&
+        await _refreshSession()) {
+      response = await send(await _getHeaders(forceAuth: forceAuth));
+    }
+    return response;
+  }
+
+  Future<bool> _refreshSession() {
+    return _refreshInFlight ??= _requestNewTokens().whenComplete(() {
+      _refreshInFlight = null;
+    });
+  }
+
+  Future<bool> _requestNewTokens() async {
+    final String? refresh = await _storage.read(key: _refreshKey);
+    if (refresh == null || refresh.isEmpty) return false;
+    try {
+      final uri = Uri.parse(
+        '${apiBaseUrlFor(ApiGroup.auth)}${ApiEndpoints.authRefresh}',
+      );
+      final response = await _client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode({'refresh_token': refresh}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return false;
+      await _updateToken(response);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   String _generateCacheKey(Map<String, dynamic>? queryParams) {
@@ -194,9 +257,9 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint').replace(queryParameters: queryParams);
       try {
-        final response = await _client
-            .get(uri, headers: await _getHeaders())
-            .timeout(const Duration(seconds: 10));
+        final response = await _authorized(
+          (headers) => _client.get(uri, headers: headers).timeout(const Duration(seconds: 10)),
+        );
 
         final decoded = await _updateToken(response);
 
@@ -222,14 +285,14 @@ class ServiceProvider<T> {
   }
 
   /// Post Data (POST) - เปลี่ยนจาก void เป็น Future<dynamic> เพื่อคืนค่าที่ Server ส่งมา
-  Future<dynamic> postData(Map<String, dynamic> payload) async {
+  ///
+  /// [pathSuffix] ต่อท้าย endpoint (เช่น `$taskId/responses` ใต้ /tasks)
+  Future<dynamic> postData(Map<String, dynamic> payload, {String? pathSuffix}) async {
     if (isRealApi) {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      final uri = Uri.parse('$baseUrl$endpoint${pathSuffix == null ? '' : '/$pathSuffix'}');
       try {
-        final response = await _client.post(
-          uri,
-          headers: await _getHeaders(),
-          body: jsonEncode(payload),
+        final response = await _authorized(
+          (headers) => _client.post(uri, headers: headers, body: jsonEncode(payload)),
         );
 
         // อัปเดต token จาก Response -- คืนค่า body ที่ decode แล้วกลับมาด้วย
@@ -252,12 +315,7 @@ class ServiceProvider<T> {
           return responseData;
         } else {
           // 3. ดึง Error Message อย่างปลอดภัย (ป้องกันกรณี responseData ไม่ใช่ Map หรือไม่มี key error)
-          String errorMessage = 'Post Error';
-          if (responseData is Map && responseData.containsKey('error')) {
-            errorMessage = responseData['error'].toString();
-          } else if (responseData is Map && responseData.containsKey('message')) {
-            errorMessage = responseData['message'].toString();
-          }
+          final String errorMessage = _errorOf(responseData) ?? 'Post Error';
 
           throw ServerRejection(response.statusCode, errorMessage);
         }
@@ -287,20 +345,23 @@ class ServiceProvider<T> {
     required List<int> bytes,
     required String filename,
   }) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint/$pathSuffix'));
-    final String? token = await _storage.read(key: _tokenKey);
-    request.headers['Accept'] = 'application/json';
-    if (token != null && useCookie) request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
-
-    final streamed = await _client.send(request).timeout(const Duration(seconds: 60));
-    final response = await http.Response.fromStream(streamed);
+    final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
+    final response = await _authorized((headers) async {
+      // A MultipartRequest can only be sent once, so a retry builds a new one.
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Accept'] = 'application/json';
+      final String? authorization = headers['Authorization'];
+      if (authorization != null) request.headers['Authorization'] = authorization;
+      request.files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+      final streamed = await _client.send(request).timeout(const Duration(seconds: 60));
+      return http.Response.fromStream(streamed);
+    });
     final decoded = await _updateToken(response);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return decoded;
     }
-    throw (decoded is Map ? decoded['error'] : null) ?? 'Upload Error (${response.statusCode})';
+    throw _errorOf(decoded) ?? 'Upload Error (${response.statusCode})';
   }
 
   /// Fetch a single object (GET) with local cache fallback, for endpoints
@@ -314,9 +375,9 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
       try {
-        final response = await _client
-            .get(uri, headers: await _getHeaders())
-            .timeout(const Duration(seconds: 35));
+        final response = await _authorized(
+          (headers) => _client.get(uri, headers: headers).timeout(const Duration(seconds: 35)),
+        );
         final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
@@ -326,7 +387,7 @@ class ServiceProvider<T> {
         } else {
           final cached = await _fetchOneFromLocal(effectiveKey);
           if (cached != null) return cached;
-          throw (decoded is Map ? decoded['error'] : null) ?? 'Fetch error';
+          throw _errorOf(decoded) ?? 'Fetch error';
         }
       } catch (e) {
         final cached = await _fetchOneFromLocal(effectiveKey);
@@ -360,9 +421,9 @@ class ServiceProvider<T> {
         // (weak signal out on a farm) would hang the app until force
         // quit, so this has to fail rather than wait. Same 10s as
         // isLoggedIn() and fetchAll().
-        final response = await _client
-            .get(uri, headers: await _getHeaders())
-            .timeout(const Duration(seconds: 10));
+        final response = await _authorized(
+          (headers) => _client.get(uri, headers: headers).timeout(const Duration(seconds: 10)),
+        );
         final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
@@ -376,7 +437,7 @@ class ServiceProvider<T> {
           }
           return decoded;
         } else {
-          throw (decoded is Map ? decoded['error'] : null) ?? "Fetch Self Error";
+          throw _errorOf(decoded) ?? "Fetch Self Error";
         }
       } catch (e) {
         rethrow;
@@ -392,14 +453,14 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$id');
       try {
-        final response = await _client.get(uri, headers: await _getHeaders());
+        final response = await _authorized((headers) => _client.get(uri, headers: headers));
         final decoded = await _updateToken(response);
 
         if (response.statusCode == 200) {
           print(response.body);
           return decoded as Map<String, dynamic>;
         } else {
-          throw (decoded is Map ? decoded['error'] : null) ?? "Fetch One Error";
+          throw _errorOf(decoded) ?? "Fetch One Error";
         }
       } catch (e) {
         rethrow;
@@ -423,9 +484,9 @@ class ServiceProvider<T> {
   }) async {
     if (!isRealApi) return null;
     final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
-    final response = await _client
-        .get(uri, headers: await _getHeaders())
-        .timeout(timeout);
+    final response = await _authorized(
+      (headers) => _client.get(uri, headers: headers).timeout(timeout),
+    );
     final decoded = await _updateToken(response);
     if (response.statusCode == 200 && decoded is Map<String, dynamic>) {
       return decoded;
@@ -433,16 +494,29 @@ class ServiceProvider<T> {
     return null;
   }
 
-  /// Update Data (PUT) - ปรับแก้ให้ส่งเข้า /tasks ตรงๆ และ ID อยู่ใน Payload ตาม Go Backend
-  Future<dynamic> putData(Map<String, dynamic> payload) async {
+  /// GET a list under `endpoint/pathSuffix` (e.g. /tasks/:taskId/responses).
+  /// Not cached: it is for lists that must be current, like which answer to edit.
+  Future<List<Map<String, dynamic>>> fetchListAt(String pathSuffix) async {
+    if (!isRealApi) return [];
+    final uri = Uri.parse('$baseUrl$endpoint/$pathSuffix');
+    final response = await _authorized(
+      (headers) => _client.get(uri, headers: headers).timeout(const Duration(seconds: 10)),
+    );
+    final decoded = await _updateToken(response);
+    if (response.statusCode == 200 && decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+    throw ServerRejection(response.statusCode, _errorOf(decoded) ?? 'Fetch list error');
+  }
+
+  /// Update Data (PUT) -- [pathSuffix] ต่อท้าย endpoint ถ้ามี (เช่น
+  /// `$taskId/responses/$responseId` ใต้ /tasks) ไม่งั้นยิงที่ endpoint ตรงๆ
+  Future<dynamic> putData(Map<String, dynamic> payload, {String? pathSuffix}) async {
     if (isRealApi) {
-      // ปรับให้ยิงไปที่ endpoint หลัก (เช่น /tasks) ไม่ต้องต่อท้ายด้วย /id
-      final uri = Uri.parse('$baseUrl$endpoint');
+      final uri = Uri.parse('$baseUrl$endpoint${pathSuffix == null ? '' : '/$pathSuffix'}');
       try {
-        final response = await _client.put(
-          uri,
-          headers: await _getHeaders(),
-          body: jsonEncode(payload),
+        final response = await _authorized(
+          (headers) => _client.put(uri, headers: headers, body: jsonEncode(payload)),
         );
         final decoded = await _updateToken(response);
 
@@ -451,7 +525,7 @@ class ServiceProvider<T> {
         } else {
           throw ServerRejection(
             response.statusCode,
-            ((decoded is Map ? decoded['error'] : null) ?? "Update Error").toString(),
+            _errorOf(decoded) ?? "Update Error",
           );
         }
       } catch (e) {
@@ -468,7 +542,7 @@ class ServiceProvider<T> {
     if (isRealApi) {
       final uri = Uri.parse('$baseUrl$endpoint/$identifierValue');
       try {
-        final response = await _client.delete(uri, headers: await _getHeaders());
+        final response = await _authorized((headers) => _client.delete(uri, headers: headers));
         await _updateToken(response);
         return (response.statusCode == 200 || response.statusCode == 204);
       } catch (e) {
@@ -495,7 +569,24 @@ class ServiceProvider<T> {
     await _storage.deleteAll();
   }
 
+  /// ออกจากระบบ: ลืม token ในเครื่องทันที แล้วบอก backend ให้เพิกถอน refresh token
+  /// (ทำให้ดีที่สุด -- ถ้าออฟไลน์ก็ออกจากระบบในเครื่องอยู่ดี)
   Future<void> logout() async {
+    final String? refresh = await _storage.read(key: _refreshKey);
     await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshKey);
+    if (refresh == null || refresh.isEmpty) return;
+    try {
+      final uri = Uri.parse('${apiBaseUrlFor(ApiGroup.auth)}${ApiEndpoints.authLogout}');
+      await _client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refresh_token': refresh}),
+          )
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // ออฟไลน์หรือ backend ไม่ตอบ: ออกจากระบบในเครื่องแล้ว refresh token จะหมดอายุเอง
+    }
   }
 }

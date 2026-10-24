@@ -55,7 +55,7 @@ void main() {
           // The bloc now also asks GET /tasks/t1/autofill (US2-5) -- nothing
           // to offer here.
           if (request.url.path.endsWith('/autofill')) return http.Response('', 204);
-          expect(request.url.toString(), 'https://mobile-backend-2-t8h6.onrender.com/tasks/t1/form');
+          expect(request.url.toString(), 'https://mobile-backend-2-t8h6.onrender.com/api/v1/tasks/t1/form');
           return jsonResponse({
             'form': formWith([
               {'fieldName': 'first_name', 'label': 'ชื่อจริง', 'inputType': 'VARCHAR', 'isMandatory': true, 'isActive': true, 'sortOrder': 1},
@@ -263,7 +263,7 @@ void main() {
       act: (bloc) => bloc.add(LoadSchemaAndData('farm_activity', 't1')),
       wait: settle,
       expect: () => [isA<DynamicLoading>(), plainForm],
-      verify: (_) => expect(requested, isNot(contains('/tasks/t1/autofill'))),
+      verify: (_) => expect(requested, isNot(contains('/api/v1/tasks/t1/autofill'))),
     );
 
     blocTest<DynamicBloc, DynamicState>(
@@ -275,7 +275,7 @@ void main() {
       act: (bloc) => bloc.add(LoadSchemaAndData('farm_activity', 't1')),
       wait: settle,
       expect: () => [isA<DynamicLoading>(), plainForm],
-      verify: (_) => expect(requested, isNot(contains('/tasks/t1/autofill'))),
+      verify: (_) => expect(requested, isNot(contains('/api/v1/tasks/t1/autofill'))),
     );
 
     blocTest<DynamicBloc, DynamicState>(
@@ -293,7 +293,7 @@ void main() {
       wait: settle,
       // The form opens first and the offer follows: opening never waits on it.
       expect: () => [isA<DynamicLoading>(), plainForm, offered],
-      verify: (_) => expect(requested, contains('/tasks/t1/autofill')),
+      verify: (_) => expect(requested, contains('/api/v1/tasks/t1/autofill')),
     );
 
     blocTest<DynamicBloc, DynamicState>(
@@ -310,7 +310,7 @@ void main() {
       act: (bloc) => bloc.add(LoadSchemaAndData('farm_activity', 't1')),
       wait: settle,
       expect: () => [isA<DynamicLoading>(), plainForm],
-      verify: (_) => expect(requested, isNot(contains('/tasks/t1/autofill'))),
+      verify: (_) => expect(requested, isNot(contains('/api/v1/tasks/t1/autofill'))),
     );
 
     blocTest<DynamicBloc, DynamicState>(

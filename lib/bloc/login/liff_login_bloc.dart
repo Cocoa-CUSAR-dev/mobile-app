@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
 import 'package:cocoa_supply/config/liff_config.dart';
 import 'package:cocoa_supply/services/liff_service.dart';
@@ -13,7 +14,7 @@ import 'package:cocoa_supply/services/service_provider.dart';
 class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
   final _linkService = ServiceProvider(
     storageKey: 'liff_link',
-    endpoint: '/public/liff/link',
+    endpoint: ApiEndpoints.authLineLink,
     isRealApi: true,
     useCookie: false,
   );
@@ -85,16 +86,20 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
 
     try {
       final response = await _linkService.postData({
-        'idToken': idToken,
+        'id_token': idToken,
         'username': event.username,
         'password': event.password,
       });
 
+      // The backend answers with the token pair (already stored by the
+      // ServiceProvider) and the account; having a role is having a profile.
+      final Object? user = response['user'];
+      final Object? roles = user is Map ? user['roles'] : null;
       emit(LiffLoginSuccess(
-        userId: response['user_id']?.toString() ?? '',
-        lineUserId: response['line_user_id']?.toString() ?? '',
-        message: response['message']?.toString() ?? 'verify สำเร็จ และบันทึกการผูกบัญชี LINE เรียบร้อยแล้ว',
-        hasProfile: response['has_profile'] == true,
+        userId: (user is Map ? user['user_id'] : null)?.toString() ?? '',
+        lineUserId: '',
+        message: 'verify สำเร็จ และบันทึกการผูกบัญชี LINE เรียบร้อยแล้ว',
+        hasProfile: roles is List && roles.isNotEmpty,
       ));
     } catch (e) {
       // แนบ idToken เดิมกลับไปด้วย — error นี้เกิดตอน submit (username/password

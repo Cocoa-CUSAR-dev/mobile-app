@@ -1,12 +1,13 @@
 // lib/services/hub_service.dart
 
 import 'package:cocoa_supply/models/hub_model.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:http/http.dart' as http;
 
 class HubService {
   static const String _storageKey = 'hub_data';
-  static const String _endpoint = '/hubs'; // ปรับ Endpoint เป็น /hub
+  static const String _endpoint = ApiEndpoints.hubs;
 
   HubService({http.Client? client})
     : _provider = ServiceProvider<Hub>(

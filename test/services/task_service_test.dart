@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/services/task_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -54,19 +55,61 @@ void main() {
   });
 
   group('submitTask', () {
-    test('posts task_id and answer together', () async {
-      Map<String, dynamic>? body;
+    test('posts the answer to /tasks/<taskId>/responses, the task id only in the URL', () async {
+      late http.Request sent;
       final client = MockClient((request) async {
-        body = jsonDecode(request.body) as Map<String, dynamic>;
+        sent = request;
         return jsonResponse({}, 200);
       });
 
       await TaskService(client: client).submitTask('t1', {'note': 'x'});
 
-      expect(body, {
-        'task_id': 't1',
+      expect(sent.method, 'POST');
+      expect(sent.url.toString(), '$testBaseUrl/api/v1/tasks/t1/responses');
+      expect(jsonDecode(sent.body), {
         'answer': {'note': 'x'},
       });
+    });
+  });
+
+  group('updateTask', () {
+    test('edits the newest answer: finds its id, then PUTs to /tasks/<taskId>/responses/<id>', () async {
+      final requests = <http.Request>[];
+      final client = MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'GET') {
+          // newest first, as the backend lists them
+          return jsonResponse([
+            {'response_id': 'r-new', 'answer': {'note': 'b'}},
+            {'response_id': 'r-old', 'answer': {'note': 'a'}},
+          ], 200);
+        }
+        return jsonResponse({}, 200);
+      });
+
+      await TaskService(client: client).updateTask('t1', {'note': 'c'});
+
+      expect(requests.map((r) => '${r.method} ${r.url.path}'), [
+        'GET /api/v1/tasks/t1/responses',
+        'PUT /api/v1/tasks/t1/responses/r-new',
+      ]);
+      expect(jsonDecode(requests.last.body), {
+        'answer': {'note': 'c'},
+      });
+    });
+
+    test('says so when the task has no answer to edit, and sends nothing', () async {
+      final requests = <http.Request>[];
+      final client = MockClient((request) async {
+        requests.add(request);
+        return jsonResponse([], 200);
+      });
+
+      await expectLater(
+        TaskService(client: client).updateTask('t1', {'note': 'c'}),
+        throwsA(isA<ServerRejection>().having((e) => e.statusCode, 'statusCode', 404)),
+      );
+      expect(requests.where((r) => r.method == 'PUT'), isEmpty);
     });
   });
 
@@ -80,7 +123,7 @@ void main() {
 
       await TaskService(client: client).deleteTask('t1');
 
-      expect(deletedPath, '/tasks/t1');
+      expect(deletedPath, '/api/v1/tasks/t1');
     });
   });
 }
