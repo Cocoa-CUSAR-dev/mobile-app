@@ -61,6 +61,9 @@ void main() {
       expect(profile.roles, ['hub_collector', 'farmer']);
       expect(profile.fullName, 'สมชาย ใจดี');
       expect(profile.phoneNumber, '0812345678');
+      // Each role's own profile is kept (the add-role form starts from it).
+      expect(profile.profiles.keys, unorderedEquals(['farmer', 'hub_collector']));
+      expect(profile.profiles['hub_collector']['first_name'], 'ไม่ใช่ชื่อนี้');
     });
 
     test('falls back to the next role when the first has no profile', () {

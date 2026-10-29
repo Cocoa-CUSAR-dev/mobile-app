@@ -1,4 +1,6 @@
+import 'package:cocoa_supply/config/roles.dart';
 import 'package:cocoa_supply/models/profile_model.dart';
+import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +102,23 @@ class _RootScaffoldState extends State<RootScaffold> {
         (route) => false,
       );
     }
+  }
+
+  /// Roles the person can still add themselves.
+  List<String> get _missingRoles {
+    final roles = _userProfile?.roles ?? const [];
+    return selfServiceRoles.where((r) => !roles.contains(r)).toList();
+  }
+
+  void _openAddRole() {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    Navigator.of(context).pushNamed(
+      AppRoute.roleRegister,
+      arguments: {
+        'ownedRoles': _userProfile?.roles ?? const <String>[],
+        'prefill': registrationPrefill(_userProfile?.profiles ?? const {}),
+      },
+    );
   }
 
   // ฟังก์ชันสำหรับแสดง Pop-up โปรไฟล์
@@ -265,6 +284,22 @@ class _RootScaffoldState extends State<RootScaffold> {
             ),
 
             const SizedBox(height: 24),
+            if (_missingRoles.isNotEmpty) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _openAddRole,
+                  icon: const Icon(Icons.add, color: AppColors.primary, size: 20),
+                  label: Text("เพิ่มบทบาท", style: AppTextTheme.scale.titleSmall?.copyWith(color: AppColors.primary)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -288,7 +323,8 @@ class _RootScaffoldState extends State<RootScaffold> {
       (_userProfile?.provinceName ?? '').contains('กรุงเทพ');
 
   Widget _buildProfileHeader() {
-    final roleLabel = _userProfile!.roles?.join(', ') ?? 'ทั่วไป';
+    final roles = _userProfile!.roles ?? const [];
+    final roleText = roles.isEmpty ? 'ทั่วไป' : roles.map(roleLabel).join(', ');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -329,7 +365,7 @@ class _RootScaffoldState extends State<RootScaffold> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              "บทบาท: $roleLabel",
+              "บทบาท: $roleText",
               style: AppTextTheme.scale.labelMedium?.copyWith(color: Colors.white),
             ),
           ),
