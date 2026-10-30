@@ -57,8 +57,15 @@ class AppRoute {
         // the answers to start with.
         final ownedRoles = (args?['ownedRoles'] as Iterable?)?.map((r) => '$r').toSet() ?? const <String>{};
         final prefill = (args?['prefill'] as Map<String, String>?) ?? const <String, String>{};
+        // From a role card's "แก้ไข": edit that role's profile instead.
+        final editRole = args?['editRole'] as String?;
         return MaterialPageRoute(
-          builder: (_) => RegisterRolePage(fromLiff: fromLiff, ownedRoles: ownedRoles, prefill: prefill),
+          builder: (_) => RegisterRolePage(
+            fromLiff: fromLiff,
+            ownedRoles: ownedRoles,
+            prefill: prefill,
+            editRole: editRole,
+          ),
         );
       case farmRegister:
         return MaterialPageRoute(

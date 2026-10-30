@@ -68,3 +68,28 @@ Map<String, String> registrationPrefill(Map<String, dynamic> profiles) {
   }
   return {};
 }
+
+/// Fields about the person rather than one role's work (name, phone,
+/// address). Editing them in one role's profile can be applied to the
+/// person's other roles too; each role still takes only the ones it has.
+const Set<String> sharedProfileFields = {
+  'first_name',
+  'last_name',
+  'nickname',
+  'birth_date',
+  'phone_number',
+  'line',
+  'facebook',
+  'id_card_number',
+  'province_id',
+  'district_id',
+  'subdistrict_id',
+  'zip_code',
+  'address_detail',
+};
+
+/// The shared fields of [form] only (see [sharedProfileFields]).
+Map<String, dynamic> sharedAnswers(Map<String, dynamic> form) => {
+      for (final entry in form.entries)
+        if (sharedProfileFields.contains(entry.key)) entry.key: entry.value,
+    };

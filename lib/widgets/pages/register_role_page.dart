@@ -15,7 +15,8 @@ import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
 /// Pick one or more roles and fill in their profiles: right after sign-up,
-/// or later from the profile sheet to add another role.
+/// or later from the profile sheet to add another role. With [editRole] it
+/// edits that role's profile instead (PATCH /me/profiles/{role}).
 ///
 /// The shared fields (name, phone, address) are asked once for every picked
 /// role; a role's own fields only when it is picked (see role_registration).
@@ -34,11 +35,16 @@ class RegisterRolePage extends StatefulWidget {
   /// Answers to start with (registrationPrefill of the person's profiles).
   final Map<String, String> prefill;
 
+  /// Edit this role's profile: no role picking, the form starts filled with
+  /// [prefill], and saving changes it. Pops `true` once saved.
+  final String? editRole;
+
   const RegisterRolePage({
     super.key,
     this.fromLiff = false,
     this.ownedRoles = const {},
     this.prefill = const {},
+    this.editRole,
   });
 
   @override
@@ -74,7 +80,18 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     'agri_experience': TextEditingController(),
   };
 
-  bool get _addingRole => widget.ownedRoles.isNotEmpty;
+  bool get _editing => widget.editRole != null;
+
+  bool get _addingRole => widget.ownedRoles.isNotEmpty && !_editing;
+
+  /// Editing: also write the shared fields (name, phone, address) into the
+  /// person's other role profiles.
+  bool _applyToAllRoles = false;
+
+  /// The person's other roles that have a profile here, when editing.
+  List<String> get _otherOwnedRoles => selfServiceRoles
+      .where((r) => r != widget.editRole && widget.ownedRoles.contains(r))
+      .toList();
 
   /// Picked roles in the app's usual order.
   List<String> get _rolesInOrder => selfServiceRoles.where(_pickedRoles.contains).toList();
@@ -86,6 +103,10 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   @override
   void initState() {
     super.initState();
+    if (_editing) {
+      _pickedRoles.add(widget.editRole!);
+      _choosingRoles = false;
+    }
     widget.prefill.forEach((key, value) {
       if (key.endsWith('_id')) {
         _currentFormData[key] = value;
@@ -193,11 +214,52 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     );
   }
 
+  /// Save the edited profile; with "ใช้กับบทบาทอื่นด้วย", also the shared
+  /// fields of the person's other roles. Only fields that have an answer are
+  /// sent, so a field left blank keeps what it had.
+  Future<void> _handleEdit() async {
+    setState(() => _isLoading = true);
+    final form = _answers();
+    final role = widget.editRole!;
+    final bodies = <String, Map<String, dynamic>>{
+      role: roleProfilePayload(role, form),
+      if (_applyToAllRoles)
+        for (final other in _otherOwnedRoles) other: roleProfilePayload(other, sharedAnswers(form)),
+    };
+    final failed = <String>[];
+    String? reason;
+    for (final entry in bodies.entries) {
+      final endpoint = ApiEndpoints.meProfile(entry.key);
+      final service = ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint);
+      try {
+        await service.patchData(entry.value);
+      } on ServerRejection catch (e) {
+        failed.add(entry.key);
+        reason ??= e.message;
+      } catch (_) {
+        failed.add(entry.key);
+        reason ??= 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+      }
+    }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (failed.isNotEmpty) {
+      AppSnackBar.show(
+        context,
+        'บันทึกไม่สำเร็จ (${failed.map(roleLabel).join(', ')}): $reason',
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
+    AppSnackBar.show(context, 'บันทึกข้อมูลเรียบร้อย', type: AppSnackBarType.success);
+    Navigator.of(context).pop(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      title: '',
-      showBackButton: _addingRole,
+      title: _editing ? 'แก้ไขข้อมูล${roleLabel(widget.editRole!)}' : '',
+      showBackButton: _addingRole || _editing,
       body: _choosingRoles ? _buildRoleSelection() : _buildPaginatedForm(),
     );
   }
@@ -282,6 +344,16 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   const SizedBox(height: 24),
                   _buildCurrentStepFields(),
                   if (isLastStep && (_savedRoles.isNotEmpty || _failedRoles.isNotEmpty)) _buildSaveResults(),
+                  if (isLastStep && _editing && _otherOwnedRoles.isNotEmpty)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _applyToAllRoles,
+                      onChanged: (v) => setState(() => _applyToAllRoles = v ?? false),
+                      title: Text(
+                        'ใช้ชื่อ เบอร์ และที่อยู่นี้กับบทบาท${_otherOwnedRoles.map(roleLabel).join(', ')}ด้วย',
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -455,7 +527,11 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   }
 
   Widget _buildBottomButtons({required bool isLastStep, required bool canProceed}) {
-    final submitLabel = _failedRoles.isNotEmpty ? 'ลองอีกครั้ง' : 'ยืนยันลงทะเบียน';
+    final submitLabel = _editing
+        ? 'บันทึก'
+        : _failedRoles.isNotEmpty
+            ? 'ลองอีกครั้ง'
+            : 'ยืนยันลงทะเบียน';
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -467,7 +543,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                 ? () {
                     if (_formKey.currentState!.validate()) {
                       if (isLastStep) {
-                        _handleRegister();
+                        _editing ? _handleEdit() : _handleRegister();
                       } else {
                         setState(() => _currentStep++);
                       }
@@ -493,6 +569,8 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                 : () {
                     if (_currentStep > 0) {
                       setState(() => _currentStep--);
+                    } else if (_editing) {
+                      Navigator.of(context).pop(false);
                     } else {
                       setState(() => _choosingRoles = true); // กลับไปเลือกบทบาทใหม่
                     }
@@ -503,7 +581,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               side: BorderSide(color: Colors.grey.shade400),
             ),
             child: Text(
-              _currentStep > 0 ? 'ย้อนกลับ' : 'เลือกบทบาทใหม่',
+              _currentStep > 0 ? 'ย้อนกลับ' : (_editing ? 'ยกเลิก' : 'เลือกบทบาทใหม่'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87)
             ),
           ),

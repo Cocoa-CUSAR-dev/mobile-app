@@ -537,6 +537,21 @@ class ServiceProvider<T> {
     }
   }
 
+  /// Change some fields (PATCH): only the fields in [payload] change.
+  Future<dynamic> patchData(Map<String, dynamic> payload) async {
+    if (!isRealApi) {
+      await _simulateNetworkDelay();
+      return payload;
+    }
+    final uri = Uri.parse('$baseUrl$endpoint');
+    final response = await _authorized(
+      (headers) => _client.patch(uri, headers: headers, body: jsonEncode(payload)),
+    );
+    final decoded = await _updateToken(response);
+    if (response.statusCode == 200) return decoded;
+    throw ServerRejection(response.statusCode, _errorOf(decoded) ?? 'Update Error');
+  }
+
   /// Delete Data (DELETE) - เปลี่ยนเป็นคืนค่า bool เพื่อให้รู้ว่าลบสำเร็จไหม
   Future<bool> deleteData(String identifierValue) async {
     if (isRealApi) {

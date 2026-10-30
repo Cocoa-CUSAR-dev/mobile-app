@@ -121,6 +121,26 @@ class _RootScaffoldState extends State<RootScaffold> {
     );
   }
 
+  /// Roles the person holds that they can edit here, in the usual order.
+  List<String> get _editableRoles {
+    final roles = _userProfile?.roles ?? const [];
+    return selfServiceRoles.where(roles.contains).toList();
+  }
+
+  Future<void> _openEditRole(String role) async {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    final saved = await Navigator.of(context).pushNamed(
+      AppRoute.roleRegister,
+      arguments: {
+        'editRole': role,
+        'ownedRoles': _userProfile?.roles ?? const <String>[],
+        'prefill': registrationPrefill({role: _userProfile?.profiles[role]}),
+      },
+    );
+    // Show the new name and address right away.
+    if (saved == true && mounted) _fetchProfile();
+  }
+
   // ฟังก์ชันสำหรับแสดง Pop-up โปรไฟล์
   void _showProfileBottomSheet() {
     showModalBottomSheet(
@@ -283,6 +303,15 @@ class _RootScaffoldState extends State<RootScaffold> {
               ],
             ),
 
+            if (_editableRoles.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildInfoCard(
+                icon: Icons.badge_outlined,
+                title: "บทบาทของฉัน",
+                rows: _editableRoles.map(_roleRow).toList(),
+              ),
+            ],
+
             const SizedBox(height: 24),
             if (_missingRoles.isNotEmpty) ...[
               SizedBox(
@@ -371,6 +400,20 @@ class _RootScaffoldState extends State<RootScaffold> {
           ),
         ],
       ),
+    );
+  }
+
+  /// One role in "บทบาทของฉัน", with a button to edit its profile.
+  Widget _roleRow(String role) {
+    return Row(
+      children: [
+        Expanded(child: Text(roleLabel(role), style: AppTextTheme.scale.bodyLarge)),
+        TextButton.icon(
+          onPressed: () => _openEditRole(role),
+          icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+          label: Text("แก้ไข", style: AppTextTheme.scale.labelLarge?.copyWith(color: AppColors.primary)),
+        ),
+      ],
     );
   }
 

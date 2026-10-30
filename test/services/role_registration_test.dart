@@ -40,6 +40,19 @@ void main() {
     });
   });
 
+  group('sharedAnswers', () {
+    test('keeps name, phone and address; drops fields only one role has', () {
+      final shared = sharedAnswers({
+        'first_name': 'สมชาย',
+        'phone_number': '0812345678',
+        'province_id': 'p-1',
+        'salary_income': 15000.0,
+        'agri_worker_count': 2,
+      });
+      expect(shared, {'first_name': 'สมชาย', 'phone_number': '0812345678', 'province_id': 'p-1'});
+    });
+  });
+
   group('registrationPrefill', () {
     test('takes the shared fields of the first profile the person has', () {
       final prefill = registrationPrefill({

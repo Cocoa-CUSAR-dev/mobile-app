@@ -12,6 +12,8 @@
 //   * several roles can be picked; the form asks the shared fields once
 //   * roles already held are shown as "มีแล้ว" and can't be picked
 //   * the form starts with the answers it was given (prefill)
+// Editing a role's profile (editRole):
+//   * opens straight on the form, filled, with "ยกเลิก" instead of role picking
 
 import 'package:cocoa_supply/widgets/pages/register_role_page.dart';
 import 'package:flutter/material.dart';
@@ -139,5 +141,21 @@ void main() {
     expect(find.text('สมชาย'), findsOneWidget);
     final next = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ถัดไป'));
     expect(next.onPressed, isNotNull);
+  });
+
+  testWidgets('editing a role opens straight on its filled form', (tester) async {
+    await tester.pumpWidget(wrapPage(const RegisterRolePage(
+      editRole: 'hub_collector',
+      ownedRoles: {'hub_collector', 'farmer'},
+      prefill: {'first_name': 'สมชาย', 'last_name': 'โกโก้ดี', 'nickname': 'สม'},
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('คุณทำอะไรบ้าง? เลือกได้มากกว่า 1 บทบาท'), findsNothing);
+    expect(find.text('แก้ไขข้อมูลผู้รวบรวม'), findsOneWidget);
+    expect(find.text('สมชาย'), findsOneWidget);
+    expect(find.text('ยกเลิก'), findsOneWidget);
+    // Hub collector has no farmer pages: 4 shared pages only.
+    expect(find.text('หน้า 1 จาก 4'), findsOneWidget);
   });
 }
