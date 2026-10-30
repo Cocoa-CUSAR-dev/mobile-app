@@ -29,17 +29,20 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     useCookie: false,
   );
 
+  // backend-hub's register takes only these two; name, phone and address
+  // belong to each role's profile and are asked on the next page.
   final Map<String, TextEditingController> _controllers = {
     'username': TextEditingController(),
     'password': TextEditingController(),
-    'firstName': TextEditingController(),
-    'lastName': TextEditingController(),
-    'phoneNumber': TextEditingController(),
-    'email': TextEditingController(),
-    'addressDetail': TextEditingController(),
   };
 
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _controllers.forEach((_, c) => c.dispose());
+    super.dispose();
+  }
 
   // --- Validation Logic (Regex) ---
   String? _validatePhone(String? v) {
@@ -60,14 +63,12 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         (key, controller) => MapEntry(key, controller.text.trim()),
       );
 
-      // // เพิ่มพิกัดเข้าไปใน Payload
-      // payload['latitude'] = _selectedLocation!.latitude.toString();
-      // payload['longitude'] = _selectedLocation!.longitude.toString();
-
+      // The hub signs the new account in: its answer is a token pair, which
+      // postData keeps. So no second login -- straight on to picking a role.
       await _registerService.postData(payload);
 
       if (mounted) {
-        AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
+        AppSnackBar.show(context, 'สร้างบัญชีเรียบร้อย', type: AppSnackBarType.success);
         if (widget.fromLiff) {
           // สมัครมาจากหน้า LIFF landing — ไปฟอร์ม login/link ของ LiffLinkPage
           // ต่อเลย เพื่อ login + เชื่อมบัญชี LINE ให้อัตโนมัติในขั้นตอนเดียว
@@ -76,12 +77,18 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
             arguments: {'postRegistration': true},
           );
         } else {
-          Navigator.pushNamed(context, AppRoute.login);
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoute.roleRegister,
+            (route) => false,
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, 'ลงทะเบียนไม่สำเร็จ: ${e.toString()}', type: AppSnackBarType.error);
+        // The hub's own Thai message (e.g. the username is taken) when it
+        // refused; a generic one for no connection.
+        final message = e is ServerRejection ? e.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่';
+        AppSnackBar.show(context, 'ลงทะเบียนไม่สำเร็จ: $message', type: AppSnackBarType.error);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -128,14 +135,6 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 isRequired: true,
                 validator: (v) =>
                     v!.length < 8 ? 'รหัสผ่านต้องมี 8 ตัวขึ้นไป' : null,
-              ),
-              // อีเมลพร้อม Validation
-              FormInput(
-                label: 'อีเมล',
-                hintText: 'example@email.com',
-                controller: _controllers['email']!,
-                keyboardType: TextInputType.emailAddress,
-                //validator: _validateEmail,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
