@@ -53,7 +53,13 @@ class AppRoute {
         return MaterialPageRoute(builder: (_) => UserRegisterPage(fromLiff: fromLiff));
       case roleRegister:
         final fromLiff = args?['fromLiff'] as bool? ?? false;
-        return MaterialPageRoute(builder: (_) => RegisterRolePage(fromLiff: fromLiff));
+        // From the profile sheet's "เพิ่มบทบาท": the roles held already and
+        // the answers to start with.
+        final ownedRoles = (args?['ownedRoles'] as Iterable?)?.map((r) => '$r').toSet() ?? const <String>{};
+        final prefill = (args?['prefill'] as Map<String, String>?) ?? const <String, String>{};
+        return MaterialPageRoute(
+          builder: (_) => RegisterRolePage(fromLiff: fromLiff, ownedRoles: ownedRoles, prefill: prefill),
+        );
       case farmRegister:
         return MaterialPageRoute(
           builder: (_) => const FarmRegisterPage(),
