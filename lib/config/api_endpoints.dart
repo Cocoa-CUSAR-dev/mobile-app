@@ -100,9 +100,10 @@ ApiGroup apiGroupOf(String endpoint) {
   return _groupBySegment[segment] ?? ApiGroup.other;
 }
 
+// backend-hub, the merged backend that serves every path above.
 const String defaultApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://mobile-backend-2-t8h6.onrender.com',
+  defaultValue: 'https://backend-hub-two.vercel.app',
 );
 
 // Dart reads these at build time, and only from a literal name, so each group

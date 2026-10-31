@@ -3,7 +3,6 @@
 import 'package:cocoa_supply/services/harvest_service.dart';
 import 'package:cocoa_supply/models/harvest_model.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,20 +59,6 @@ void main() {
       await HarvestService(client: client).saveHarvest(Harvest(harvestId: '1'));
 
       expect(posted?['method'], 'POST');
-    });
-  });
-
-  group('deleteHarvest', () {
-    test('sends a DELETE request for the given id', () async {
-      var deletedPath = '';
-      final client = MockClient((request) async {
-        deletedPath = request.url.path;
-        return http.Response('', 200);
-      });
-
-      await HarvestService(client: client).deleteHarvest('7');
-
-      expect(deletedPath, '/api/v1/collection/harvests/7');
     });
   });
 }

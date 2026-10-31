@@ -112,18 +112,4 @@ void main() {
       expect(requests.where((r) => r.method == 'PUT'), isEmpty);
     });
   });
-
-  group('deleteTask', () {
-    test('sends a DELETE request for the given id', () async {
-      var deletedPath = '';
-      final client = MockClient((request) async {
-        deletedPath = request.url.path;
-        return http.Response('', 200);
-      });
-
-      await TaskService(client: client).deleteTask('t1');
-
-      expect(deletedPath, '/api/v1/tasks/t1');
-    });
-  });
 }

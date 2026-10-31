@@ -30,9 +30,4 @@ class HarvestService {
   Future<void> saveHarvest(Harvest harvest) async {
     await _provider.postData(harvest.toJson());
   }
-
-  /// ลบข้อมูลการเก็บเกี่ยว
-  Future<void> deleteHarvest(String id) async {
-    await _provider.deleteData(id);
-  }
 }

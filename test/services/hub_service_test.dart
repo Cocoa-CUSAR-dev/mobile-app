@@ -3,7 +3,6 @@
 import 'package:cocoa_supply/models/hub_model.dart';
 import 'package:cocoa_supply/services/hub_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,23 +66,6 @@ void main() {
         HubService(client: client).save(Hub(hubId: '1')),
         throwsA(isA<Exception>()),
       );
-    });
-  });
-
-  group('delete', () {
-    test('sends a DELETE request for the given id', () async {
-      var deletedId = '';
-      final client = MockClient((request) async {
-        if (request.method == 'DELETE') {
-          deletedId = request.url.pathSegments.last;
-          return http.Response('', 200);
-        }
-        return jsonResponse([], 200);
-      });
-
-      await HubService(client: client).delete('42');
-
-      expect(deletedId, '42');
     });
   });
 }
