@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/config/api_endpoints.dart';
+import 'package:cocoa_supply/config/roles.dart';
 import 'package:cocoa_supply/services/role_profile_payload.dart';
+import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
@@ -12,13 +14,38 @@ import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 
+/// Pick one or more roles and fill in their profiles: right after sign-up,
+/// or later from the profile sheet to add another role. With [editRole] it
+/// edits that role's profile instead (PATCH /me/profiles/{role}).
+///
+/// The shared fields (name, phone, address) are asked once for every picked
+/// role; a role's own fields only when it is picked (see role_registration).
+/// Each role is then saved with its own POST /me/roles/{role}; if one fails
+/// the others stay saved and "ลองอีกครั้ง" retries only the failed ones.
 class RegisterRolePage extends StatefulWidget {
   /// true = มาจาก flow "ยังไม่มีบัญชีผู้ใช้" บนหน้า LIFF landing (สมัคร + เชื่อม
   /// บัญชี LINE ไปแล้วผ่าน LiffLinkPage) — ลงทะเบียนโปรไฟล์เสร็จให้ไปหน้า
   /// "สมัครสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
   final bool fromLiff;
 
-  const RegisterRolePage({super.key, this.fromLiff = false});
+  /// Roles the person already holds. Non-empty means "add a role" from the
+  /// profile sheet: those roles can't be picked again, and Back leaves.
+  final Set<String> ownedRoles;
+
+  /// Answers to start with (registrationPrefill of the person's profiles).
+  final Map<String, String> prefill;
+
+  /// Edit this role's profile: no role picking, the form starts filled with
+  /// [prefill], and saving changes it. Pops `true` once saved.
+  final String? editRole;
+
+  const RegisterRolePage({
+    super.key,
+    this.fromLiff = false,
+    this.ownedRoles = const {},
+    this.prefill = const {},
+    this.editRole,
+  });
 
   @override
   State<RegisterRolePage> createState() => _RegisterRolePageState();
@@ -26,10 +53,15 @@ class RegisterRolePage extends StatefulWidget {
 
 class _RegisterRolePageState extends State<RegisterRolePage> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedRole;
+  final Set<String> _pickedRoles = {};
+  bool _choosingRoles = true;
   bool _isLoading = false;
-  
+
   int _currentStep = 0;
+
+  // Per role, once submitting started: saved, or the message it was refused with.
+  final Set<String> _savedRoles = {};
+  final Map<String, String> _failedRoles = {};
 
   final Map<String, dynamic> _currentFormData = {};
   final Map<String, TextEditingController> _controllers = {
@@ -42,18 +74,47 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     'zip_code': TextEditingController(),
     'phone_number': TextEditingController(),
     'line': TextEditingController(),
-    'email': TextEditingController(),
     'salary_income': TextEditingController(text: '0.00'),
     'family_member_count': TextEditingController(text: '0'),
     'agri_worker_count': TextEditingController(text: '0'),
     'agri_experience': TextEditingController(),
   };
 
-  final Map<String, dynamic> _roleConfigs = {
-    'farmer': {'endpoint': ApiEndpoints.meRole('farmer'), 'title': 'เกษตรกร'},
-    'processor': {'endpoint': ApiEndpoints.meRole('processor'), 'title': 'ผู้แปรรูป'},
-    'hub_collector': {'endpoint': ApiEndpoints.meRole('hub_collector'), 'title': 'ผู้รวบรวม'},
-  };
+  bool get _editing => widget.editRole != null;
+
+  bool get _addingRole => widget.ownedRoles.isNotEmpty && !_editing;
+
+  /// Editing: also write the shared fields (name, phone, address) into the
+  /// person's other role profiles.
+  bool _applyToAllRoles = false;
+
+  /// The person's other roles that have a profile here, when editing.
+  List<String> get _otherOwnedRoles => selfServiceRoles
+      .where((r) => r != widget.editRole && widget.ownedRoles.contains(r))
+      .toList();
+
+  /// Picked roles in the app's usual order.
+  List<String> get _rolesInOrder => selfServiceRoles.where(_pickedRoles.contains).toList();
+
+  List<List<String>> get _steps => registrationSteps(_pickedRoles);
+
+  int get _totalSteps => _steps.length;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_editing) {
+      _pickedRoles.add(widget.editRole!);
+      _choosingRoles = false;
+    }
+    widget.prefill.forEach((key, value) {
+      if (key.endsWith('_id')) {
+        _currentFormData[key] = value;
+      } else {
+        _controllers[key]?.text = value;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -61,65 +122,15 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     super.dispose();
   }
 
-  // ==========================================
-  // 1. กำหนดชุดคำถามในแต่ละหน้า (ไม่เกิน 3 ข้อ)
-  // ==========================================
-  List<List<String>> _getStepKeys(String role) {
-    if (role == 'farmer') {
-      return [
-        ['first_name', 'last_name', 'nickname'], // หน้า 1
-        ['birth_date', 'phone_number', 'line'], // หน้า 2
-        ['province_id', 'district_id', 'subdistrict_id'], // หน้า 3 (จังหวัด อำเภอ ตำบล รวมกัน)
-        ['email', 'salary_income'], // หน้า 4
-        ['family_member_count', 'agri_worker_count', 'agri_experience'], // หน้า 5
-      ];
-    } else if (role == 'processor') {
-      return [
-        ['first_name', 'last_name', 'nickname'],
-        ['birth_date', 'id_card_number'],
-        ['province_id', 'district_id', 'subdistrict_id'], // (จังหวัด อำเภอ ตำบล รวมกัน)
-        ['zip_code', 'phone_number', 'line'],
-        ['email'],
-      ];
-    } else {
-      // hub_collector
-      return [
-        ['first_name', 'last_name', 'nickname'],
-        ['birth_date', 'id_card_number', 'phone_number'],
-        ['province_id', 'district_id', 'subdistrict_id'], // (จังหวัด อำเภอ ตำบล รวมกัน)
-        ['line', 'email'],
-      ];
-    }
-  }
-
-  int get _totalSteps => _selectedRole == null ? 0 : _getStepKeys(_selectedRole!).length;
+  bool _isRequired(String key) => isRegistrationFieldRequired(key, _pickedRoles);
 
   // ==========================================
-  // 2. กำหนดว่าฟิลด์ไหนจำเป็นต้องกรอก (Is Required)
-  // ==========================================
-  bool _isFieldRequired(String key, String role) {
-    if (['first_name', 'last_name', 'nickname', 'birth_date', 'phone_number'].contains(key)) return true;
-    if (['province_id', 'district_id', 'subdistrict_id'].contains(key)) return true;
-
-    if (role == 'farmer') {
-      return ['zip_code', 'salary_income', 'family_member_count', 'agri_worker_count'].contains(key);
-    } else if (role == 'processor') {
-      return ['id_card_number', 'address_detail'].contains(key);
-    } else if (role == 'hub_collector') {
-      return ['id_card_number'].contains(key);
-    }
-    return false;
-  }
-
-  // ==========================================
-  // 3. Validation ของหน้าปัจจุบัน
+  // Validation ของหน้าปัจจุบัน
   // ==========================================
   bool _isCurrentStepValid() {
-    if (_selectedRole == null) return false;
-    final stepKeys = _getStepKeys(_selectedRole!)[_currentStep];
-
-    for (String key in stepKeys) {
-      if (!_isFieldRequired(key, _selectedRole!)) continue;
+    if (_pickedRoles.isEmpty) return false;
+    for (String key in _steps[_currentStep]) {
+      if (!_isRequired(key)) continue;
 
       if (key.endsWith('_id')) { // กลุ่ม Dropdown
         if (_currentFormData[key] == null) return false;
@@ -145,72 +156,176 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     }
   }
 
+  Map<String, dynamic> _answers() {
+    final Map<String, dynamic> form = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
+    form.addAll(_currentFormData);
+    form['salary_income'] = double.tryParse(form['salary_income'].toString()) ?? 0.0;
+    form['family_member_count'] = int.tryParse(form['family_member_count'].toString()) ?? 0;
+    form['agri_worker_count'] = int.tryParse(form['agri_worker_count'].toString()) ?? 0;
+    return form;
+  }
+
+  /// Save every picked role not saved yet, one request each. Each answer
+  /// carries a new token pair (kept by postData), so the last one holds
+  /// every role.
   Future<void> _handleRegister() async {
     setState(() => _isLoading = true);
-    try {
-      final String endpoint = _roleConfigs[_selectedRole!]['endpoint'];
-      final registerService = ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint);
-
-      final Map<String, dynamic> form = _controllers.map((k, v) => MapEntry(k, v.text.trim()));
-      form.addAll(_currentFormData);
-
-      if (_selectedRole == 'farmer') {
-        form['salary_income'] = double.tryParse(form['salary_income'].toString()) ?? 0.0;
-        form['family_member_count'] = int.tryParse(form['family_member_count'].toString()) ?? 0;
-        form['agri_worker_count'] = int.tryParse(form['agri_worker_count'].toString()) ?? 0;
+    final form = _answers();
+    for (final role in _rolesInOrder) {
+      if (_savedRoles.contains(role)) continue;
+      final endpoint = ApiEndpoints.meRole(role);
+      final service = ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint);
+      try {
+        // The backend takes exactly the fields of the role's profile, so the
+        // form's other fields and its blank answers are left out.
+        await service.postData(roleProfilePayload(role, form));
+        _savedRoles.add(role);
+        _failedRoles.remove(role);
+      } on ServerRejection catch (e) {
+        if (e.statusCode == 409) {
+          // Already holds it (a double tap, or another device): that's done.
+          _savedRoles.add(role);
+          _failedRoles.remove(role);
+        } else {
+          _failedRoles[role] = e.message;
+        }
+      } catch (_) {
+        _failedRoles[role] = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
       }
-
-      // The backend takes exactly the fields of the role's profile, so the form's
-      // other fields and its blank answers are left out.
-      await registerService.postData(roleProfilePayload(_selectedRole!, form));
-      if (mounted) {
-        AppSnackBar.show(context, 'ลงทะเบียนสำเร็จ', type: AppSnackBarType.success);
-
-        // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
-        // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          widget.fromLiff ? AppRoute.liffLoginSuccess : AppRoute.home,
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) AppSnackBar.show(context, 'Error: $e', type: AppSnackBarType.error);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (_failedRoles.isNotEmpty) {
+      AppSnackBar.show(context, 'บันทึกไม่สำเร็จบางบทบาท กรุณาลองอีกครั้ง', type: AppSnackBarType.error);
+      return;
+    }
+    final names = _rolesInOrder.map(roleLabel).join(', ');
+    AppSnackBar.show(
+      context,
+      _addingRole ? 'เพิ่มบทบาท$namesเรียบร้อย' : 'ลงทะเบียนสำเร็จ',
+      type: AppSnackBarType.success,
+    );
+    // ถ้ามาจาก LiffLinkPage (login/link ผ่านแล้วแต่ยังไม่มีโปรไฟล์ตอนนั้น)
+    // ให้พาไปหน้า "เชื่อมบัญชีสำเร็จ" (ปิด LIFF webview) แทนหน้า home ปกติ
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      widget.fromLiff ? AppRoute.liffLoginSuccess : AppRoute.home,
+      (route) => false,
+    );
+  }
+
+  /// Save the edited profile; with "ใช้กับบทบาทอื่นด้วย", also the shared
+  /// fields of the person's other roles. Only fields that have an answer are
+  /// sent, so a field left blank keeps what it had.
+  Future<void> _handleEdit() async {
+    setState(() => _isLoading = true);
+    final form = _answers();
+    final role = widget.editRole!;
+    final bodies = <String, Map<String, dynamic>>{
+      role: roleProfilePayload(role, form),
+      if (_applyToAllRoles)
+        for (final other in _otherOwnedRoles) other: roleProfilePayload(other, sharedAnswers(form)),
+    };
+    final failed = <String>[];
+    String? reason;
+    for (final entry in bodies.entries) {
+      final endpoint = ApiEndpoints.meProfile(entry.key);
+      final service = ServiceProvider(endpoint: endpoint, isRealApi: true, storageKey: endpoint);
+      try {
+        await service.patchData(entry.value);
+      } on ServerRejection catch (e) {
+        failed.add(entry.key);
+        reason ??= e.message;
+      } catch (_) {
+        failed.add(entry.key);
+        reason ??= 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+      }
+    }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (failed.isNotEmpty) {
+      AppSnackBar.show(
+        context,
+        'บันทึกไม่สำเร็จ (${failed.map(roleLabel).join(', ')}): $reason',
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
+    AppSnackBar.show(context, 'บันทึกข้อมูลเรียบร้อย', type: AppSnackBarType.success);
+    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      title: '',
-      showBackButton: false,
-      body: _selectedRole == null ? _buildRoleSelection() : _buildPaginatedForm(),
+      title: _editing ? 'แก้ไขข้อมูล${roleLabel(widget.editRole!)}' : '',
+      showBackButton: _addingRole || _editing,
+      body: _choosingRoles ? _buildRoleSelection() : _buildPaginatedForm(),
     );
   }
 
   Widget _buildRoleSelection() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 80),
-          Text('ลงทะเบียนเข้าใช้งาน', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text('กรุณาเลือกประเภทสมาชิก', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54)),
-          const SizedBox(height: 40),
-          _roleCard('เกษตรกร', 'farmer', Icons.agriculture),
-          const SizedBox(height: 16),
-          _roleCard('ผู้รวบรวม (Hub)', 'hub_collector', Icons.local_shipping),
-          const SizedBox(height: 16),
-          _roleCard('ผู้แปรรูป', 'processor', Icons.factory),
-        ],
-      ),
+    final roleCards = <Widget>[];
+    for (final role in selfServiceRoles) {
+      if (roleCards.isNotEmpty) roleCards.add(const SizedBox(height: 16));
+      roleCards.add(_roleCard(role));
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: _addingRole ? 24 : 80),
+                Text(
+                  _addingRole ? 'เพิ่มบทบาท' : 'ลงทะเบียนเข้าใช้งาน',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'คุณทำอะไรบ้าง? เลือกได้มากกว่า 1 บทบาท',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                ),
+                const SizedBox(height: 40),
+                ...roleCards,
+                if (!_addingRole) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'เพิ่มบทบาทภายหลังได้ที่หน้าโปรไฟล์',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black45),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: ElevatedButton(
+            onPressed: _pickedRoles.isEmpty
+                ? null
+                : () => setState(() {
+                      _choosingRoles = false;
+                      _currentStep = 0;
+                    }),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              disabledBackgroundColor: Colors.grey.shade300,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildPaginatedForm() {
+    final isLastStep = _currentStep == _totalSteps - 1;
     return Form(
       key: _formKey,
       child: Column(
@@ -223,34 +338,66 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   _buildStepIndicator(_totalSteps),
                   const SizedBox(height: 32),
                   Text(
-                    'ข้อมูล${_roleConfigs[_selectedRole!]['title']}',
+                    _stepTitle(),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                   ),
                   const SizedBox(height: 24),
                   _buildCurrentStepFields(),
+                  if (isLastStep && (_savedRoles.isNotEmpty || _failedRoles.isNotEmpty)) _buildSaveResults(),
+                  if (isLastStep && _editing && _otherOwnedRoles.isNotEmpty)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _applyToAllRoles,
+                      onChanged: (v) => setState(() => _applyToAllRoles = v ?? false),
+                      title: Text(
+                        'ใช้ชื่อ เบอร์ และที่อยู่นี้กับบทบาท${_otherOwnedRoles.map(roleLabel).join(', ')}ด้วย',
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
-          _buildBottomButtons(
-            isLastStep: _currentStep == _totalSteps - 1, 
-            canProceed: _isCurrentStepValid()
-          ),
+          _buildBottomButtons(isLastStep: isLastStep, canProceed: _isCurrentStepValid()),
         ],
       ),
     );
   }
 
+  /// Shared pages are "ข้อมูลส่วนตัว"; a page of one role's own fields is
+  /// named after that role.
+  String _stepTitle() {
+    final ownFields = {'salary_income', 'family_member_count', 'agri_worker_count', 'agri_experience'};
+    final isFarmerPage = _steps[_currentStep].every(ownFields.contains);
+    return isFarmerPage ? 'ข้อมูล${roleLabel('farmer')}' : 'ข้อมูลส่วนตัว';
+  }
+
+  /// After a submit that partly failed: which roles were saved, which not.
+  Widget _buildSaveResults() {
+    return Column(
+      children: _rolesInOrder.map((role) {
+        final failed = _failedRoles[role];
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(
+            failed == null ? Icons.check_circle : Icons.error,
+            color: failed == null ? Colors.green : Colors.red,
+          ),
+          title: Text(roleLabel(role)),
+          subtitle: Text(failed ?? 'บันทึกแล้ว'),
+        );
+      }).toList(),
+    );
+  }
+
   // ==========================================
-  // 4. Render Field ตาม Key ที่ดึงมาจาก Step
+  // Render Field ตาม Key ที่ดึงมาจาก Step
   // ==========================================
   Widget _buildCurrentStepFields() {
-    final stepKeys = _getStepKeys(_selectedRole!)[_currentStep];
-
     return Column(
-      children: stepKeys.map((key) {
-        bool isReq = _isFieldRequired(key, _selectedRole!);
-        
+      children: _steps[_currentStep].map((key) {
+        bool isReq = _isRequired(key);
+
         switch(key) {
           case 'first_name': return _input(key, 'ชื่อจริง', isReq);
           case 'last_name': return _input(key, 'นามสกุล', isReq);
@@ -260,15 +407,14 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
           case 'zip_code': return _input(key, 'รหัสไปรษณีย์', isReq);
           case 'phone_number': return _phoneInput(key, isReq);
           case 'line': return _input(key, 'Line ID', isReq);
-          case 'email': return _input(key, 'อีเมล', isReq);
           case 'salary_income': return FormHelper.buildNumber(label: 'รายได้เฉลี่ยต่อเดือน (บาท)', controller: _controllers[key]!, isReq: isReq);
           case 'family_member_count': return FormHelper.buildNumber(label: 'จำนวนสมาชิกครอบครัว', controller: _controllers[key]!, isReq: isReq, isInt: true);
           case 'agri_worker_count': return FormHelper.buildNumber(label: 'จำนวนแรงงานเกษตร', controller: _controllers[key]!, isReq: isReq, isInt: true);
           case 'birth_date': return FormHelper.buildDate(label: 'วัน/เดือน/ปีเกิด', controller: _controllers[key]!, isReq: isReq);
           case 'agri_experience': return FormHelper.buildDate(label: 'วันที่เริ่มทำเกษตร', controller: _controllers[key]!, isReq: isReq);
-          
+
           case 'province_id':
-            return _buildFilteredDropdown('province_id', 'จังหวัด', isReq: isReq, 
+            return _buildFilteredDropdown('province_id', 'จังหวัด', isReq: isReq,
               onChanged: (val) => setState(() {
                 _currentFormData['province_id'] = val;
                 _currentFormData['district_id'] = null; // รีเซ็ตอำเภอเมื่อเปลี่ยนจังหวัด
@@ -300,7 +446,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               filterKey: 'district_id',
               onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
             );
-          default: 
+          default:
             return const SizedBox.shrink();
         }
       }).toList(),
@@ -381,6 +527,11 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   }
 
   Widget _buildBottomButtons({required bool isLastStep, required bool canProceed}) {
+    final submitLabel = _editing
+        ? 'บันทึก'
+        : _failedRoles.isNotEmpty
+            ? 'ลองอีกครั้ง'
+            : 'ยืนยันลงทะเบียน';
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -392,7 +543,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                 ? () {
                     if (_formKey.currentState!.validate()) {
                       if (isLastStep) {
-                        _handleRegister();
+                        _editing ? _handleEdit() : _handleRegister();
                       } else {
                         setState(() => _currentStep++);
                       }
@@ -407,58 +558,85 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
             ),
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(isLastStep ? 'ยืนยันลงทะเบียน' : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
+                : Text(isLastStep ? submitLabel : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () {
-              if (_currentStep > 0) {
-                setState(() => _currentStep--);
-              } else {
-                setState(() => _selectedRole = null); // กลับไปเลือก Role ใหม่
-              }
-            },
+            // Once a role is saved, changing the picked roles would leave it
+            // half-done; the remaining ones can only be retried.
+            onPressed: _currentStep == 0 && _savedRoles.isNotEmpty
+                ? null
+                : () {
+                    if (_currentStep > 0) {
+                      setState(() => _currentStep--);
+                    } else if (_editing) {
+                      Navigator.of(context).pop(false);
+                    } else {
+                      setState(() => _choosingRoles = true); // กลับไปเลือกบทบาทใหม่
+                    }
+                  },
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               side: BorderSide(color: Colors.grey.shade400),
             ),
             child: Text(
-              _currentStep > 0 ? 'ย้อนกลับ' : 'เปลี่ยนประเภทสมาชิก',
+              _currentStep > 0 ? 'ย้อนกลับ' : (_editing ? 'ยกเลิก' : 'เลือกบทบาทใหม่'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87)
             ),
           ),
-          
         ],
       ),
     );
   }
 
-  Widget _roleCard(String title, String roleValue, IconData icon) {
+  static const Map<String, IconData> _roleIcons = {
+    'farmer': Icons.agriculture,
+    'hub_collector': Icons.local_shipping,
+    'processor': Icons.factory,
+  };
+
+  Widget _roleCard(String role) {
+    final owned = widget.ownedRoles.contains(role);
+    final picked = _pickedRoles.contains(role);
+    final title = role == 'hub_collector' ? '${roleLabel(role)} (Hub)' : roleLabel(role);
     return InkWell(
-      onTap: () => setState(() {
-        _selectedRole = roleValue;
-        _currentStep = 0;
-      }),
+      onTap: owned
+          ? null
+          : () => setState(() {
+                if (!_pickedRoles.remove(role)) _pickedRoles.add(role);
+              }),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: owned ? Colors.grey.shade100 : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
+          border: Border.all(
+            color: picked ? AppColors.primary : Colors.grey.shade200,
+            width: picked ? 2 : 1,
+          ),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 5))],
         ),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Icon(icon, color: AppColors.primary),
+              backgroundColor: AppColors.primary.withValues(alpha: owned ? 0.05 : 0.1),
+              child: Icon(_roleIcons[role], color: owned ? Colors.grey : AppColors.primary),
             ),
             const SizedBox(width: 16),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: owned ? Colors.grey : null),
+            ),
             const Spacer(),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            if (owned)
+              Text('มีแล้ว', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey))
+            else
+              Icon(
+                picked ? Icons.check_box : Icons.check_box_outline_blank,
+                color: picked ? AppColors.primary : Colors.grey,
+              ),
           ],
         ),
       ),

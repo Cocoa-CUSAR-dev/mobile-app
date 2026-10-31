@@ -1,4 +1,6 @@
+import 'package:cocoa_supply/config/roles.dart';
 import 'package:cocoa_supply/models/profile_model.dart';
+import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +102,43 @@ class _RootScaffoldState extends State<RootScaffold> {
         (route) => false,
       );
     }
+  }
+
+  /// Roles the person can still add themselves.
+  List<String> get _missingRoles {
+    final roles = _userProfile?.roles ?? const [];
+    return selfServiceRoles.where((r) => !roles.contains(r)).toList();
+  }
+
+  void _openAddRole() {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    Navigator.of(context).pushNamed(
+      AppRoute.roleRegister,
+      arguments: {
+        'ownedRoles': _userProfile?.roles ?? const <String>[],
+        'prefill': registrationPrefill(_userProfile?.profiles ?? const {}),
+      },
+    );
+  }
+
+  /// Roles the person holds that they can edit here, in the usual order.
+  List<String> get _editableRoles {
+    final roles = _userProfile?.roles ?? const [];
+    return selfServiceRoles.where(roles.contains).toList();
+  }
+
+  Future<void> _openEditRole(String role) async {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    final saved = await Navigator.of(context).pushNamed(
+      AppRoute.roleRegister,
+      arguments: {
+        'editRole': role,
+        'ownedRoles': _userProfile?.roles ?? const <String>[],
+        'prefill': registrationPrefill({role: _userProfile?.profiles[role]}),
+      },
+    );
+    // Show the new name and address right away.
+    if (saved == true && mounted) _fetchProfile();
   }
 
   // ฟังก์ชันสำหรับแสดง Pop-up โปรไฟล์
@@ -264,7 +303,32 @@ class _RootScaffoldState extends State<RootScaffold> {
               ],
             ),
 
+            if (_editableRoles.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildInfoCard(
+                icon: Icons.badge_outlined,
+                title: "บทบาทของฉัน",
+                rows: _editableRoles.map(_roleRow).toList(),
+              ),
+            ],
+
             const SizedBox(height: 24),
+            if (_missingRoles.isNotEmpty) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _openAddRole,
+                  icon: const Icon(Icons.add, color: AppColors.primary, size: 20),
+                  label: Text("เพิ่มบทบาท", style: AppTextTheme.scale.titleSmall?.copyWith(color: AppColors.primary)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -288,7 +352,8 @@ class _RootScaffoldState extends State<RootScaffold> {
       (_userProfile?.provinceName ?? '').contains('กรุงเทพ');
 
   Widget _buildProfileHeader() {
-    final roleLabel = _userProfile!.roles?.join(', ') ?? 'ทั่วไป';
+    final roles = _userProfile!.roles ?? const [];
+    final roleText = roles.isEmpty ? 'ทั่วไป' : roles.map(roleLabel).join(', ');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -329,12 +394,26 @@ class _RootScaffoldState extends State<RootScaffold> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              "บทบาท: $roleLabel",
+              "บทบาท: $roleText",
               style: AppTextTheme.scale.labelMedium?.copyWith(color: Colors.white),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// One role in "บทบาทของฉัน", with a button to edit its profile.
+  Widget _roleRow(String role) {
+    return Row(
+      children: [
+        Expanded(child: Text(roleLabel(role), style: AppTextTheme.scale.bodyLarge)),
+        TextButton.icon(
+          onPressed: () => _openEditRole(role),
+          icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+          label: Text("แก้ไข", style: AppTextTheme.scale.labelLarge?.copyWith(color: AppColors.primary)),
+        ),
+      ],
     );
   }
 

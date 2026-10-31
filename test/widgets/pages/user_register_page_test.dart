@@ -30,6 +30,14 @@ void main() {
     expect(find.text('ยืนยันการลงทะเบียน'), findsOneWidget);
   });
 
+  testWidgets('asks only for phone and password (profiles come on the next page)', (tester) async {
+    await tester.pumpWidget(wrapPage(const UserRegisterPage()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(find.text('อีเมล'), findsNothing);
+  });
+
   testWidgets('M-PROF-01 — submitting an empty form triggers validation', (tester) async {
     await tester.pumpWidget(wrapPage(const UserRegisterPage()));
     await tester.pumpAndSettle();

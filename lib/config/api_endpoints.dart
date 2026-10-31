@@ -51,6 +51,9 @@ abstract final class ApiEndpoints {
   /// Add a role (farmer, hub_collector or processor) to myself.
   static String meRole(String role) => '/api/v1/me/roles/$role';
 
+  /// Edit one of my role profiles (only the fields sent change).
+  static String meProfile(String role) => '/api/v1/me/profiles/$role';
+
   static const String tasks = '/api/v1/tasks';
   static String taskResponses(String taskId) =>
       '/api/v1/tasks/$taskId/responses';

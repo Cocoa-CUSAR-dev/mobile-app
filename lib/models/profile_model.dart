@@ -13,6 +13,9 @@ class Profile {
   final String? fullName;
   final List<String>? roles; // ← เพิ่มเพราะ roles อยู่ระดับเดียวกันแล้ว
   final String? userId;      // ← เผื่อใช้ user_id
+  /// Each role's own profile from GET /me (`profiles.farmer`, ...); a role
+  /// the person doesn't hold has none.
+  final Map<String, dynamic> profiles;
 
   Profile({
     this.firstName,
@@ -29,6 +32,7 @@ class Profile {
     this.fullName,
     this.roles,
     this.userId,
+    this.profiles = const {},
   });
 
   /// From GET /api/v1/me: the account, its roles and one profile per role
@@ -43,6 +47,10 @@ class Profile {
 
     return Profile(
       userId: json['user_id']?.toString(),
+      profiles: {
+        for (final entry in ((json['profiles'] as Map?) ?? const {}).entries)
+          if (entry.value is Map) '${entry.key}': entry.value,
+      },
       roles: (json['roles'] as List?)?.map((e) => e.toString()).toList(),
       firstName: first,
       lastName: last,
