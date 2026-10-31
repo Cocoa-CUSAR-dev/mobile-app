@@ -10,6 +10,8 @@ class Profile {
   final String? districtName;
   final String? provinceName;
   final String? zipCode;
+  /// The profile's subdistrict id, to look its place names up by.
+  final String? subdistrictId;
   final String? fullName;
   final List<String>? roles; // ← เพิ่มเพราะ roles อยู่ระดับเดียวกันแล้ว
   final String? userId;      // ← เผื่อใช้ user_id
@@ -29,6 +31,7 @@ class Profile {
     this.districtName,
     this.provinceName,
     this.zipCode,
+    this.subdistrictId,
     this.fullName,
     this.roles,
     this.userId,
@@ -60,14 +63,41 @@ class Profile {
       facebook: source['facebook'],
       addressDetail: source['address_detail'],
       // The profile holds the ids of the subdistrict, district and province,
-      // not their names, so these stay empty until the backend sends names.
+      // not their names: AuthService fills these in with [withPlaceNames].
       subdistrictName: source['subdistrict_name'],
       districtName: source['district_name'],
       provinceName: source['province_name'],
       zipCode: source['zip_code'],
+      subdistrictId: source['subdistrict_id']?.toString(),
       fullName: name.isEmpty ? null : name,
     );
   }
+
+  /// This profile with its subdistrict, district and province names, e.g.
+  /// from one row of GET /api/v1/ref/constants/location.
+  Profile withPlaceNames({
+    String? subdistrictName,
+    String? districtName,
+    String? provinceName,
+  }) =>
+      Profile(
+        firstName: firstName,
+        lastName: lastName,
+        nickname: nickname,
+        phoneNumber: phoneNumber,
+        line: line,
+        facebook: facebook,
+        addressDetail: addressDetail,
+        subdistrictName: subdistrictName ?? this.subdistrictName,
+        districtName: districtName ?? this.districtName,
+        provinceName: provinceName ?? this.provinceName,
+        zipCode: zipCode,
+        subdistrictId: subdistrictId,
+        fullName: fullName,
+        roles: roles,
+        userId: userId,
+        profiles: profiles,
+      );
 
   static Map<String, dynamic>? _firstRoleProfile(Map<String, dynamic> json) {
     final Object? profiles = json['profiles'];

@@ -35,6 +35,66 @@ void main() {
       expect(profile?.roles, ['farmer']);
     });
 
+    test('fills the place names from the location list', () async {
+      final requests = <Uri>[];
+      final client = MockClient((request) async {
+        requests.add(request.url);
+        if (request.url.path == '/api/v1/me') {
+          return jsonResponse({
+            'user_id': 'u1',
+            'roles': ['farmer'],
+            'profiles': {
+              'farmer': {
+                'first_name': 'สมชาย',
+                'last_name': 'โกโก้ดี',
+                'subdistrict_id': 'sd1',
+                'zip_code': '50300',
+              },
+            },
+          }, 200);
+        }
+        return jsonResponse([
+          {
+            'subdistrict_id': 'sd1',
+            'subdistrict_name': 'ช้างเผือก',
+            'district_name': 'เมือง',
+            'province_name': 'เชียงใหม่',
+            'zip_code': '50300',
+            'full_name': 'ต.ช้างเผือก อ.เมือง จ.เชียงใหม่ 50300',
+          },
+        ], 200);
+      });
+
+      final profile = await AuthService(client: client).getProfile();
+
+      expect(requests.last.path, '/api/v1/ref/constants/location');
+      expect(requests.last.queryParameters, {'subdistrict_id': 'sd1'});
+      expect(
+        [profile?.subdistrictName, profile?.districtName, profile?.provinceName],
+        ['ช้างเผือก', 'เมือง', 'เชียงใหม่'],
+      );
+    });
+
+    test('still returns the profile when the place lookup fails', () async {
+      final client = MockClient((request) async {
+        if (request.url.path == '/api/v1/me') {
+          return jsonResponse({
+            'user_id': 'u1',
+            'roles': ['farmer'],
+            'profiles': {
+              'farmer': {'first_name': 'สมชาย', 'last_name': 'โกโก้ดี', 'subdistrict_id': 'sd1'},
+            },
+          }, 200);
+        }
+        return http.Response('boom', 500);
+      });
+
+      final profile = await AuthService(client: client).getProfile();
+
+      expect(profile?.fullName, 'สมชาย โกโก้ดี');
+      expect(profile?.subdistrictName, isNull);
+    });
+
     test('fails instead of hanging when the connection stalls', () async {
       // RootScaffold has no exit from its full-screen spinner other than
       // this future settling, so a stalled request used to leave the app
