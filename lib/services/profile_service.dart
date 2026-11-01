@@ -28,7 +28,7 @@ class AuthService {
     try {
       final Map<String, dynamic> result = await _provider.fetchSelf();
       print(result);
-      return _withPlaceNames(Profile.fromJson(result));
+      return await _withPlaceNames(Profile.fromJson(result));
     } catch (e) {
       print('Error in getProfile: $e');
       rethrow;
