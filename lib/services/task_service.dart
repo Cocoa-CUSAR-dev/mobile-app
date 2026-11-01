@@ -59,9 +59,4 @@ class TaskService {
     }
     await _provider.putData({'answer': answer}, pathSuffix: '$taskId/responses/$responseId');
   }
-
-  /// ลบข้อมูลงาน
-  Future<void> deleteTask(String taskId) async {
-    await _provider.deleteData(taskId);
-  }
 }

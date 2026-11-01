@@ -552,26 +552,8 @@ class ServiceProvider<T> {
     throw ServerRejection(response.statusCode, _errorOf(decoded) ?? 'Update Error');
   }
 
-  /// Delete Data (DELETE) - เปลี่ยนเป็นคืนค่า bool เพื่อให้รู้ว่าลบสำเร็จไหม
-  Future<bool> deleteData(String identifierValue) async {
-    if (isRealApi) {
-      final uri = Uri.parse('$baseUrl$endpoint/$identifierValue');
-      try {
-        final response = await _authorized((headers) => _client.delete(uri, headers: headers));
-        await _updateToken(response);
-        return (response.statusCode == 200 || response.statusCode == 204);
-      } catch (e) {
-        rethrow;
-      }
-    } else {
-      await _simulateNetworkDelay();
-      return true;
-    }
-  }
-
   /// Overwrite the local list under [storageKey] in one write -- for the
-  /// offline queue, which removes individual items by rebuilding the list
-  /// (deleteData is a no-op in local mode, so it can't remove anything).
+  /// offline queue, which removes individual items by rebuilding the list.
   Future<void> replaceLocal(List<Map<String, dynamic>> items) async {
     await _storage.write(key: storageKey, value: jsonEncode(items));
   }

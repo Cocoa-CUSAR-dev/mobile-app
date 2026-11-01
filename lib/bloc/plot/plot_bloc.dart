@@ -14,7 +14,6 @@ class PlotBloc extends Bloc<PlotEvent, PlotState> {
     on<LoadPlots>(_onLoadPlots);
     on<RegisterPlot>(_onRegisterPlot);
     on<UpdatePlot>(_onUpdatePlot);
-    on<DeletePlot>(_onDeletePlot);
   }
 
   Future<void> _onLoadPlots(LoadPlots event, Emitter<PlotState> emit) async {
@@ -47,18 +46,6 @@ class PlotBloc extends Bloc<PlotEvent, PlotState> {
       
       final updatedList = await _service.getPlots();
       emit(PlotOperationSuccess(plots: updatedList, message: 'แปลงย่อยภายในฟาร์มถูกอัปเดตเรียบร้อย'));
-    } catch (e) {
-      emit(PlotOperationFailure(e.toString()));
-    }
-  }
-
-  Future<void> _onDeletePlot(DeletePlot event, Emitter<PlotState> emit) async {
-    emit(PlotLoading());
-    try {
-      await _service.deletePlot(event.farmNo);
-      
-      final updatedList = await _service.getPlots();
-      emit(PlotOperationSuccess(plots: updatedList, message: 'แปลงย่อยภายในฟาร์มถูกลบเรียบร้อย'));
     } catch (e) {
       emit(PlotOperationFailure(e.toString()));
     }

@@ -50,10 +50,4 @@ class FarmService {
   //   // Use PUT or equivalent operation (mocked)
   //   await _provider.putData('farmId', updatedFarm.toJson());
   // }
-
-  /// Delete farm
-  Future<void> deleteFarm(String farmId) async {
-    // Use DELETE operation (mocked)
-    await _provider.deleteData(farmId.toString());
-  }
 }

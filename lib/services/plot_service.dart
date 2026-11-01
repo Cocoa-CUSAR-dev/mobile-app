@@ -50,10 +50,4 @@ class PlotService {
   //   // Use PUT or equivalent operation (mocked)
   //   await _provider.putData('farmId', updatedPlot.toJson());
   // }
-
-  /// Delete plot
-  Future<void> deletePlot(String plotId) async {
-    // Use DELETE operation (mocked)
-    await _provider.deleteData(plotId.toString());
-  }
 }

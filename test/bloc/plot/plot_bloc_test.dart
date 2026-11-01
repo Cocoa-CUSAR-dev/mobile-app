@@ -7,7 +7,6 @@ import 'package:cocoa_supply/bloc/plot/plot_state.dart';
 import 'package:cocoa_supply/models/plot_model.dart';
 import 'package:cocoa_supply/services/plot_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,22 +68,6 @@ void main() {
       expect: () => [
         isA<PlotLoading>(),
         isA<PlotOperationFailure>(),
-      ],
-    );
-
-    blocTest<PlotBloc, PlotState>(
-      'DeletePlot emits operation success with the refreshed list',
-      build: () {
-        final client = MockClient((request) async {
-          if (request.method == 'DELETE') return http.Response('', 200);
-          return jsonResponse([], 200);
-        });
-        return PlotBloc(plotService: PlotService(client: client));
-      },
-      act: (bloc) => bloc.add(const DeletePlot('1')),
-      expect: () => [
-        isA<PlotLoading>(),
-        isA<PlotOperationSuccess>(),
       ],
     );
   });

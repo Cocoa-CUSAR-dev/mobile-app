@@ -54,9 +54,4 @@ class HubService {
   //   // ระบุ Key ที่ใช้ในการอ้างอิงเพื่อ Update (เช่น hubId)
   //   await _provider.putData('hubId', data.toJson());
   // }
-
-  /// ลบข้อมูลออกจาก Hub
-  Future<void> delete(String id) async {
-    await _provider.deleteData(id.toString());
-  }
 }

@@ -15,6 +15,7 @@ import 'package:cocoa_supply/bloc/dynamic/autofill_offer.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/bloc/task/task_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_event.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
 import 'package:cocoa_supply/services/task_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -55,7 +56,7 @@ void main() {
           // The bloc now also asks GET /tasks/t1/autofill (US2-5) -- nothing
           // to offer here.
           if (request.url.path.endsWith('/autofill')) return http.Response('', 204);
-          expect(request.url.toString(), 'https://mobile-backend-2-t8h6.onrender.com/api/v1/tasks/t1/form');
+          expect(request.url.toString(), '$defaultApiBaseUrl/api/v1/tasks/t1/form');
           return jsonResponse({
             'form': formWith([
               {'fieldName': 'first_name', 'label': 'ชื่อจริง', 'inputType': 'VARCHAR', 'isMandatory': true, 'isActive': true, 'sortOrder': 1},
