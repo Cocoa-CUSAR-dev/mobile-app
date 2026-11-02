@@ -43,6 +43,16 @@ void main() {
         isA<HomeLoaded>().having((s) => s.currentTabIndex, 'currentTabIndex', 1),
       ],
     );
+
+    blocTest<HomeBloc, HomeState>(
+      'a tab asked for while tasks load is kept, not dropped',
+      build: () => HomeBloc(taskBloc: buildTaskBloc()),
+      seed: () => HomeLoading(currentTabIndex: 0, selectedDate: DateTime(2026, 1, 11)),
+      act: (bloc) => bloc.add(HomeTabChanged(newIndex: 2)),
+      expect: () => [
+        isA<HomeLoading>().having((s) => s.currentTabIndex, 'currentTabIndex', 2),
+      ],
+    );
   });
 
   group('HomeDataRequested (W-DASH-03 date/year change)', () {

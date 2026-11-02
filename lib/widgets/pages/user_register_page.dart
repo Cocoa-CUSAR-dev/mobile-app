@@ -70,11 +70,15 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       if (mounted) {
         AppSnackBar.show(context, 'สร้างบัญชีเรียบร้อย', type: AppSnackBarType.success);
         if (widget.fromLiff) {
-          // สมัครมาจากหน้า LIFF landing — ไปฟอร์ม login/link ของ LiffLinkPage
-          // ต่อเลย เพื่อ login + เชื่อมบัญชี LINE ให้อัตโนมัติในขั้นตอนเดียว
+          // สมัครมาจากหน้า LIFF landing — ไป LiffLinkPage ต่อเลย พร้อมบัญชีที่เพิ่ง
+          // สมัคร เพื่อเชื่อมบัญชี LINE ให้อัตโนมัติโดยไม่ต้องกรอกรหัสผ่านซ้ำ
           Navigator.of(context).pushNamed(
             AppRoute.liffLink,
-            arguments: {'postRegistration': true},
+            arguments: {
+              'postRegistration': true,
+              'username': payload['username'],
+              'password': payload['password'],
+            },
           );
         } else {
           Navigator.of(context).pushNamedAndRemoveUntil(

@@ -19,7 +19,18 @@ class LiffLinkPage extends StatefulWidget {
   /// ใน build() ด้านล่าง)
   final bool postRegistration;
 
-  const LiffLinkPage({super.key, this.postRegistration = false});
+  /// The account just created (postRegistration): it is linked with LINE
+  /// without asking for the phone and password again. Should the link fail,
+  /// the form shows with these filled in.
+  final String? username;
+  final String? password;
+
+  const LiffLinkPage({
+    super.key,
+    this.postRegistration = false,
+    this.username,
+    this.password,
+  });
 
   @override
   State<LiffLinkPage> createState() => _LiffLinkPageState();
@@ -30,12 +41,15 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _autoSubmitted = false;
 
   final Color primaryColor = AppColors.primary;
 
   @override
   void initState() {
     super.initState();
+    _usernameController.text = widget.username ?? '';
+    _passwordController.text = widget.password ?? '';
     // postRegistration: liff.init() วิ่งไปแล้วครั้งแรกที่เข้าหน้านี้ตอนต้น session
     // (LiffLoginBloc เป็น instance เดียวทั้งแอป ไม่ได้ผูกกับ widget นี้) ข้ามหน้า
     // landing ไปเรียก LiffHasAccountPressed ตรงๆ เพื่อขอ idToken + โชว์ฟอร์ม login เลย
@@ -89,6 +103,10 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
               const SizedBox(height: 32),
               BlocConsumer<LiffLoginBloc, LiffLoginState>(
                 listener: (context, state) {
+                  if (state is LiffReady && widget.password != null && !_autoSubmitted) {
+                    _autoSubmitted = true;
+                    _onSubmit();
+                  }
                   if (state is LiffLoginFailure) {
                     AppSnackBar.show(context, state.error, type: AppSnackBarType.error);
                   }

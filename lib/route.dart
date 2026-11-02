@@ -42,12 +42,19 @@ class AppRoute {
       case liffLink:
         final postRegistration = args?['postRegistration'] as bool? ?? false;
         return MaterialPageRoute(
-          builder: (_) => LiffLinkPage(postRegistration: postRegistration),
+          builder: (_) => LiffLinkPage(
+            postRegistration: postRegistration,
+            username: args?['username'] as String?,
+            password: args?['password'] as String?,
+          ),
         );
       case liffLoginSuccess:
         return MaterialPageRoute(builder: (_) => const LiffLoginSuccessPage());
       case home:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        // After adding a role: open that role's tab.
+        return MaterialPageRoute(
+          builder: (_) => HomePage(openRole: args?['openRole'] as String?),
+        );
       case userRegister:
         final fromLiff = args?['fromLiff'] as bool? ?? false;
         return MaterialPageRoute(builder: (_) => UserRegisterPage(fromLiff: fromLiff));

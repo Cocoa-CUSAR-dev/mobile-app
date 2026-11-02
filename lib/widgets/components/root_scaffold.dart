@@ -18,6 +18,9 @@ class RootScaffold extends StatefulWidget {
 
   final AuthService? authService;
 
+  /// A role whose tab to open once the profile has loaded (just added).
+  final String? openRole;
+
   const RootScaffold({
     super.key,
     required this.title,
@@ -26,6 +29,7 @@ class RootScaffold extends StatefulWidget {
     required this.onItemSelected,
     this.backgroundColor,
     this.authService,
+    this.openRole,
   });
 
   @override
@@ -37,6 +41,7 @@ class _RootScaffoldState extends State<RootScaffold> {
   Profile? _userProfile;
   late final AuthService _authService = widget.authService ?? AuthService();
   bool _isLoading = true;
+  late String? _roleToOpen = widget.openRole;
 
   @override
   void initState() {
@@ -60,6 +65,14 @@ class _RootScaffoldState extends State<RootScaffold> {
     return count;
   }
 
+  // The tab of [role] among those build() below makes (0 is home).
+  int _tabOfRole(String role, List<String> roles) =>
+      const ['farmer', 'processor', 'hub_collector']
+          .where(roles.contains)
+          .toList()
+          .indexOf(role) +
+      1;
+
   // int.clamp(int, int) returns num, not int (it's inherited from num) --
   // a plain helper avoids needing a .toInt() at every call site.
   int _clampIndex(int index, int itemCount) {
@@ -79,13 +92,24 @@ class _RootScaffoldState extends State<RootScaffold> {
         // ever handing it to PageController/BottomNavigationBar, both of
         // which assert currentIndex/initialPage < item count.
         final itemCount = _navItemCount(profile?.roles ?? []);
-        final effectiveIndex = _clampIndex(widget.currentIndex, itemCount);
+        final roleToOpen = _roleToOpen;
+        _roleToOpen = null;
+        final effectiveIndex = roleToOpen != null
+            ? _tabOfRole(roleToOpen, profile?.roles ?? [])
+            : _clampIndex(widget.currentIndex, itemCount);
         _pageController.dispose();
         setState(() {
           _userProfile = profile;
           _isLoading = false;
           _pageController = PageController(initialPage: effectiveIndex);
         });
+        // After the frame: telling HomeBloc makes didUpdateWidget jump the
+        // page, which needs the new controller attached.
+        if (roleToOpen != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onItemSelected(effectiveIndex);
+          });
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);

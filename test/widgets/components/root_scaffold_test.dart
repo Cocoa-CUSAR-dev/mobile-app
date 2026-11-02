@@ -168,4 +168,36 @@ void main() {
       expect(find.text('เขต'), findsNothing);
     });
   });
+
+  testWidgets('openRole opens that role\'s tab and tells the parent', (tester) async {
+    final client = MockClient((request) async => jsonResponse({
+      'first_name': 'สมชาย',
+      'last_name': 'โกโก้ดี',
+      'roles': ['farmer', 'hub_collector'],
+    }, 200));
+    final selected = <int>[];
+
+    await tester.pumpWidget(MaterialApp(
+      home: RootScaffold(
+        title: 'หน้าหลัก',
+        currentIndex: 0,
+        onItemSelected: selected.add,
+        authService: AuthService(client: client),
+        openRole: 'hub_collector',
+        children: const [
+          Text('home body'),
+          Text('farm body'),
+          Text('station body'),
+          Text('hub body'),
+        ],
+      ),
+    ));
+
+    await _pumpUntilSpinnerGone(tester);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('hub body'), findsOneWidget);
+    expect(selected, [2]);
+  });
 }

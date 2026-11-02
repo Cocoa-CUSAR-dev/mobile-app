@@ -211,20 +211,25 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     Navigator.of(context).pushNamedAndRemoveUntil(
       widget.fromLiff ? AppRoute.liffLoginSuccess : AppRoute.home,
       (route) => false,
+      arguments: _addingRole ? {'openRole': _rolesInOrder.first} : null,
     );
   }
 
   /// Save the edited profile; with "ใช้กับบทบาทอื่นด้วย", also the shared
-  /// fields of the person's other roles. Only fields that have an answer are
-  /// sent, so a field left blank keeps what it had.
+  /// fields of the person's other roles. A field emptied here is sent as
+  /// null to clear it, unless that role requires it.
   Future<void> _handleEdit() async {
     setState(() => _isLoading = true);
     final form = _answers();
     final role = widget.editRole!;
+    Map<String, dynamic> body(String target, Map<String, dynamic> answers) => {
+          ...roleProfilePayload(target, answers),
+          ...roleProfileClears(target, clearedFields(widget.prefill, answers, target)),
+        };
     final bodies = <String, Map<String, dynamic>>{
-      role: roleProfilePayload(role, form),
+      role: body(role, form),
       if (_applyToAllRoles)
-        for (final other in _otherOwnedRoles) other: roleProfilePayload(other, sharedAnswers(form)),
+        for (final other in _otherOwnedRoles) other: body(other, sharedAnswers(form)),
     };
     final failed = <String>[];
     String? reason;
