@@ -148,7 +148,7 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         FormInput(
-                          label: 'เบอร์มือถือ',
+                          label: 'เบอร์มือถือหรืออีเมล',
                           controller: _usernameController,
                         ),
                         FormInput(

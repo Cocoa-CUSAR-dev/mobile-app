@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/config/api_endpoints.dart';
+import 'package:cocoa_supply/services/email_validation.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
@@ -29,11 +30,12 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     useCookie: false,
   );
 
-  // backend-hub's register takes only these two; name, phone and address
-  // belong to each role's profile and are asked on the next page.
+  // What backend-hub's register takes (email is optional); name, phone and
+  // address belong to each role's profile and are asked on the next page.
   final Map<String, TextEditingController> _controllers = {
     'username': TextEditingController(),
     'password': TextEditingController(),
+    'email': TextEditingController(),
   };
 
   bool _isLoading = false;
@@ -62,6 +64,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       final payload = _controllers.map(
         (key, controller) => MapEntry(key, controller.text.trim()),
       );
+      if (payload['email']!.isEmpty) payload.remove('email');
 
       // The hub signs the new account in: its answer is a token pair, which
       // postData keeps. So no second login -- straight on to picking a role.
@@ -135,6 +138,13 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 isRequired: true,
                 validator: (v) =>
                     v!.length < 8 ? 'รหัสผ่านต้องมี 8 ตัวขึ้นไป' : null,
+              ),
+              FormInput(
+                label: 'อีเมล (ไม่บังคับ)',
+                hintText: 'ใช้เข้าสู่ระบบแทนเบอร์โทรได้',
+                controller: _controllers['email']!,
+                keyboardType: TextInputType.emailAddress,
+                validator: emailError,
               ),
               const SizedBox(height: 16),
               ElevatedButton(

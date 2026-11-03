@@ -48,6 +48,9 @@ abstract final class ApiEndpoints {
   /// Who I am: my account, my roles and a profile for each role.
   static const String me = '/api/v1/me';
 
+  /// My account: add, change or remove my email.
+  static const String meAccount = '/api/v1/me/account';
+
   /// Add a role (farmer, hub_collector or processor) to myself.
   static String meRole(String role) => '/api/v1/me/roles/$role';
 

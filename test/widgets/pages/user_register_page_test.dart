@@ -30,12 +30,27 @@ void main() {
     expect(find.text('ยืนยันการลงทะเบียน'), findsOneWidget);
   });
 
-  testWidgets('asks only for phone and password (profiles come on the next page)', (tester) async {
+  testWidgets('asks for phone, password and an optional email (profiles come on the next page)', (tester) async {
     await tester.pumpWidget(wrapPage(const UserRegisterPage()));
     await tester.pumpAndSettle();
 
-    expect(find.byType(TextFormField), findsNWidgets(2));
-    expect(find.text('อีเมล'), findsNothing);
+    expect(find.byType(TextFormField), findsNWidgets(3));
+    expect(find.textContaining('อีเมล (ไม่บังคับ)', findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('a badly formed email is refused; a blank one is not', (tester) async {
+    await tester.pumpWidget(wrapPage(const UserRegisterPage()));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(2), 'not-an-email');
+    await tester.tap(find.text('ยืนยันการลงทะเบียน'));
+    await tester.pump();
+    expect(find.text('รูปแบบอีเมลไม่ถูกต้อง'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(2), '');
+    await tester.tap(find.text('ยืนยันการลงทะเบียน'));
+    await tester.pump();
+    expect(find.text('รูปแบบอีเมลไม่ถูกต้อง'), findsNothing);
   });
 
   testWidgets('M-PROF-01 — submitting an empty form triggers validation', (tester) async {

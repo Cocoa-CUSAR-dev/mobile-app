@@ -158,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormInput(
-              label: 'เบอร์มือถือ',
+              label: 'เบอร์มือถือหรืออีเมล',
               controller: _usernameController,
             ),
             FormInput(
