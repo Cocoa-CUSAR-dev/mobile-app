@@ -85,4 +85,13 @@ void main() {
       );
     });
   });
+
+  group('roleProfileClears', () {
+    test('nulls only the fields the role has', () {
+      expect(
+        roleProfileClears('hub_collector', {'line', 'address_detail'}),
+        {'line': null},
+      );
+    });
+  });
 }

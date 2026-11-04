@@ -73,4 +73,24 @@ void main() {
       expect(registrationPrefill({}), isEmpty);
     });
   });
+
+  group('clearedFields', () {
+    const prefill = {'line': 'somchai', 'zip_code': '10110', 'first_name': 'สมชาย'};
+
+    test('an optional field emptied since the form opened', () {
+      final form = {'line': ' ', 'zip_code': '10110', 'first_name': 'สมชาย'};
+      expect(clearedFields(prefill, form, 'processor'), {'line'});
+    });
+
+    test('not a field the role requires', () {
+      final form = {'line': 'somchai', 'zip_code': '', 'first_name': ''};
+      expect(clearedFields(prefill, form, 'farmer'), isEmpty);
+      expect(clearedFields(prefill, form, 'processor'), {'zip_code'});
+    });
+
+    test('not a field that was blank already, or that the form lacks', () {
+      expect(clearedFields(const {'line': ''}, {'line': ''}, 'farmer'), isEmpty);
+      expect(clearedFields(const {'line': 'somchai'}, {}, 'farmer'), isEmpty);
+    });
+  });
 }

@@ -36,6 +36,16 @@ const Map<String, Set<String>> _fieldsByRole = {
   'hub_collector': {..._contact, 'birthdate'},
 };
 
+/// For PATCH /me/profiles/{role}: [fields] as nulls, which clears them. Only
+/// the ones [role]'s profile has.
+Map<String, dynamic> roleProfileClears(String role, Set<String> fields) {
+  final allowed = _fieldsByRole[role] ?? const <String>{};
+  return {
+    for (final field in fields)
+      if (allowed.contains(field)) field: null,
+  };
+}
+
 /// The body for adding [role] from the registration [form]'s answers.
 Map<String, dynamic> roleProfilePayload(
   String role,

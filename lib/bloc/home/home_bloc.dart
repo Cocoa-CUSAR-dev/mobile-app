@@ -46,6 +46,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         currentTabIndex: event.newIndex,
         selectedDate: s.selectedDate,
       ));
+    } else if (state is HomeLoading) {
+      // The tasks are still on their way; they keep the tab asked for here.
+      final s = state as HomeLoading;
+      emit(HomeLoading(
+        currentTabIndex: event.newIndex,
+        selectedDate: s.selectedDate,
+      ));
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
 import 'package:cocoa_supply/config/liff_config.dart';
 import 'package:cocoa_supply/services/liff_service.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:http/http.dart' as http;
 
 /// LiffLoginBloc: flow "existing farmer เชื่อมบัญชีผ่าน LINE LIFF"
 /// 1. liff.init() + liff.getIDToken() ฝั่ง frontend (ผ่าน liff_service.dart)
@@ -12,14 +13,16 @@ import 'package:cocoa_supply/services/service_provider.dart';
 ///    verify กับ LINE จริงๆ แล้วคืน line_user_id ที่ verify แล้วกลับมา
 ///    (ดู LinkLineAccount ใน mobile-backend/internal/handlers/auth_handler.go)
 class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
-  final _linkService = ServiceProvider(
+  final http.Client? _client;
+  late final _linkService = ServiceProvider(
     storageKey: 'liff_link',
     endpoint: ApiEndpoints.authLineLink,
     isRealApi: true,
     useCookie: false,
+    client: _client,
   );
 
-  LiffLoginBloc() : super(LiffLoginInitial()) {
+  LiffLoginBloc({http.Client? client}) : _client = client, super(LiffLoginInitial()) {
     on<LiffInitRequested>(_onLiffInitRequested);
     on<LiffHasAccountPressed>(_onLiffHasAccountPressed);
     on<LiffLoginSubmitted>(_onLiffLoginSubmitted);
@@ -75,13 +78,18 @@ class LiffLoginBloc extends Bloc<LiffLoginEvent, LiffLoginState> {
     LiffLoginSubmitted event,
     Emitter<LiffLoginState> emit,
   ) async {
+    // A refused submit keeps its idToken, so the form can be sent again.
     final currentState = state;
-    if (currentState is! LiffReady) {
+    final String? idToken = currentState is LiffReady
+        ? currentState.idToken
+        : currentState is LiffLoginFailure
+            ? currentState.idToken
+            : null;
+    if (idToken == null) {
       emit(const LiffLoginFailure(error: 'ยังไม่มี idToken จาก LINE ให้ส่งไป verify'));
       return;
     }
 
-    final idToken = currentState.idToken;
     emit(LiffLoginLoading(idToken: idToken));
 
     try {

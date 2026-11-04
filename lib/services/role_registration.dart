@@ -69,6 +69,23 @@ Map<String, String> registrationPrefill(Map<String, dynamic> profiles) {
   return {};
 }
 
+/// The fields the person emptied while editing: filled when the form opened
+/// ([prefill]), blank in [form] now. A field [role] requires is left out, as
+/// are fields not in [form].
+Set<String> clearedFields(
+  Map<String, String> prefill,
+  Map<String, dynamic> form,
+  String role,
+) =>
+    {
+      for (final entry in prefill.entries)
+        if (entry.value.trim().isNotEmpty &&
+            form.containsKey(entry.key) &&
+            '${form[entry.key] ?? ''}'.trim().isEmpty &&
+            !isRegistrationFieldRequired(entry.key, {role}))
+          entry.key,
+    };
+
 /// Fields about the person rather than one role's work (name, phone,
 /// address). Editing them in one role's profile can be applied to the
 /// person's other roles too; each role still takes only the ones it has.
