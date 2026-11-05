@@ -17,11 +17,24 @@ class AuthService {
         endpoint: ApiEndpoints.constants('location'),
         isRealApi: true,
         client: client,
+      ),
+      _account = ServiceProvider<Map<String, dynamic>>(
+        storageKey: 'me_account',
+        endpoint: ApiEndpoints.meAccount,
+        isRealApi: true,
+        client: client,
       );
 
   // ใช้ ServiceProvider พื้นฐานเหมือนเดิม
   final ServiceProvider<Profile> _provider;
   final ServiceProvider<Map<String, dynamic>> _places;
+  final ServiceProvider<Map<String, dynamic>> _account;
+
+  /// Save my email; blank removes it. The username stays as it is.
+  Future<void> updateEmail(String email) async {
+    final trimmed = email.trim();
+    await _account.patchData({'email': trimmed.isEmpty ? null : trimmed});
+  }
 
   /// ฟังก์ชันสำหรับดึงข้อมูลโปรไฟล์ทั้งหมด (ใช้ในหน้า Profile)
   Future<Profile?> getProfile() async {

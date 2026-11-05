@@ -1,8 +1,10 @@
 // Unit tests for lib/services/profile_service.dart (AuthService).
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cocoa_supply/services/profile_service.dart';
+import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -130,5 +132,57 @@ void main() {
         throwsA(anything),
       );
     });
+  });
+
+  group('updateEmail', () {
+    Future<Object?> sentFor(String email) async {
+      Object? sent;
+      final client = MockClient((request) async {
+        expect(request.method, 'PATCH');
+        expect(request.url.toString(), '$testBaseUrl/api/v1/me/account');
+        sent = jsonDecode(request.body);
+        return jsonResponse({'user_id': 'u1', 'email': null}, 200);
+      });
+      await AuthService(client: client).updateEmail(email);
+      return sent;
+    }
+
+    test('sends the trimmed email', () async {
+      expect(await sentFor(' a@test.com '), {'email': 'a@test.com'});
+    });
+
+    test('blank removes it', () async {
+      expect(await sentFor('  '), {'email': null});
+    });
+
+    test('a taken email comes back as the hub said it', () async {
+      final client = MockClient(
+        (request) async => jsonResponse({'detail': 'อีเมลนี้ถูกใช้งานแล้ว'}, 409),
+      );
+      await expectLater(
+        AuthService(client: client).updateEmail('a@test.com'),
+        throwsA(isA<ServerRejection>().having((e) => e.message, 'message', 'อีเมลนี้ถูกใช้งานแล้ว')),
+      );
+    });
+  });
+
+  test('getProfile keeps the email once the place names are filled in', () async {
+    final client = MockClient((request) async {
+      if (request.url.path == '/api/v1/me') {
+        return jsonResponse({
+          'user_id': 'u1',
+          'email': 'a@test.com',
+          'roles': ['farmer'],
+          'profiles': {
+            'farmer': {'first_name': 'สมชาย', 'subdistrict_id': 's1'},
+          },
+        }, 200);
+      }
+      return jsonResponse([], 200);
+    });
+
+    final profile = await AuthService(client: client).getProfile();
+
+    expect(profile?.email, 'a@test.com');
   });
 }

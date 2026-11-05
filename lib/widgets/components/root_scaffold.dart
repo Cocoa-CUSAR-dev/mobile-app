@@ -6,6 +6,7 @@ import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/theme/app_text_theme.dart';
+import 'package:cocoa_supply/widgets/components/edit_email_dialog.dart';
 import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 
@@ -165,6 +166,18 @@ class _RootScaffoldState extends State<RootScaffold> {
     if (saved == true && mounted) _fetchProfile();
   }
 
+  Future<void> _openEditEmail() async {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => EditEmailDialog(
+        email: _userProfile?.email,
+        onSave: _authService.updateEmail,
+      ),
+    );
+    if (saved == true && mounted) _fetchProfile();
+  }
+
   // ฟังก์ชันสำหรับแสดง Pop-up โปรไฟล์
   void _showProfileBottomSheet() {
     showModalBottomSheet(
@@ -308,6 +321,7 @@ class _RootScaffoldState extends State<RootScaffold> {
               rows: [
                 _infoRow(Icons.phone_outlined, "เบอร์โทร", _userProfile!.phoneNumber),
                 _infoRow(Icons.chat_bubble_outline, "Line", _userProfile!.line),
+                _emailRow(),
               ],
             ),
             const SizedBox(height: 12),
@@ -424,6 +438,32 @@ class _RootScaffoldState extends State<RootScaffold> {
           ),
         ],
       ),
+    );
+  }
+
+  /// The account's email, with a button to add or change it.
+  Widget _emailRow() {
+    return Row(
+      children: [
+        const Icon(Icons.email_outlined, size: 18, color: AppColors.primary),
+        const SizedBox(width: 10),
+        Text("อีเมล", style: AppTextTheme.scale.bodyMedium?.copyWith(color: Colors.grey.shade600)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            _userProfile!.email ?? "-",
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextTheme.scale.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+        IconButton(
+          onPressed: _openEditEmail,
+          tooltip: "แก้ไขอีเมล",
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+        ),
+      ],
     );
   }
 
