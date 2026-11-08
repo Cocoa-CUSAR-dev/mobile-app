@@ -7,7 +7,7 @@ name: Deploy web build to GitHub Pages (test)
 
 on:
   push:
-    branches: [fix-change_cookie_to_token_bearer]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
