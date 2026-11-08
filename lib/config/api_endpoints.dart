@@ -134,5 +134,8 @@ String resolveApiBaseUrl(
   String defaultBaseUrl,
 ) {
   final override = overrides[group];
-  return (override == null || override.isEmpty) ? defaultBaseUrl : override;
+  final base = (override == null || override.isEmpty) ? defaultBaseUrl : override;
+  // Every request is '$base$endpoint' and endpoints start with '/', so a value
+  // ending in '/' would make a double slash that 404s on the backend.
+  return base.endsWith('/') ? base.substring(0, base.length - 1) : base;
 }
