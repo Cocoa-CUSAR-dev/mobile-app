@@ -75,9 +75,9 @@ void main() {
   }, skip: 'KNOWN BUG: submitData() is missing isRealApi: true — see file header comment.');
 
   group('fetchConstants (the one method that already sets isRealApi: true)', () {
-    test('routes to /constants/<key>', () async {
+    test('routes to /api/v1/ref/constants/<key>', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), '$testBaseUrl/constants/province_id');
+        expect(request.url.toString(), '$testBaseUrl/api/v1/ref/constants/province_id');
         return jsonResponse([
           {'province_id': '50', 'province_name_th': 'เชียงใหม่'},
         ], 200);
@@ -179,7 +179,7 @@ void main() {
   // null (= no offer, blank form), because opening a form must never wait
   // on, or break because of, this call.
   group('fetchAutofill', () {
-    test('GETs /tasks/<taskId>/autofill with the farmer token and returns the offer', () async {
+    test('GETs /api/v1/tasks/<taskId>/autofill with the farmer token and returns the offer', () async {
       FlutterSecureStorage.setMockInitialValues({'auth_token': 'a.b.c'});
       late http.Request seen;
       final service = DynamicApiService(
@@ -195,7 +195,7 @@ void main() {
       final offer = await service.fetchAutofill('t1');
 
       expect(seen.method, 'GET');
-      expect(seen.url.toString(), '$testBaseUrl/tasks/t1/autofill');
+      expect(seen.url.toString(), '$testBaseUrl/api/v1/tasks/t1/autofill');
       expect(seen.headers['Authorization'], 'Bearer a.b.c');
       expect(offer?['answer'], {'description': 'ฉีดพ่นรอบโคน'});
     });

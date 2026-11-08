@@ -1,4 +1,5 @@
 // lib/bloc/task/task_bloc.dart
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/task/task_event.dart';
 import 'package:cocoa_supply/bloc/task/task_state.dart';
@@ -12,7 +13,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   // คิวในเครื่อง (ผ่าน ServiceProvider -- secure storage หลัง APP-2)
   final ServiceProvider<Map<String, dynamic>> _queueService = ServiceProvider(
     storageKey: 'pending_task_queue',
-    endpoint: '/tasks',
+    endpoint: ApiEndpoints.tasks,
     isRealApi: false,
   );
 

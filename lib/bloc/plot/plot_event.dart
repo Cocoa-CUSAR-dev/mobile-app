@@ -29,12 +29,3 @@ class UpdatePlot extends PlotEvent {
   @override
   List<Object?> get props => [plot];
 }
-
-/// Event to delete an existing plot
-class DeletePlot extends PlotEvent {
-  final String farmNo;
-  const DeletePlot(this.farmNo);
-
-  @override
-  List<Object?> get props => [farmNo];
-}

@@ -39,6 +39,8 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, dynamic> _currentFormData = {};
+  // คำถามทั้งหมดของฟอร์ม (ทุกหน้า) -- ใช้หาคำตอบลูกที่ต้องล้างเมื่อคำตอบแม่เปลี่ยน
+  List<Map<String, dynamic>> _questions = const [];
 
   int _currentStep = 0;
   final int _fieldsPerPage = 1;
@@ -206,14 +208,24 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
 
       case 'OPTION':
         // choices มากับ question อยู่แล้ว ({id, name} ต่อรายการ) — ไม่ต้อง fetch แยก
-        final choices = ((question['choices'] as List<dynamic>?) ?? [])
-            .cast<Map<String, dynamic>>();
-        return FormHelper.buildDropdown(
-          label: label,
-          isReq: isReq,
-          options: choices,
-          currentValue: _currentFormData[key],
-          onChanged: (val) => setState(() => _currentFormData[key] = val),
+        // US2-13: คำถามที่ขึ้นกับคำถามอื่น (แปลง -> ฟาร์ม) เหลือเฉพาะตัวเลือก
+        // ของคำตอบแม่ และเปลี่ยนคำตอบแม่เมื่อไหร่ คำตอบลูกที่ไม่เข้าแล้วถูกล้าง
+        final parentField = question['dependsOn'] as String?;
+        return KeyedSubtree(
+          // สร้างช่องใหม่เมื่อคำตอบแม่เปลี่ยน ค่าที่ช่องจำไว้จะได้ไม่ค้าง
+          key: ValueKey('$key/${parentField == null ? '' : _currentFormData[parentField]}'),
+          child: FormHelper.buildDropdown(
+            label: label,
+            isReq: isReq,
+            options: visibleChoices(question, _currentFormData),
+            currentValue: _currentFormData[key],
+            onChanged: (val) => setState(() {
+              _currentFormData[key] = val;
+              for (final stale in staleDependentAnswers(_questions, key, _currentFormData)) {
+                _currentFormData.remove(stale);
+              }
+            }),
+          ),
         );
 
       default:
@@ -279,6 +291,7 @@ class _DynamicRegisterPageState extends State<DynamicRegisterPage> {
 
             if (state is DynamicReady) {
               final displayQuestions = flattenActiveQuestions(state.form);
+              _questions = displayQuestions;
 
               int totalSteps = (displayQuestions.length / _fieldsPerPage).ceil();
               int startIndex = _currentStep * _fieldsPerPage;

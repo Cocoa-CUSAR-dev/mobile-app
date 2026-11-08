@@ -1,9 +1,12 @@
+import 'package:cocoa_supply/config/roles.dart';
 import 'package:cocoa_supply/models/profile_model.dart';
+import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/theme/app_text_theme.dart';
+import 'package:cocoa_supply/widgets/components/edit_email_dialog.dart';
 import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 
@@ -16,6 +19,9 @@ class RootScaffold extends StatefulWidget {
 
   final AuthService? authService;
 
+  /// A role whose tab to open once the profile has loaded (just added).
+  final String? openRole;
+
   const RootScaffold({
     super.key,
     required this.title,
@@ -24,6 +30,7 @@ class RootScaffold extends StatefulWidget {
     required this.onItemSelected,
     this.backgroundColor,
     this.authService,
+    this.openRole,
   });
 
   @override
@@ -35,6 +42,7 @@ class _RootScaffoldState extends State<RootScaffold> {
   Profile? _userProfile;
   late final AuthService _authService = widget.authService ?? AuthService();
   bool _isLoading = true;
+  late String? _roleToOpen = widget.openRole;
 
   @override
   void initState() {
@@ -58,6 +66,14 @@ class _RootScaffoldState extends State<RootScaffold> {
     return count;
   }
 
+  // The tab of [role] among those build() below makes (0 is home).
+  int _tabOfRole(String role, List<String> roles) =>
+      const ['farmer', 'processor', 'hub_collector']
+          .where(roles.contains)
+          .toList()
+          .indexOf(role) +
+      1;
+
   // int.clamp(int, int) returns num, not int (it's inherited from num) --
   // a plain helper avoids needing a .toInt() at every call site.
   int _clampIndex(int index, int itemCount) {
@@ -77,13 +93,24 @@ class _RootScaffoldState extends State<RootScaffold> {
         // ever handing it to PageController/BottomNavigationBar, both of
         // which assert currentIndex/initialPage < item count.
         final itemCount = _navItemCount(profile?.roles ?? []);
-        final effectiveIndex = _clampIndex(widget.currentIndex, itemCount);
+        final roleToOpen = _roleToOpen;
+        _roleToOpen = null;
+        final effectiveIndex = roleToOpen != null
+            ? _tabOfRole(roleToOpen, profile?.roles ?? [])
+            : _clampIndex(widget.currentIndex, itemCount);
         _pageController.dispose();
         setState(() {
           _userProfile = profile;
           _isLoading = false;
           _pageController = PageController(initialPage: effectiveIndex);
         });
+        // After the frame: telling HomeBloc makes didUpdateWidget jump the
+        // page, which needs the new controller attached.
+        if (roleToOpen != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onItemSelected(effectiveIndex);
+          });
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -100,6 +127,55 @@ class _RootScaffoldState extends State<RootScaffold> {
         (route) => false,
       );
     }
+  }
+
+  /// Roles the person can still add themselves.
+  List<String> get _missingRoles {
+    final roles = _userProfile?.roles ?? const [];
+    return selfServiceRoles.where((r) => !roles.contains(r)).toList();
+  }
+
+  void _openAddRole() {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    Navigator.of(context).pushNamed(
+      AppRoute.roleRegister,
+      arguments: {
+        'ownedRoles': _userProfile?.roles ?? const <String>[],
+        'prefill': registrationPrefill(_userProfile?.profiles ?? const {}),
+      },
+    );
+  }
+
+  /// Roles the person holds that they can edit here, in the usual order.
+  List<String> get _editableRoles {
+    final roles = _userProfile?.roles ?? const [];
+    return selfServiceRoles.where(roles.contains).toList();
+  }
+
+  Future<void> _openEditRole(String role) async {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    final saved = await Navigator.of(context).pushNamed(
+      AppRoute.roleRegister,
+      arguments: {
+        'editRole': role,
+        'ownedRoles': _userProfile?.roles ?? const <String>[],
+        'prefill': registrationPrefill({role: _userProfile?.profiles[role]}),
+      },
+    );
+    // Show the new name and address right away.
+    if (saved == true && mounted) _fetchProfile();
+  }
+
+  Future<void> _openEditEmail() async {
+    Navigator.pop(context); // ปิด Bottom Sheet ก่อน
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => EditEmailDialog(
+        email: _userProfile?.email,
+        onSave: _authService.updateEmail,
+      ),
+    );
+    if (saved == true && mounted) _fetchProfile();
   }
 
   // ฟังก์ชันสำหรับแสดง Pop-up โปรไฟล์
@@ -245,6 +321,7 @@ class _RootScaffoldState extends State<RootScaffold> {
               rows: [
                 _infoRow(Icons.phone_outlined, "เบอร์โทร", _userProfile!.phoneNumber),
                 _infoRow(Icons.chat_bubble_outline, "Line", _userProfile!.line),
+                _emailRow(),
               ],
             ),
             const SizedBox(height: 12),
@@ -264,7 +341,32 @@ class _RootScaffoldState extends State<RootScaffold> {
               ],
             ),
 
+            if (_editableRoles.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildInfoCard(
+                icon: Icons.badge_outlined,
+                title: "บทบาทของฉัน",
+                rows: _editableRoles.map(_roleRow).toList(),
+              ),
+            ],
+
             const SizedBox(height: 24),
+            if (_missingRoles.isNotEmpty) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _openAddRole,
+                  icon: const Icon(Icons.add, color: AppColors.primary, size: 20),
+                  label: Text("เพิ่มบทบาท", style: AppTextTheme.scale.titleSmall?.copyWith(color: AppColors.primary)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -288,7 +390,8 @@ class _RootScaffoldState extends State<RootScaffold> {
       (_userProfile?.provinceName ?? '').contains('กรุงเทพ');
 
   Widget _buildProfileHeader() {
-    final roleLabel = _userProfile!.roles?.join(', ') ?? 'ทั่วไป';
+    final roles = _userProfile!.roles ?? const [];
+    final roleText = roles.isEmpty ? 'ทั่วไป' : roles.map(roleLabel).join(', ');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -329,12 +432,52 @@ class _RootScaffoldState extends State<RootScaffold> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              "บทบาท: $roleLabel",
+              "บทบาท: $roleText",
               style: AppTextTheme.scale.labelMedium?.copyWith(color: Colors.white),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// The account's email, with a button to add or change it.
+  Widget _emailRow() {
+    return Row(
+      children: [
+        const Icon(Icons.email_outlined, size: 18, color: AppColors.primary),
+        const SizedBox(width: 10),
+        Text("อีเมล", style: AppTextTheme.scale.bodyMedium?.copyWith(color: Colors.grey.shade600)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            _userProfile!.email ?? "-",
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextTheme.scale.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+        IconButton(
+          onPressed: _openEditEmail,
+          tooltip: "แก้ไขอีเมล",
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+        ),
+      ],
+    );
+  }
+
+  /// One role in "บทบาทของฉัน", with a button to edit its profile.
+  Widget _roleRow(String role) {
+    return Row(
+      children: [
+        Expanded(child: Text(roleLabel(role), style: AppTextTheme.scale.bodyLarge)),
+        TextButton.icon(
+          onPressed: () => _openEditRole(role),
+          icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+          label: Text("แก้ไข", style: AppTextTheme.scale.labelLarge?.copyWith(color: AppColors.primary)),
+        ),
+      ],
     );
   }
 

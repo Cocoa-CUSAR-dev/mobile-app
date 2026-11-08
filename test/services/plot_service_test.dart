@@ -26,7 +26,7 @@ void main() {
   group('getPlots', () {
     test('returns parsed plots on a 200 response', () async {
       final client = MockClient((request) async {
-        expect(request.url.toString(), '$testBaseUrl/plots');
+        expect(request.url.toString(), '$testBaseUrl/api/v1/agriculture/plots');
         return jsonResponse([
           {'plot_id': 1, 'plot_name': 'แปลง 1'},
         ], 200);

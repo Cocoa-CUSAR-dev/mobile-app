@@ -19,7 +19,10 @@ import 'package:cocoa_supply/widgets/pages/processing_station_page.dart';
 
 // --- HomePage ---
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  /// A role to open the tab of, right after adding it.
+  final String? openRole;
+
+  const HomePage({super.key, this.openRole});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -59,6 +62,7 @@ class _HomePageState extends State<HomePage> {
         return RootScaffold(
           title: titles[currentIndex],
           currentIndex: currentIndex,
+          openRole: widget.openRole,
           onItemSelected: (index) {
             context.read<HomeBloc>().add(HomeTabChanged(newIndex: index));
           },

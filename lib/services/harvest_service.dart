@@ -1,12 +1,13 @@
 // lib/services/harvest_service.dart
 
 import 'package:cocoa_supply/models/harvest_model.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:http/http.dart' as http;
 
 class HarvestService {
   static const String _storageKey = 'harvest_data';
-  static const String _endpoint = '/harvests';
+  static const String _endpoint = ApiEndpoints.harvests;
 
   HarvestService({http.Client? client})
     : _provider = ServiceProvider<Harvest>(
@@ -28,10 +29,5 @@ class HarvestService {
   /// บันทึกการเก็บเกี่ยวใหม่
   Future<void> saveHarvest(Harvest harvest) async {
     await _provider.postData(harvest.toJson());
-  }
-
-  /// ลบข้อมูลการเก็บเกี่ยว
-  Future<void> deleteHarvest(String id) async {
-    await _provider.deleteData(id);
   }
 }

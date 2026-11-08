@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
@@ -77,7 +78,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
     setState(() => _isLoading = true);
     try {
       final registerService = ServiceProvider<dynamic>(
-        endpoint: '/plots',
+        endpoint: ApiEndpoints.plots,
         isRealApi: true,
         storageKey: '/plots',
       );

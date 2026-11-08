@@ -1,12 +1,13 @@
 // lib/services/hub_service.dart
 
 import 'package:cocoa_supply/models/hub_model.dart';
+import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:http/http.dart' as http;
 
 class HubService {
   static const String _storageKey = 'hub_data';
-  static const String _endpoint = '/hubs'; // ปรับ Endpoint เป็น /hub
+  static const String _endpoint = ApiEndpoints.hubs;
 
   HubService({http.Client? client})
     : _provider = ServiceProvider<Hub>(
@@ -53,9 +54,4 @@ class HubService {
   //   // ระบุ Key ที่ใช้ในการอ้างอิงเพื่อ Update (เช่น hubId)
   //   await _provider.putData('hubId', data.toJson());
   // }
-
-  /// ลบข้อมูลออกจาก Hub
-  Future<void> delete(String id) async {
-    await _provider.deleteData(id.toString());
-  }
 }
