@@ -3,6 +3,8 @@ import 'package:cocoa_supply/models/profile_model.dart';
 import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/theme/app_text_theme.dart';
@@ -43,9 +45,13 @@ class _RootScaffoldState extends State<RootScaffold> {
   bool _isLoading = true;
   late String? _roleToOpen = widget.openRole;
 
+  // Guided tour (docs-and-plan#311): the home page's steps.
+  final GlobalKey _profileTourKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
+    TourController.instance.addListener(_showTourIfWanted);
     // Real page count depends on the profile's roles, which aren't known
     // yet here -- page 0 is always safe. _fetchProfile() below replaces
     // this with a correctly-bounded controller once roles are known,
@@ -110,10 +116,25 @@ class _RootScaffoldState extends State<RootScaffold> {
             if (mounted) widget.onItemSelected(effectiveIndex);
           });
         }
+        _showTourIfWanted();
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // Runs when the tour starts or moves on, and once the page has loaded:
+  // the home steps need the app bar on screen.
+  void _showTourIfWanted() {
+    if (!mounted || _isLoading || !TourController.instance.wants(TourStage.home)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TourController.instance.show(TourStage.home, [_profileTourKey]);
+    });
+  }
+
+  void _replayTour() {
+    Navigator.pop(context); // the profile sheet
+    TourController.instance.replay();
   }
 
   Future<void> _handleLogout() async {
@@ -210,6 +231,7 @@ class _RootScaffoldState extends State<RootScaffold> {
 
   @override
   void dispose() {
+    TourController.instance.removeListener(_showTourIfWanted);
     _pageController.dispose();
     super.dispose();
   }
@@ -257,9 +279,18 @@ class _RootScaffoldState extends State<RootScaffold> {
         toolbarHeight: 64,
         backgroundColor: AppColors.primary,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle, color: Colors.white, size: 42.0),
-            onPressed: _showProfileBottomSheet, // เปลี่ยนเป็นเปิด Pop-up
+          TourStep(
+            stepKey: _profileTourKey,
+            title: 'โปรไฟล์ของคุณ',
+            description: 'กดตรงนี้เพื่อดูข้อมูลของคุณ เพิ่มบทบาท '
+                'หรือกด "วิธีใช้แอป" เพื่อดูคำแนะนำนี้อีกครั้ง',
+            isFirst: true,
+            isLast: true,
+            shape: const CircleBorder(),
+            child: IconButton(
+              icon: const Icon(Icons.account_circle, color: Colors.white, size: 42.0),
+              onPressed: _showProfileBottomSheet, // เปลี่ยนเป็นเปิด Pop-up
+            ),
           ),
         ],
       ),
@@ -353,6 +384,20 @@ class _RootScaffoldState extends State<RootScaffold> {
               ),
               const SizedBox(height: 12),
             ],
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: _replayTour,
+                icon: const Icon(Icons.help_outline, color: AppColors.primary, size: 20),
+                label: Text("วิธีใช้แอป", style: AppTextTheme.scale.titleSmall?.copyWith(color: AppColors.primary)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               height: 52,
