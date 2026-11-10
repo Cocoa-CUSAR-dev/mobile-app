@@ -2,7 +2,9 @@ import 'package:cocoa_supply/bloc/home/home_bloc.dart';
 import 'package:cocoa_supply/bloc/home/home_event.dart';
 import 'package:cocoa_supply/bloc/home/home_state.dart';
 import 'package:cocoa_supply/models/task_item_model.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
 import 'package:cocoa_supply/services/util_service.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/components/empty_state_view.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
@@ -91,6 +93,30 @@ class _HomeTabContentState extends State<HomeTabContent> {
 
   DateTime _normalizeDate(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  // Guided tour (docs-and-plan#313): the home steps need the day's tasks on
+  // screen, so they start once HomeLoaded has been built -- or when the
+  // tour is started from the profile sheet while they already are.
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    TourController.instance.addListener(_showTourIfWanted);
+  }
+
+  @override
+  void dispose() {
+    TourController.instance.removeListener(_showTourIfWanted);
+    super.dispose();
+  }
+
+  void _showTourIfWanted() {
+    if (!mounted || !_loaded || !TourController.instance.wants(TourStage.home)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TourController.instance.show(TourStage.home, TourKeys.home);
+    });
+  }
+
   void _ensureAnchorCovers(DateTime date) {
     final diff = date.difference(_stripAnchor).inDays;
     if (diff < -DateStrip.daysBefore || diff > DateStrip.daysAfter) {
@@ -148,43 +174,66 @@ class _HomeTabContentState extends State<HomeTabContent> {
     return BlocBuilder<HomeBloc, HomeState>(
       builder: (context, state) {
         if (state is HomeLoading) {
+          _loaded = false;
           return const Center(child: ThreeDotsLoading());
         }
         if (state is HomeLoaded) {
           _ensureAnchorCovers(state.selectedDate);
+          if (!_loaded) {
+            _loaded = true;
+            _showTourIfWanted();
+          }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ส่วนหัวเรื่องและตัวเลือกวันที่
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'วันที่ ${UtilService.formatThaiDate(state.selectedDate)}',
-                        style: AppTextTheme.scale.titleLarge,
+                TourStep(
+                  stepKey: TourKeys.homeDate,
+                  title: 'เลือกวัน',
+                  description: 'แตะวันที่เพื่อดูงานของวันนั้น '
+                      'หรือกดรูปปฏิทินเพื่อไปเดือนอื่น',
+                  isFirst: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ส่วนหัวเรื่องและตัวเลือกวันที่
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'วันที่ ${UtilService.formatThaiDate(state.selectedDate)}',
+                              style: AppTextTheme.scale.titleLarge,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
+                            tooltip: 'เปิดปฏิทิน',
+                            onPressed: () => _openCalendarPicker(context, state.selectedDate),
+                          ),
+                        ],
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
-                      tooltip: 'เปิดปฏิทิน',
-                      onPressed: () => _openCalendarPicker(context, state.selectedDate),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                DateStrip(
-                  anchorDate: _stripAnchor,
-                  selectedDate: state.selectedDate,
-                  onDateSelected: (date) => context.read<HomeBloc>().add(
-                    HomeDataRequested(selectedDate: date),
+                      const SizedBox(height: 8),
+                      DateStrip(
+                        anchorDate: _stripAnchor,
+                        selectedDate: state.selectedDate,
+                        onDateSelected: (date) => context.read<HomeBloc>().add(
+                          HomeDataRequested(selectedDate: date),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  "สิ่งที่ต้องทำ",
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
+                TourStep(
+                  stepKey: TourKeys.homeTasks,
+                  title: 'สิ่งที่ต้องทำ',
+                  description: 'งานที่ต้องบันทึกของวันที่เลือกจะขึ้นตรงนี้ '
+                      'กดที่งานเพื่อกรอกข้อมูล',
+                  child: Text(
+                    "สิ่งที่ต้องทำ",
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
+                  ),
                 ),
                 const SizedBox(height: 12),
 

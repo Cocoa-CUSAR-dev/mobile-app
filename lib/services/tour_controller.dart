@@ -3,7 +3,28 @@ import 'package:flutter/widgets.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 /// The pages the guided tour walks through, in order (docs-and-plan#310).
-enum TourStage { signUp, role, home, farm, plot }
+/// farmTab is the home page's ฟาร์ม tab, where the "เพิ่มข้อมูลฟาร์ม"
+/// button is; farm and plot are the two register pages.
+enum TourStage { signUp, role, home, farmTab, farm, plot }
+
+/// The widgets the tour points at. showcaseview 5 uses these only as ids
+/// (they aren't attached to the widgets), so pages and the scaffold around
+/// them can share them.
+abstract final class TourKeys {
+  static final GlobalKey roleCards = GlobalKey(debugLabel: 'tour:roleCards');
+  static final GlobalKey roleNext = GlobalKey(debugLabel: 'tour:roleNext');
+
+  static final GlobalKey homeDate = GlobalKey(debugLabel: 'tour:homeDate');
+  static final GlobalKey homeTasks = GlobalKey(debugLabel: 'tour:homeTasks');
+  static final GlobalKey profile = GlobalKey(debugLabel: 'tour:profile');
+  static final GlobalKey farmTab = GlobalKey(debugLabel: 'tour:farmTab');
+
+  static final GlobalKey registerFarm = GlobalKey(debugLabel: 'tour:registerFarm');
+
+  /// The home page's steps, in order. It ends on the ฟาร์ม tab, which
+  /// leads to the "เพิ่มข้อมูลฟาร์ม" button.
+  static List<GlobalKey> get home => [homeDate, homeTasks, profile, farmTab];
+}
 
 /// Carries the guided tour across pages (docs-and-plan#311).
 ///
@@ -71,12 +92,16 @@ class TourController extends ChangeNotifier {
 
   /// Shows [stage]'s steps, in the order of [keys], if the tour is running
   /// and hasn't reached a later page yet. Call it after the page's first
-  /// frame, once the highlighted widgets are laid out.
+  /// frame, once the highlighted widgets are laid out. Steps whose widget
+  /// isn't on screen are left out (e.g. the ฟาร์ม tab for someone who isn't
+  /// a farmer).
   void show(TourStage stage, List<GlobalKey> keys) {
-    if (!wants(stage) || keys.isEmpty) return;
+    if (!wants(stage)) return;
+    final onScreen = keys.where(_view.isTargetRendered).toList();
+    if (onScreen.isEmpty) return;
     _stage = stage;
     _shown.add(stage);
-    _view.startShowCase(keys);
+    _view.startShowCase(onScreen);
   }
 
   /// Skip: ends the whole tour, not just this page's steps.

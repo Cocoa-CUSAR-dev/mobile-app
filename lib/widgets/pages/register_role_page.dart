@@ -7,6 +7,8 @@ import 'package:cocoa_supply/config/roles.dart';
 import 'package:cocoa_supply/services/role_profile_payload.dart';
 import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
@@ -114,6 +116,13 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         _controllers[key]?.text = value;
       }
     });
+    // Guided tour (docs-and-plan#313): right after sign-up only, not when
+    // adding or editing a role from the profile sheet.
+    if (!_addingRole && !_editing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) TourController.instance.show(TourStage.role, [TourKeys.roleCards, TourKeys.roleNext]);
+      });
+    }
   }
 
   @override
@@ -294,7 +303,17 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
                 ),
                 const SizedBox(height: 40),
-                ...roleCards,
+                TourStep(
+                  stepKey: TourKeys.roleCards,
+                  title: 'เลือกบทบาทของคุณ',
+                  description: 'บทบาทคืองานที่คุณทำ ถ้าคุณปลูกโกโก้ ให้กดเลือก "เกษตรกร" '
+                      'ถ้าทำหลายอย่าง เลือกได้มากกว่า 1 บทบาท',
+                  isFirst: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: roleCards,
+                  ),
+                ),
                 if (!_addingRole) ...[
                   const SizedBox(height: 24),
                   Text(
@@ -309,20 +328,26 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         ),
         Padding(
           padding: const EdgeInsets.all(24.0),
-          child: ElevatedButton(
-            onPressed: _pickedRoles.isEmpty
-                ? null
-                : () => setState(() {
-                      _choosingRoles = false;
-                      _currentStep = 0;
-                    }),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: Colors.grey.shade300,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: TourStep(
+            stepKey: TourKeys.roleNext,
+            title: 'ไปต่อ',
+            description: 'เลือกบทบาทแล้ว กด "ถัดไป" เพื่อกรอกข้อมูลของคุณ',
+            isLast: true,
+            child: ElevatedButton(
+              onPressed: _pickedRoles.isEmpty
+                  ? null
+                  : () => setState(() {
+                        _choosingRoles = false;
+                        _currentStep = 0;
+                      }),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: Colors.grey.shade300,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text('ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
             ),
-            child: Text('ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
         ),
       ],
