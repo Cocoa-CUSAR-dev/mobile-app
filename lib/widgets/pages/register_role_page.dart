@@ -120,7 +120,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     // adding or editing a role from the profile sheet.
     if (!_addingRole && !_editing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) TourController.instance.show(TourStage.role, [TourKeys.roleCards, TourKeys.roleNext]);
+        if (mounted) TourController.instance.show(TourStage.role, [TourKeys.roleFarmer, TourKeys.roleNext]);
       });
     }
   }
@@ -278,11 +278,26 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     );
   }
 
+  void _startForm() => setState(() {
+        _choosingRoles = false;
+        _currentStep = 0;
+      });
+
   Widget _buildRoleSelection() {
     final roleCards = <Widget>[];
     for (final role in selfServiceRoles) {
       if (roleCards.isNotEmpty) roleCards.add(const SizedBox(height: 16));
-      roleCards.add(_roleCard(role));
+      roleCards.add(role == 'farmer'
+          ? TourStep(
+              stepKey: TourKeys.roleFarmer,
+              title: 'เลือกบทบาทของคุณ',
+              description: 'บทบาทคืองานที่คุณทำ ถ้าคุณปลูกโกโก้ ลองกดที่ "เกษตรกร" '
+                  '(ทำหลายอย่างก็เลือกได้มากกว่า 1 บทบาท)',
+              isFirst: true,
+              onTap: () => setState(() => _pickedRoles.add('farmer')),
+              child: _roleCard(role),
+            )
+          : _roleCard(role));
     }
     return Column(
       children: [
@@ -303,17 +318,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
                 ),
                 const SizedBox(height: 40),
-                TourStep(
-                  stepKey: TourKeys.roleCards,
-                  title: 'เลือกบทบาทของคุณ',
-                  description: 'บทบาทคืองานที่คุณทำ ถ้าคุณปลูกโกโก้ ให้กดเลือก "เกษตรกร" '
-                      'ถ้าทำหลายอย่าง เลือกได้มากกว่า 1 บทบาท',
-                  isFirst: true,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: roleCards,
-                  ),
-                ),
+                ...roleCards,
                 if (!_addingRole) ...[
                   const SizedBox(height: 24),
                   Text(
@@ -331,15 +336,11 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
           child: TourStep(
             stepKey: TourKeys.roleNext,
             title: 'ไปต่อ',
-            description: 'เลือกบทบาทแล้ว กด "ถัดไป" เพื่อกรอกข้อมูลของคุณ',
+            description: 'เลือกบทบาทแล้ว ลองกดปุ่ม "ถัดไป" เพื่อกรอกข้อมูลของคุณ',
             isLast: true,
+            onTap: _pickedRoles.isEmpty ? () {} : _startForm,
             child: ElevatedButton(
-              onPressed: _pickedRoles.isEmpty
-                  ? null
-                  : () => setState(() {
-                        _choosingRoles = false;
-                        _currentStep = 0;
-                      }),
+              onPressed: _pickedRoles.isEmpty ? null : _startForm,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: Colors.grey.shade300,

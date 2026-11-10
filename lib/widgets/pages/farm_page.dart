@@ -165,10 +165,11 @@ class _FarmPageState extends State<FarmPage> {
       floatingActionButton: TourStep(
         stepKey: TourKeys.registerFarm,
         title: 'ลงทะเบียนฟาร์ม',
-        description: 'กดปุ่มนี้เพื่อเพิ่มฟาร์มของคุณ '
-            'เมื่อมีฟาร์มแล้วจะเพิ่มแปลงปลูกได้',
+        description: 'เมื่อมีฟาร์มแล้วจะเพิ่มแปลงปลูกได้ '
+            'ลองกดปุ่ม "เพิ่มข้อมูลฟาร์ม" เพื่อเพิ่มฟาร์มแรกของคุณ',
         isFirst: true,
         isLast: true,
+        onTap: () => _navigateToRegister(context),
         child: ElevatedButton.icon(
           onPressed: () => _navigateToRegister(context),
           icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),

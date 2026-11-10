@@ -11,7 +11,7 @@ enum TourStage { signUp, role, home, farmTab, farm, plot }
 /// (they aren't attached to the widgets), so pages and the scaffold around
 /// them can share them.
 abstract final class TourKeys {
-  static final GlobalKey roleCards = GlobalKey(debugLabel: 'tour:roleCards');
+  static final GlobalKey roleFarmer = GlobalKey(debugLabel: 'tour:roleFarmer');
   static final GlobalKey roleNext = GlobalKey(debugLabel: 'tour:roleNext');
 
   static final GlobalKey homeDate = GlobalKey(debugLabel: 'tour:homeDate');
@@ -103,6 +103,10 @@ class TourController extends ChangeNotifier {
     _shown.add(stage);
     _view.startShowCase(onScreen);
   }
+
+  /// Moves to the next step, as "ถัดไป" does. Used by steps that continue
+  /// when the highlighted button itself is tapped.
+  void next() => _view.next(force: true);
 
   /// Skip: ends the whole tour, not just this page's steps.
   Future<void> skip() async {

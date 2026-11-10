@@ -248,8 +248,13 @@ class _RootScaffoldState extends State<RootScaffold> {
           stepKey: TourKeys.farmTab,
           title: 'ฟาร์มและแปลงของคุณ',
           description: 'ฟาร์มและแปลงปลูกทั้งหมดอยู่ที่แท็บนี้ '
-              'กด "ฟาร์ม" ด้านล่าง แล้วเริ่มลงทะเบียนฟาร์มแรกของคุณ',
+              'ลองกดที่ "ฟาร์ม" ด้านล่างเลย',
           isLast: true,
+          onTap: () {
+            final farmTab = _tabOfRole('farmer', roles);
+            widget.onItemSelected(farmTab);
+            _pageController.jumpToPage(farmTab);
+          },
           child: const Icon(Icons.park),
         ),
         label: 'ฟาร์ม',

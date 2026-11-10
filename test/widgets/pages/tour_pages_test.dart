@@ -38,17 +38,22 @@ void main() {
   }
 
   group('role page', () {
-    testWidgets('after sign-up the tour explains roles, then the ถัดไป button', (tester) async {
+    testWidgets('after sign-up the farmer taps เกษตรกร, then ถัดไป, for real', (tester) async {
       await TourController.instance.startForNewUser();
       await tester.pumpWidget(wrapPage(const RegisterRolePage()));
       await tester.pumpAndSettle();
 
       expect(find.text('เลือกบทบาทของคุณ'), findsOneWidget);
-      await next(tester, 'ถัดไป');
+      expect(find.text('ถัดไป'), findsOneWidget); // only the page's own button
+      await tester.tap(find.text('เกษตรกร'));
+      await tester.pumpAndSettle();
+
       expect(find.text('ไปต่อ'), findsOneWidget);
-      await next(tester, 'เข้าใจแล้ว');
+      await tester.tap(find.text('ถัดไป'));
+      await tester.pumpAndSettle();
 
       expect(find.text('ไปต่อ'), findsNothing);
+      expect(find.textContaining('หน้า 1 จาก'), findsOneWidget); // the farmer's form opened
       expect(TourController.instance.isActive, isTrue);
       expect(TourController.instance.wants(TourStage.home), isTrue);
     });
@@ -115,22 +120,28 @@ void main() {
       expect(find.text('โปรไฟล์ของคุณ'), findsOneWidget);
       await next(tester, 'ถัดไป');
       expect(find.text('ฟาร์มและแปลงของคุณ'), findsOneWidget);
-      await next(tester, 'เข้าใจแล้ว');
+      expect(find.text('เข้าใจแล้ว'), findsNothing); // tap the tab itself
+
+      await tester.tap(find.byIcon(Icons.park));
+      await tester.pumpAndSettle();
 
       expect(find.text('ฟาร์มและแปลงของคุณ'), findsNothing);
+      expect(find.text('farm body'), findsOneWidget);
       expect(TourController.instance.wants(TourStage.farmTab), isTrue);
     });
   });
 
   group('farm tab', () {
-    testWidgets('once the home steps are done, it points at เพิ่มข้อมูลฟาร์ม', (tester) async {
+    testWidgets('once the home steps are done, tapping เพิ่มข้อมูลฟาร์ม opens the register page', (tester) async {
       TourController.instance.replay();
       await tester.pumpWidget(wrapPage(const FarmPage(), client: emptyMockClient()));
       await tester.pumpAndSettle();
 
       expect(find.text('ลงทะเบียนฟาร์ม'), findsOneWidget);
-      await next(tester, 'เข้าใจแล้ว');
-      expect(find.text('ลงทะเบียนฟาร์ม'), findsNothing);
+      await tester.tap(find.text('เพิ่มข้อมูลฟาร์ม'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ลงทะเบียนข้อมูลฟาร์ม'), findsOneWidget);
       expect(TourController.instance.wants(TourStage.farm), isTrue);
     });
 

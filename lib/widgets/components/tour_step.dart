@@ -10,6 +10,11 @@ import 'package:showcaseview/showcaseview.dart';
 ///
 /// Give each step a GlobalKey and pass the page's keys, in order, to
 /// [TourController.show].
+///
+/// With [onTap], the step has no "ถัดไป": the person taps the highlighted
+/// widget itself, which does what that widget does (open a tab or a page)
+/// and moves the tour on. Use it for steps that lead somewhere, so farmers
+/// press the real button once; keep "ถัดไป" for steps that only explain.
 class TourStep extends StatelessWidget {
   const TourStep({
     required GlobalKey stepKey,
@@ -18,6 +23,7 @@ class TourStep extends StatelessWidget {
     required this.child,
     this.isFirst = false,
     this.isLast = false,
+    this.onTap,
     this.shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
@@ -36,6 +42,9 @@ class TourStep extends StatelessWidget {
   final bool isLast;
 
   final ShapeBorder shape;
+
+  /// What tapping the highlighted widget does; see the class comment.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +66,15 @@ class TourStep extends StatelessWidget {
       // Taps outside the tooltip don't end the tour by accident.
       disableBarrierInteraction: true,
       disableMovingAnimation: true,
+      // disposeOnTap: true would end the whole tour (it dismisses, like
+      // ข้าม), so move on first and then do what the widget does.
+      onTargetClick: onTap == null
+          ? null
+          : () {
+              TourController.instance.next();
+              onTap!();
+            },
+      disposeOnTap: onTap == null ? null : false,
       tooltipActionConfig: const TooltipActionConfig(
         alignment: MainAxisAlignment.end,
         actionGap: 8,
@@ -65,7 +83,8 @@ class TourStep extends StatelessWidget {
       tooltipActions: [
         _action(TooltipDefaultActionType.skip, 'ข้าม', filled: false),
         if (!isFirst) _action(TooltipDefaultActionType.previous, 'ย้อนกลับ', filled: false),
-        _action(TooltipDefaultActionType.next, isLast ? 'เข้าใจแล้ว' : 'ถัดไป', filled: true),
+        if (onTap == null)
+          _action(TooltipDefaultActionType.next, isLast ? 'เข้าใจแล้ว' : 'ถัดไป', filled: true),
       ],
       child: child,
     );
