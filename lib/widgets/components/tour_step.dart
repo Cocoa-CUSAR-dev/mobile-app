@@ -68,13 +68,11 @@ class TourStep extends StatelessWidget {
       disableMovingAnimation: true,
       // disposeOnTap: true would end the whole tour (it dismisses, like
       // ข้าม), so move on first and then do what the widget does.
-      onTargetClick: onTap == null
-          ? null
-          : () {
-              TourController.instance.next();
-              onTap!();
-            },
+      onTargetClick: onTap == null ? null : () => TourController.instance.nextThen(onTap!),
       disposeOnTap: onTap == null ? null : false,
+      // No closing animation to wait for before a step's button opens
+      // another page.
+      disableScaleAnimation: true,
       tooltipActionConfig: const TooltipActionConfig(
         alignment: MainAxisAlignment.end,
         actionGap: 8,

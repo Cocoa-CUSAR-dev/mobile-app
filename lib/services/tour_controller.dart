@@ -104,9 +104,26 @@ class TourController extends ChangeNotifier {
     _view.startShowCase(onScreen);
   }
 
-  /// Moves to the next step, as "ถัดไป" does. Used by steps that continue
-  /// when the highlighted button itself is tapped.
-  void next() => _view.next(force: true);
+  /// Moves to the next step, as "ถัดไป" does, then runs [action] (what the
+  /// tapped button does). Used by steps that continue when the highlighted
+  /// button itself is tapped.
+  ///
+  /// [action] waits until the step has closed: if it opened another page
+  /// first, the step's closing animation would pause with the covered page
+  /// and the tooltip would stay stuck on top of the new one.
+  void nextThen(VoidCallback action) {
+    var ran = false;
+    void done(int? index, GlobalKey key) {
+      if (ran) return;
+      ran = true;
+      // Not removed right here: showcaseview is looping over its callbacks.
+      Future.microtask(() => _view.removeOnCompleteCallback(done));
+      action();
+    }
+
+    _view.addOnCompleteCallback(done);
+    _view.next(force: true);
+  }
 
   /// Skip: ends the whole tour, not just this page's steps.
   Future<void> skip() async {

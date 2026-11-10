@@ -142,6 +142,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ลงทะเบียนข้อมูลฟาร์ม'), findsOneWidget);
+      // The step closed instead of staying on top of the register page.
+      expect(find.text('ลงทะเบียนฟาร์ม'), findsNothing);
+      expect(find.text('ข้าม'), findsNothing);
       expect(TourController.instance.wants(TourStage.farm), isTrue);
     });
 
