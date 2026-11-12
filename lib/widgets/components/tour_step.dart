@@ -48,12 +48,20 @@ class TourStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Registers the tour's showcase scope before Showcase looks it up.
-    TourController.instance;
+    // Rebuilds when a tour starts, so the title gets its "1/7" counter before
+    // the step is shown. Reading instance also registers the tour's
+    // showcase scope before Showcase looks it up.
+    return ListenableBuilder(
+      listenable: TourController.instance,
+      builder: (context, _) => _showcase(TourController.instance.progressOf(_stepKey)),
+    );
+  }
+
+  Widget _showcase(String? progress) {
     return Showcase(
       key: _stepKey,
       scope: TourController.scope,
-      title: title,
+      title: progress == null ? title : '$progress · $title',
       description: description,
       titleTextStyle: AppTextTheme.scale.titleLarge?.copyWith(color: AppColors.primary),
       descTextStyle: AppTextTheme.scale.bodyLarge,

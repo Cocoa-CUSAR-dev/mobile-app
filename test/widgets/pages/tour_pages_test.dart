@@ -43,16 +43,16 @@ void main() {
       await tester.pumpWidget(wrapPage(const RegisterRolePage()));
       await tester.pumpAndSettle();
 
-      expect(find.text('เลือกบทบาทของคุณ'), findsOneWidget);
+      expect(find.text('1/7 · เลือกบทบาทของคุณ'), findsOneWidget);
       expect(find.text('ถัดไป'), findsOneWidget); // only the page's own button
       await tester.tap(find.text('เกษตรกร'));
       await tester.pumpAndSettle();
 
-      expect(find.text('ไปต่อ'), findsOneWidget);
+      expect(find.text('2/7 · ไปต่อ'), findsOneWidget);
       await tester.tap(find.text('ถัดไป'));
       await tester.pumpAndSettle();
 
-      expect(find.text('ไปต่อ'), findsNothing);
+      expect(find.textContaining('ไปต่อ'), findsNothing);
       expect(find.textContaining('หน้า 1 จาก'), findsOneWidget); // the farmer's form opened
       expect(TourController.instance.isActive, isTrue);
       expect(TourController.instance.wants(TourStage.home), isTrue);
@@ -63,7 +63,7 @@ void main() {
       await tester.pumpWidget(wrapPage(const RegisterRolePage(ownedRoles: {'farmer'})));
       await tester.pumpAndSettle();
 
-      expect(find.text('เลือกบทบาทของคุณ'), findsNothing);
+      expect(find.textContaining('เลือกบทบาทของคุณ'), findsNothing);
     });
   });
 
@@ -105,7 +105,7 @@ void main() {
 
     testWidgets('วิธีใช้แอป walks through date, tasks, profile and ends on the ฟาร์ม tab', (tester) async {
       await pumpFarmerHome(tester);
-      expect(find.text('เลือกวัน'), findsNothing); // a normal login: no tour
+      expect(find.textContaining('เลือกวัน'), findsNothing); // a normal login: no tour
 
       await tester.tap(find.byIcon(Icons.account_circle).first);
       await tester.pumpAndSettle();
@@ -113,19 +113,19 @@ void main() {
       await tester.tap(find.text('วิธีใช้แอป'));
       await tester.pumpAndSettle();
 
-      expect(find.text('เลือกวัน'), findsOneWidget);
+      expect(find.text('1/5 · เลือกวัน'), findsOneWidget);
       await next(tester, 'ถัดไป');
       expect(find.textContaining('งานที่ต้องบันทึก'), findsOneWidget);
       await next(tester, 'ถัดไป');
-      expect(find.text('โปรไฟล์ของคุณ'), findsOneWidget);
+      expect(find.text('3/5 · โปรไฟล์ของคุณ'), findsOneWidget);
       await next(tester, 'ถัดไป');
-      expect(find.text('ฟาร์มและแปลงของคุณ'), findsOneWidget);
+      expect(find.text('4/5 · ฟาร์มและแปลงของคุณ'), findsOneWidget);
       expect(find.text('เข้าใจแล้ว'), findsNothing); // tap the tab itself
 
       await tester.tap(find.byIcon(Icons.park));
       await tester.pumpAndSettle();
 
-      expect(find.text('ฟาร์มและแปลงของคุณ'), findsNothing);
+      expect(find.textContaining('ฟาร์มและแปลงของคุณ'), findsNothing);
       expect(find.text('farm body'), findsOneWidget);
       expect(TourController.instance.wants(TourStage.farmTab), isTrue);
     });
@@ -137,13 +137,13 @@ void main() {
       await tester.pumpWidget(wrapPage(const FarmPage(), client: emptyMockClient()));
       await tester.pumpAndSettle();
 
-      expect(find.text('ลงทะเบียนฟาร์ม'), findsOneWidget);
+      expect(find.text('5/5 · ลงทะเบียนฟาร์ม'), findsOneWidget);
       await tester.tap(find.text('เพิ่มข้อมูลฟาร์ม'));
       await tester.pumpAndSettle();
 
       expect(find.text('ลงทะเบียนข้อมูลฟาร์ม'), findsOneWidget);
       // The step closed instead of staying on top of the register page.
-      expect(find.text('ลงทะเบียนฟาร์ม'), findsNothing);
+      expect(find.textContaining('ลงทะเบียนฟาร์ม'), findsNothing);
       expect(find.text('ข้าม'), findsNothing);
       expect(TourController.instance.wants(TourStage.farm), isTrue);
     });
@@ -152,7 +152,7 @@ void main() {
       await tester.pumpWidget(wrapPage(const FarmPage(), client: emptyMockClient()));
       await tester.pumpAndSettle();
 
-      expect(find.text('ลงทะเบียนฟาร์ม'), findsNothing);
+      expect(find.textContaining('ลงทะเบียนฟาร์ม'), findsNothing);
     });
   });
 }

@@ -24,6 +24,14 @@ abstract final class TourKeys {
   /// The home page's steps, in order. It ends on the ฟาร์ม tab, which
   /// leads to the "เพิ่มข้อมูลฟาร์ม" button.
   static List<GlobalKey> get home => [homeDate, homeTasks, profile, farmTab];
+
+  /// Every page's steps, in tour order. The "1/7" counter on each step is
+  /// counted from this, so a page that adds steps adds them here too.
+  static Map<TourStage, List<GlobalKey>> get byStage => {
+        TourStage.role: [roleFarmer, roleNext],
+        TourStage.home: home,
+        TourStage.farmTab: [registerFarm],
+      };
 }
 
 /// Carries the guided tour across pages (docs-and-plan#311).
@@ -64,10 +72,24 @@ class TourController extends ChangeNotifier {
   late final ShowcaseView _view;
 
   bool _active = false;
+  TourStage _start = TourStage.signUp;
   TourStage _stage = TourStage.signUp;
   final Set<TourStage> _shown = {};
 
   bool get isActive => _active;
+
+  /// Where [key]'s step is in the whole tour, e.g. "3/7", counted from the
+  /// page the tour started on. Null when no tour is running or the step
+  /// isn't in [TourKeys.byStage].
+  String? progressOf(GlobalKey key) {
+    if (!_active) return null;
+    final steps = [
+      for (final stage in TourStage.values)
+        if (stage.index >= _start.index) ...?TourKeys.byStage[stage],
+    ];
+    final index = steps.indexOf(key);
+    return index < 0 ? null : '${index + 1}/${steps.length}';
+  }
 
   /// Starts the tour from sign-up, unless this phone has seen it already.
   Future<void> startForNewUser() async {
@@ -81,6 +103,7 @@ class TourController extends ChangeNotifier {
 
   void _begin(TourStage from) {
     _active = true;
+    _start = from;
     _stage = from;
     _shown.clear();
     notifyListeners();
