@@ -50,9 +50,7 @@ void main() {
     await tester.pumpWidget(wrapPage(const LoginPage()));
     await tester.pump();
 
-    await tester.tap(find.text('มีบัญชีผู้ใช้แล้ว'));
-    await tester.pumpAndSettle();
-
+    expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });
 
@@ -60,9 +58,6 @@ void main() {
     await _setTallViewport(tester);
     await tester.pumpWidget(wrapPage(const LoginPage()));
     await tester.pump();
-
-    await tester.tap(find.text('มีบัญชีผู้ใช้แล้ว'));
-    await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.visibility_off), findsOneWidget);
     expect(find.byIcon(Icons.visibility), findsNothing);
@@ -74,29 +69,24 @@ void main() {
     expect(find.byIcon(Icons.visibility_off), findsNothing);
   });
 
-  testWidgets('M-REG-01 — registration button navigates to user-register page', (tester) async {
+  testWidgets('M-REG-01 — "สมัครใช้งาน" under the form opens sign-up', (tester) async {
     await _setTallViewport(tester);
     await tester.pumpWidget(wrapPage(const LoginPage()));
     await tester.pump();
 
-    await tester.tap(find.text('ยังไม่มีบัญชีผู้ใช้'));
+    await tester.tap(find.text('สมัครใช้งาน'));
     await tester.pumpAndSettle();
 
-    expect(find.text('ลงทะเบียนผู้ใช้งานใหม่'), findsOneWidget);
+    expect(find.text('สร้างบัญชี'), findsOneWidget);
   });
 
-  testWidgets('back button on the login form returns to the selection area', (tester) async {
+  testWidgets('the form shows straight away, with no "do you have an account" step first', (tester) async {
     await _setTallViewport(tester);
     await tester.pumpWidget(wrapPage(const LoginPage()));
     await tester.pump();
 
-    await tester.tap(find.text('มีบัญชีผู้ใช้แล้ว'));
-    await tester.pumpAndSettle();
-    expect(find.byType(TextFormField), findsNWidgets(2));
-
-    await tester.tap(find.text('ย้อนกลับ'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่'), findsOneWidget);
+    expect(find.text('ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่'), findsNothing);
+    expect(find.text('ลงชื่อเข้าใช้งาน'), findsOneWidget);
+    expect(find.text('ยังไม่มีบัญชี?'), findsOneWidget);
   });
 }

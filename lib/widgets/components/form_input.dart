@@ -14,6 +14,7 @@ class FormInput extends StatelessWidget {
   final TextEditingController? controller;
   final TextInputType keyboardType;
   final Widget? suffixIcon;
+  final Widget? prefixIcon;
   final VoidCallback? onTap;
   final bool readOnly;
 
@@ -30,6 +31,7 @@ class FormInput extends StatelessWidget {
     this.onChanged,
     this.keyboardType = TextInputType.text,
     this.suffixIcon,
+    this.prefixIcon,
     this.onTap,
     this.readOnly = false,
   });
@@ -103,6 +105,7 @@ class FormInput extends StatelessWidget {
                     color: AppColors.primary, width: 2),
               ),
               suffixIcon: suffixIcon,
+              prefixIcon: prefixIcon,
             ),
           ),
         ],
