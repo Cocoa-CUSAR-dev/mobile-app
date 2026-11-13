@@ -232,7 +232,9 @@ void main() {
       expect(TourController.instance.isActive, isFalse);
     });
 
-    testWidgets('วิธีใช้แอป in the profile sheet replays the tour', (tester) async {
+    // The home steps themselves are shown by HomeTabContent; see
+    // test/widgets/pages/tour_pages_test.dart.
+    testWidgets('วิธีใช้แอป in the profile sheet replays the tour from the home page', (tester) async {
       await TourService().markSeen(); // an existing user
       await pumpFarmerHome(tester);
 
@@ -242,12 +244,9 @@ void main() {
       await tester.tap(find.text('วิธีใช้แอป'));
       await tester.pumpAndSettle();
 
-      expect(find.text('โปรไฟล์ของคุณ'), findsOneWidget);
-      expect(find.text('เข้าใจแล้ว'), findsOneWidget);
-
-      await tester.tap(find.text('เข้าใจแล้ว'));
-      await tester.pumpAndSettle();
-      expect(find.text('โปรไฟล์ของคุณ'), findsNothing);
+      expect(find.text('วิธีใช้แอป'), findsNothing); // the sheet closed
+      expect(TourController.instance.isActive, isTrue);
+      expect(TourController.instance.wants(TourStage.home), isTrue);
     });
   });
 }

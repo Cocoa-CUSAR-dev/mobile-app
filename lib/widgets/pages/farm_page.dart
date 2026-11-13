@@ -3,6 +3,8 @@ import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:cocoa_supply/widgets/components/data_record_container.dart';
 import 'package:cocoa_supply/bloc/farm/farm_bloc.dart';
 import 'package:cocoa_supply/bloc/farm/farm_event.dart';
@@ -22,6 +24,22 @@ class _FarmPageState extends State<FarmPage> {
   void initState() {
     super.initState();
     _onRefresh();
+    // Guided tour (docs-and-plan#313): the home steps end on this tab.
+    TourController.instance.addListener(_showTourIfWanted);
+    _showTourIfWanted();
+  }
+
+  @override
+  void dispose() {
+    TourController.instance.removeListener(_showTourIfWanted);
+    super.dispose();
+  }
+
+  void _showTourIfWanted() {
+    if (!TourController.instance.wants(TourStage.farmTab)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TourController.instance.show(TourStage.farmTab, [TourKeys.registerFarm]);
+    });
   }
 
   Future<void> _onRefresh() async {
@@ -144,15 +162,24 @@ class _FarmPageState extends State<FarmPage> {
           return const Center(child: Text('สถานะไม่รู้จัก'));
         },
       ),
-      floatingActionButton: ElevatedButton.icon(
-        onPressed: () => _navigateToRegister(context),
-        icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
-        label: Text(
-          "เพิ่มข้อมูลฟาร์ม",
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+      floatingActionButton: TourStep(
+        stepKey: TourKeys.registerFarm,
+        title: 'ลงทะเบียนฟาร์ม',
+        description: 'เมื่อมีฟาร์มแล้วจะเพิ่มแปลงปลูกได้ '
+            'ลองกดปุ่ม "เพิ่มข้อมูลฟาร์ม" เพื่อเพิ่มฟาร์มแรกของคุณ',
+        isFirst: true,
+        isLast: true,
+        onTap: () => _navigateToRegister(context),
+        child: ElevatedButton.icon(
+          onPressed: () => _navigateToRegister(context),
+          icon: const Icon(Icons.add, color: Color(0xFFF3F3F3)),
+          label: Text(
+            "เพิ่มข้อมูลฟาร์ม",
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFFF3F3F3)),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+          ),
         ),
       ),
     );

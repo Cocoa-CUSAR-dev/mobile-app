@@ -135,6 +135,46 @@ void main() {
     expect(TourController.instance.wants(TourStage.signUp), isFalse);
   });
 
+  testWidgets('a step with onTap has no ถัดไป: tapping the widget does its job and moves on', (tester) async {
+    var tapped = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Column(
+          children: [
+            TourStep(
+              stepKey: first,
+              title: 'กดตรงนี้',
+              description: 'ลองกดปุ่มนี้',
+              isFirst: true,
+              onTap: () => tapped++,
+              child: const Text('ปุ่มจริง'),
+            ),
+            TourStep(
+              stepKey: second,
+              title: 'ขั้นที่สอง',
+              description: 'คำอธิบายขั้นที่สอง',
+              isLast: true,
+              child: const Text('ปุ่มที่สอง'),
+            ),
+          ],
+        ),
+      ),
+    ));
+    TourController.instance.replay();
+    await show(tester, TourStage.home);
+
+    expect(find.text('กดตรงนี้'), findsOneWidget);
+    expect(find.text('ถัดไป'), findsNothing);
+    expect(find.text('ข้าม'), findsOneWidget);
+
+    await tester.tap(find.text('ปุ่มจริง'));
+    await tester.pumpAndSettle();
+
+    expect(tapped, 1);
+    expect(find.text('ขั้นที่สอง'), findsOneWidget);
+    expect(TourController.instance.isActive, isTrue);
+  });
+
   testWidgets('nothing shows when no tour is running', (tester) async {
     await pumpPage(tester);
     await show(tester, TourStage.home);
