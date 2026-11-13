@@ -20,6 +20,8 @@ import 'package:cocoa_supply/services/dynamic_api_service.dart';
 ///
 /// The shared fields (name, phone, address) are asked once for every picked
 /// role; a role's own fields only when it is picked (see role_registration).
+/// Before saving, a review page shows every answer with "แก้ไข" back to its
+/// page (docs-and-plan#320).
 /// Each role is then saved with its own POST /me/roles/{role}; if one fails
 /// the others stay saved and "ลองอีกครั้ง" retries only the failed ones.
 class RegisterRolePage extends StatefulWidget {
@@ -58,6 +60,13 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   bool _isLoading = false;
 
   int _currentStep = 0;
+
+  /// On the review page after the last form page (not when editing).
+  bool _reviewing = false;
+
+  /// The province, district and subdistrict choices loaded so far, so the
+  /// review page can show names instead of ids.
+  final Map<String, List<Map<String, dynamic>>> _options = {};
 
   // Per role, once submitting started: saved, or the message it was refused with.
   final Set<String> _savedRoles = {};
@@ -147,13 +156,43 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       final Map<String, String> params = {};
       if (filterKey != null && filterId != null) params[filterKey] = filterId;
 
-      return await dynamicBloc.api.fetchConstants(
+      final options = await dynamicBloc.api.fetchConstants(
         key.replaceAll("_id", ""),
         queryParams: params,
       );
+      _options[key] = options;
+      return options;
     } catch (e) {
       return [];
     }
+  }
+
+  /// The postcode of [subdistrictId], filled in for the person. They can
+  /// still change it.
+  Future<void> _fillZipCode(dynamic subdistrictId) async {
+    if (subdistrictId == null) return;
+    try {
+      final places = await context.read<DynamicBloc>().api.fetchConstants(
+        'location',
+        queryParams: {'subdistrict_id': '$subdistrictId'},
+      );
+      final zip = places.isEmpty ? null : places.first['zip_code']?.toString();
+      if (zip == null || zip.isEmpty || !mounted) return;
+      setState(() => _controllers['zip_code']!.text = zip);
+    } catch (_) {
+      // No postcode to offer: they type it.
+    }
+  }
+
+  /// The name of the [key] option with [id], as its dropdown showed it.
+  String _optionName(String key, dynamic id) {
+    for (final option in _options[key] ?? const <Map<String, dynamic>>[]) {
+      final values = option.values.toList();
+      if (values.isNotEmpty && '${values.first}' == '$id') {
+        return values.length > 1 ? '${values[1]}' : '$id';
+      }
+    }
+    return '';
   }
 
   Map<String, dynamic> _answers() {
@@ -265,7 +304,11 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     return SimpleScaffold(
       title: _editing ? 'แก้ไขข้อมูล${roleLabel(widget.editRole!)}' : '',
       showBackButton: _addingRole || _editing,
-      body: _choosingRoles ? _buildRoleSelection() : _buildPaginatedForm(),
+      body: _choosingRoles
+          ? _buildRoleSelection()
+          : _reviewing
+              ? _buildReview()
+              : _buildPaginatedForm(),
     );
   }
 
@@ -340,15 +383,22 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  _buildStepIndicator(_totalSteps),
+                  _buildStepIndicator(_currentStep),
                   const SizedBox(height: 32),
                   Text(
                     _stepTitle(),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary),
                   ),
+                  if (_stepSubtitle() != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      _stepSubtitle()!,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   _buildCurrentStepFields(),
-                  if (isLastStep && (_savedRoles.isNotEmpty || _failedRoles.isNotEmpty)) _buildSaveResults(),
                   if (isLastStep && _editing && _otherOwnedRoles.isNotEmpty)
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
@@ -369,12 +419,17 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     );
   }
 
-  /// Shared pages are "ข้อมูลส่วนตัว"; a page of one role's own fields is
-  /// named after that role.
-  String _stepTitle() {
-    final ownFields = {'salary_income', 'family_member_count', 'agri_worker_count', 'agri_experience'};
-    final isFarmerPage = _steps[_currentStep].every(ownFields.contains);
-    return isFarmerPage ? 'ข้อมูล${roleLabel('farmer')}' : 'ข้อมูลส่วนตัว';
+  /// About you, address, then the roles' own page (see registrationSteps).
+  String _stepTitle() => const ['ข้อมูลส่วนตัว', 'ที่อยู่', 'ข้อมูลตามบทบาท'][_currentStep];
+
+  String? _stepSubtitle() {
+    if (_editing) return null;
+    final several = _pickedRoles.length > 1;
+    return switch (_currentStep) {
+      0 => several ? 'ถามครั้งเดียว ใช้กับทุกบทบาทที่เลือก' : null,
+      1 => several ? 'ใช้เป็นที่อยู่ติดต่อของทุกบทบาทที่เลือก' : null,
+      _ => 'ข้อมูลที่บทบาทที่เลือกต้องใช้',
+    };
   }
 
   /// After a submit that partly failed: which roles were saved, which not.
@@ -399,8 +454,67 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
   // Render Field ตาม Key ที่ดึงมาจาก Step
   // ==========================================
   Widget _buildCurrentStepFields() {
+    final fields = _steps[_currentStep];
+    if (_currentStep == 2) return _buildRoleDetailFields(fields);
+    return Column(children: fields.map(_field).toList());
+  }
+
+  /// The roles' own page: one box per question group, each tagged with the
+  /// roles that ask it, so a two-role person sees why it's there.
+  Widget _buildRoleDetailFields(List<String> fields) {
+    final idCard = fields.where((f) => f == 'id_card_number').toList();
+    final farm = fields.where(farmerOwnFields.contains).toList();
     return Column(
-      children: _steps[_currentStep].map((key) {
+      children: [
+        if (idCard.isNotEmpty) _section('บัตรประชาชน', rolesAsking('id_card_number', _pickedRoles), idCard),
+        if (farm.isNotEmpty) _section('ครัวเรือนและการทำเกษตร', const ['farmer'], farm),
+      ],
+    );
+  }
+
+  Widget _section(String title, List<String> roles, List<String> fields) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              for (final role in roles) _roleChip(role),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...fields.map(_field),
+        ],
+      ),
+    );
+  }
+
+  Widget _roleChip(String role) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.primaryFaint,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        roleLabel(role),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _field(String key) {
         bool isReq = _isRequired(key);
 
         switch(key) {
@@ -449,13 +563,14 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               isReq: isReq,
               filterId: _currentFormData['district_id']?.toString(),
               filterKey: 'district_id',
-              onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
+              onChanged: (val) {
+                setState(() => _currentFormData['subdistrict_id'] = val);
+                _fillZipCode(val);
+              },
             );
           default:
             return const SizedBox.shrink();
         }
-      }).toList(),
-    );
   }
 
   Widget _input(String key, String label, bool isReq) {
@@ -509,21 +624,25 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     );
   }
 
-  Widget _buildStepIndicator(int totalSteps) {
-    if (totalSteps <= 1) return const SizedBox.shrink();
+  /// Pages in all: the form's, plus the review page when registering.
+  int get _pageCount => _totalSteps + (_editing ? 0 : 1);
+
+  Widget _buildStepIndicator(int current) {
+    final total = _pageCount;
+    if (total <= 1) return const SizedBox.shrink();
     return Column(
       children: [
-        Text("หน้า ${_currentStep + 1} จาก $totalSteps", style: Theme.of(context).textTheme.bodyMedium),
+        Text("หน้า ${current + 1} จาก $total", style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(totalSteps, (i) => Container(
+          children: List.generate(total, (i) => Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: _currentStep == i ? 24 : 8,
+            width: current == i ? 24 : 8,
             height: 8,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
-              color: _currentStep == i ? AppColors.primary : Colors.grey.shade300,
+              color: i <= current ? AppColors.primary : Colors.grey.shade300,
             ),
           )),
         ),
@@ -531,67 +650,227 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
     );
   }
 
-  Widget _buildBottomButtons({required bool isLastStep, required bool canProceed}) {
-    final submitLabel = _editing
-        ? 'บันทึก'
-        : _failedRoles.isNotEmpty
-            ? 'ลองอีกครั้ง'
-            : 'ยืนยันลงทะเบียน';
+  Widget _primaryButton(String label, VoidCallback? onPressed) {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        disabledBackgroundColor: Colors.grey.shade300,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: _isLoading
+          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+          : Text(label, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
+    );
+  }
+
+  Widget _secondaryButton(String label, VoidCallback? onPressed) {
+    return OutlinedButton(
+      onPressed: _isLoading ? null : onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(color: Colors.grey.shade400),
+      ),
+      child: Text(label, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87)),
+    );
+  }
+
+  Widget _buttons(Widget primary, Widget secondary) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [primary, const SizedBox(height: 12), secondary],
+      ),
+    );
+  }
+
+  Widget _buildBottomButtons({required bool isLastStep, required bool canProceed}) {
+    return _buttons(
+      _primaryButton(
+        isLastStep && _editing ? 'บันทึก' : 'ถัดไป',
+        canProceed
+            ? () {
+                if (!_formKey.currentState!.validate()) return;
+                if (!isLastStep) {
+                  setState(() => _currentStep++);
+                } else if (_editing) {
+                  _handleEdit();
+                } else {
+                  setState(() => _reviewing = true);
+                }
+              }
+            : null,
+      ),
+      _secondaryButton(
+        _currentStep > 0 ? 'ย้อนกลับ' : (_editing ? 'ยกเลิก' : 'เลือกบทบาทใหม่'),
+        // Once a role is saved, changing the picked roles would leave it
+        // half-done; the remaining ones can only be retried.
+        _currentStep == 0 && _savedRoles.isNotEmpty
+            ? null
+            : () {
+                if (_currentStep > 0) {
+                  setState(() => _currentStep--);
+                } else if (_editing) {
+                  Navigator.of(context).pop(false);
+                } else {
+                  setState(() => _choosingRoles = true); // กลับไปเลือกบทบาทใหม่
+                }
+              },
+      ),
+    );
+  }
+
+  // ==========================================
+  // Review: every answer once more before saving
+  // ==========================================
+  String _text(String key) => _controllers[key]?.text.trim() ?? '';
+
+  /// A date answer the Thai way ("12 มี.ค. 2515"), or as typed when it
+  /// isn't a date.
+  String _thaiDate(String value) {
+    final date = DateTime.tryParse(value);
+    if (date == null) return value;
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    return '${date.day} ${months[date.month - 1]} ${date.year + 543}';
+  }
+
+  String _joined(List<String> parts, String separator) =>
+      parts.where((p) => p.isNotEmpty).join(separator);
+
+  List<String> _aboutLines() {
+    final name = _joined([_text('first_name'), _text('last_name')], ' ');
+    final nickname = _text('nickname');
+    return [
+      nickname.isEmpty ? name : '$name ($nickname)',
+      if (_text('birth_date').isNotEmpty) 'เกิด ${_thaiDate(_text('birth_date'))}',
+      _joined([_text('phone_number'), if (_text('line').isNotEmpty) 'LINE ${_text('line')}'], ' · '),
+    ].where((line) => line.isNotEmpty).toList();
+  }
+
+  String _addressLine() {
+    final bangkok = DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString());
+    String place(String key, String prefix) {
+      final name = _optionName(key, _currentFormData[key]);
+      return name.isEmpty ? '' : '$prefix$name';
+    }
+
+    return _joined([
+      _text('address_detail'),
+      place('subdistrict_id', bangkok ? 'แขวง' : 'ต.'),
+      place('district_id', bangkok ? 'เขต' : 'อ.'),
+      place('province_id', bangkok ? '' : 'จ.'),
+      _text('zip_code'),
+    ], ' ');
+  }
+
+  List<String> _roleDetailLines() {
+    final asked = _totalSteps > 2 ? _steps[2] : const <String>[];
+    return [
+      if (asked.contains('id_card_number')) 'เลขบัตรประชาชน ${_text('id_card_number')}',
+      if (asked.contains('salary_income'))
+        _joined([
+          'รายได้ ${_text('salary_income')} บาท/เดือน',
+          'สมาชิก ${_text('family_member_count')} คน',
+          'แรงงาน ${_text('agri_worker_count')} คน',
+        ], ' · '),
+      if (asked.contains('agri_experience') && _text('agri_experience').isNotEmpty)
+        'เริ่มทำเกษตร ${_thaiDate(_text('agri_experience'))}',
+    ];
+  }
+
+  Widget _reviewCard(String title, List<String> lines, VoidCallback? onEdit) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 4, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ElevatedButton(
-            onPressed: (canProceed && !_isLoading)
-                ? () {
-                    if (_formKey.currentState!.validate()) {
-                      if (isLastStep) {
-                        _editing ? _handleEdit() : _handleRegister();
-                      } else {
-                        setState(() => _currentStep++);
-                      }
-                    }
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: Colors.grey.shade300,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: _isLoading
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(isLastStep ? submitLabel : 'ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
+          Row(
+            children: [
+              Expanded(child: Text(title, style: textTheme.titleMedium)),
+              if (onEdit != null)
+                TextButton.icon(
+                  onPressed: _isLoading ? null : onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+                  label: Text('แก้ไข', style: textTheme.bodyLarge?.copyWith(color: AppColors.primary)),
+                ),
+            ],
           ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            // Once a role is saved, changing the picked roles would leave it
-            // half-done; the remaining ones can only be retried.
-            onPressed: _currentStep == 0 && _savedRoles.isNotEmpty
-                ? null
-                : () {
-                    if (_currentStep > 0) {
-                      setState(() => _currentStep--);
-                    } else if (_editing) {
-                      Navigator.of(context).pop(false);
-                    } else {
-                      setState(() => _choosingRoles = true); // กลับไปเลือกบทบาทใหม่
-                    }
-                  },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              side: BorderSide(color: Colors.grey.shade400),
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, right: 12),
+              child: Text(line, style: textTheme.bodyLarge?.copyWith(color: Colors.black87)),
             ),
-            child: Text(
-              _currentStep > 0 ? 'ย้อนกลับ' : (_editing ? 'ยกเลิก' : 'เลือกบทบาทใหม่'),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87)
-            ),
-          ),
         ],
       ),
+    );
+  }
+
+  void _editStep(int step) => setState(() {
+        _reviewing = false;
+        _currentStep = step;
+      });
+
+  Widget _buildReview() {
+    final textTheme = Theme.of(context).textTheme;
+    final submitLabel = _failedRoles.isNotEmpty
+        ? 'ลองอีกครั้ง'
+        : _addingRole
+            ? 'ยืนยันเพิ่มบทบาท'
+            : 'ยืนยันการสมัคร';
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildStepIndicator(_pageCount - 1),
+                const SizedBox(height: 32),
+                Text(
+                  'ตรวจสอบข้อมูล',
+                  textAlign: TextAlign.center,
+                  style: textTheme.headlineSmall?.copyWith(color: AppColors.primary),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'ถ้ามีข้อมูลผิด แตะ "แก้ไข" เพื่อกลับไปแก้',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                ),
+                const SizedBox(height: 24),
+                _reviewCard(
+                  'บทบาท',
+                  [_rolesInOrder.map(roleLabel).join(', ')],
+                  _savedRoles.isEmpty ? () => setState(() {
+                        _reviewing = false;
+                        _choosingRoles = true;
+                      }) : null,
+                ),
+                _reviewCard('ข้อมูลส่วนตัว', _aboutLines(), () => _editStep(0)),
+                _reviewCard('ที่อยู่', [_addressLine()], () => _editStep(1)),
+                if (_totalSteps > 2) _reviewCard('ข้อมูลตามบทบาท', _roleDetailLines(), () => _editStep(2)),
+                if (_savedRoles.isNotEmpty || _failedRoles.isNotEmpty) _buildSaveResults(),
+              ],
+            ),
+          ),
+        ),
+        _buttons(
+          _primaryButton(submitLabel, _handleRegister),
+          _secondaryButton('ย้อนกลับ', () => _editStep(_totalSteps - 1)),
+        ),
+      ],
     );
   }
 
@@ -630,11 +909,13 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               child: Icon(_roleIcons[role], color: owned ? Colors.grey : AppColors.primary),
             ),
             const SizedBox(width: 16),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: owned ? Colors.grey : null),
+            // Wraps on a narrow phone instead of pushing the checkbox off.
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: owned ? Colors.grey : null),
+              ),
             ),
-            const Spacer(),
             if (owned)
               Text('มีแล้ว', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey))
             else
