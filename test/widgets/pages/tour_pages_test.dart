@@ -48,20 +48,43 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('สมัครใช้งาน starts the tour: phone, password, email, then the button', (tester) async {
+    testWidgets('สมัครใช้งาน starts the tour, and each field is filled in during its step', (tester) async {
       await openSignUp(tester);
+      final fields = find.byType(TextField);
 
       expect(find.text('1/11 · เบอร์โทรศัพท์'), findsOneWidget);
+      await tester.enterText(fields.at(0), '0812345678');
+      await tester.pump();
+      expect(find.text('0812345678'), findsOneWidget);
+      expect(find.text('1/11 · เบอร์โทรศัพท์'), findsOneWidget); // still on this step
       await next(tester, 'ถัดไป');
+
       expect(find.text('2/11 · ตั้งรหัสผ่าน'), findsOneWidget);
+      await tester.enterText(fields.at(1), 'abc123');
+      await tester.enterText(fields.at(2), 'abc123');
+      await tester.pump();
+      expect(find.text('รหัสผ่านตรงกัน'), findsOneWidget);
       await next(tester, 'ถัดไป');
+
       expect(find.text('3/11 · อีเมล (ไม่บังคับ)'), findsOneWidget);
       await next(tester, 'ถัดไป');
-      expect(find.text('4/11 · ไปเลือกบทบาท'), findsOneWidget);
-      await next(tester, 'เข้าใจแล้ว');
 
-      expect(find.textContaining('ไปเลือกบทบาท'), findsNothing);
-      // Next: the role page, once the account is made.
+      expect(find.text('4/11 · ไปเลือกบทบาท'), findsOneWidget);
+      expect(find.text('เข้าใจแล้ว'), findsNothing); // press the real button
+    });
+
+    testWidgets('the last step presses the real button; a wrong field still shows why', (tester) async {
+      await openSignUp(tester);
+      for (var i = 0; i < 3; i++) {
+        await next(tester, 'ถัดไป');
+      }
+
+      await tester.tap(find.text('ถัดไป: เลือกบทบาท'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('ไปเลือกบทบาท ·'), findsNothing);
+      expect(find.text('กรุณาระบุเบอร์โทรศัพท์'), findsOneWidget); // nothing was typed
+      // The tour waits for the role page, once the account is made.
       expect(TourController.instance.wants(TourStage.role), isTrue);
     });
 

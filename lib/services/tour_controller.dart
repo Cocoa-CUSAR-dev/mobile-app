@@ -59,6 +59,9 @@ class TourController extends ChangeNotifier {
       scope: scope,
       onFinish: _onPageFinished,
       onDismiss: (_) => skip(),
+      // Scrolls a long page (e.g. sign-up on a small phone) to each step's
+      // widget, so the tooltip never points off-screen.
+      enableAutoScroll: true,
     );
   }
 

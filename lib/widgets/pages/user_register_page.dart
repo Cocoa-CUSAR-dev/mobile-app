@@ -189,9 +189,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               TourStep(
                 stepKey: TourKeys.signUpPhone,
                 title: 'เบอร์โทรศัพท์',
-                description: 'กรอกเบอร์มือถือ 10 หลัก '
-                    'เบอร์นี้ใช้เข้าสู่ระบบครั้งต่อไป',
+                description: 'กรอกเบอร์มือถือ 10 หลักในช่องนี้ได้เลย '
+                    '(ใช้เข้าสู่ระบบครั้งต่อไป) แล้วกด "ถัดไป"',
                 isFirst: true,
+                fillIn: true,
                 child: FormInput(
                   label: 'เบอร์โทรศัพท์',
                   hintText: 'เช่น 08XXXXXXXX',
@@ -205,8 +206,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               TourStep(
                 stepKey: TourKeys.signUpPassword,
                 title: 'ตั้งรหัสผ่าน',
-                description: 'ตั้งรหัสผ่านอย่างน้อย 6 ตัว แล้วพิมพ์ซ้ำอีกครั้ง '
-                    'ถ้าถูกต้องจะขึ้นเครื่องหมายสีเขียว',
+                description: 'ตั้งรหัสผ่านอย่างน้อย 6 ตัว แล้วพิมพ์ซ้ำในช่องล่าง '
+                    'ถ้าถูกต้องจะขึ้นเครื่องหมายสีเขียว แล้วกด "ถัดไป"',
+                fillIn: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -243,8 +245,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               TourStep(
                 stepKey: TourKeys.signUpEmail,
                 title: 'อีเมล (ไม่บังคับ)',
-                description: 'ไม่มีอีเมลก็ข้ามได้เลย '
-                    'ถ้าใส่ไว้ จะใช้อีเมลเข้าสู่ระบบแทนเบอร์โทรได้',
+                description: 'ถ้ามีอีเมล กรอกไว้ใช้เข้าสู่ระบบแทนเบอร์โทรได้ '
+                    'ไม่มีก็กด "ถัดไป" ได้เลย',
+                fillIn: true,
                 child: FormInput(
                   label: 'อีเมล (ไม่บังคับ)',
                   hintText: 'ใช้เข้าสู่ระบบแทนเบอร์โทรได้',
@@ -255,14 +258,18 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              // The last step explains rather than taps: the form is still
-              // empty while it shows, so pressing the button would only fail.
+              // The fields were filled in during the steps above, so this one
+              // presses the real button. If a field is still wrong, the form
+              // shows why and the tour waits on the role page.
               TourStep(
                 stepKey: TourKeys.signUpSubmit,
                 title: 'ไปเลือกบทบาท',
-                description: 'กรอกครบแล้ว กดปุ่มนี้เพื่อสร้างบัญชี '
+                description: 'กรอกครบแล้ว ลองกดปุ่มนี้เพื่อสร้างบัญชี '
                     'แล้วไปเลือกว่าคุณทำงานอะไร',
                 isLast: true,
+                onTap: () {
+                  if (!_isLoading) _handleRegister();
+                },
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
