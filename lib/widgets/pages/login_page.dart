@@ -1,4 +1,5 @@
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/login/login_bloc.dart';
@@ -20,7 +21,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  bool _showLoginForm = false;
   bool _isPasswordVisible = false;
   String? _errorMessage;
 
@@ -49,11 +49,8 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _errorMessage = 'กรุณากรอกข้อมูลให้ครบถ้วน');
     } else {
       context.read<LoginBloc>().add(
-            LoginButtonPressed(
-              username: _usernameController.text,
-              password: _passwordController.text,
-            ),
-          );
+        LoginButtonPressed(username: _usernameController.text, password: _passwordController.text),
+      );
     }
   }
 
@@ -76,9 +73,16 @@ class _LoginPageState extends State<LoginPage> {
           BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
               if (state is LoginSuccess) {
-                Navigator.of(context).pushReplacementNamed(
-                  state.next_page == "HOME" ? AppRoute.home : AppRoute.roleRegister,
-                );
+                if (state.next_page == "HOME") {
+                  Navigator.of(context).pushReplacementNamed(AppRoute.home);
+                } else {
+                  // No role yet: the role form starts with the phone number
+                  // they just signed in with.
+                  Navigator.of(context).pushReplacementNamed(
+                    AppRoute.roleRegister,
+                    arguments: {'prefill': signUpPrefill(_usernameController.text)},
+                  );
+                }
               } else if (state is LoginFailure) {
                 AppSnackBar.show(context, state.error, type: AppSnackBarType.error);
               }
@@ -95,10 +99,9 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         Text(
                           'ยินดีต้อนรับเข้าสู่แอปพลิเคชัน',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
                         ),
                         const SizedBox(height: 8),
                         Image.asset('assets/images/logo.png', width: 280),
@@ -106,11 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 50),
 
-                    // --- เนื้อหาที่มี Animation สลับไปมา ---
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: _showLoginForm ? _buildLoginForm() : _buildSelectionArea(),
-                    ),
+                    _buildLoginForm(),
                   ],
                 ),
               ),
@@ -118,33 +117,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
-    );
-  }
-
-  // ส่วนเลือก (มีบัญชี / ไม่มีบัญชี)
-  Widget _buildSelectionArea() {
-    return Column(
-      key: const ValueKey(1),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 32),
-        _buildMainButton(
-          label: 'มีบัญชีผู้ใช้แล้ว',
-          icon: Icons.login_rounded,
-          onPressed: () => setState(() => _showLoginForm = true),
-          backgroundColor: primaryColor,
-          textColor: Colors.white,
-        ),
-        const SizedBox(height: 16),
-        _buildSecondaryButton(
-          label: 'ยังไม่มีบัญชีผู้ใช้',
-          onPressed: () => Navigator.of(context).pushNamed(AppRoute.userRegister),
-        ),
-      ],
     );
   }
 
@@ -157,28 +129,28 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text('เข้าสู่ระบบ', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primary)),
+            const SizedBox(height: 24),
             FormInput(
               label: 'เบอร์มือถือหรืออีเมล',
               controller: _usernameController,
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
             ),
             FormInput(
               label: 'รหัสผ่าน',
               controller: _passwordController,
               isPassword: !_isPasswordVisible,
+              prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
               suffixIcon: IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                ),
+                icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                 onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
               ),
             ),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  _errorMessage!,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.red),
-                ),
+                child: Text(_errorMessage!, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.red)),
               ),
             const SizedBox(height: 24),
             BlocBuilder<LoginBloc, LoginState>(
@@ -195,9 +167,21 @@ class _LoginPageState extends State<LoginPage> {
               },
             ),
             const SizedBox(height: 16),
-            _buildSecondaryButton(
-              label: 'ย้อนกลับ',
-              onPressed: () => setState(() => _showLoginForm = false),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('ยังไม่มีบัญชี?', style: Theme.of(context).textTheme.bodyLarge),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pushNamed(AppRoute.userRegister),
+                  child: Text(
+                    'สมัครใช้งาน',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: primaryColor, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -220,11 +204,7 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           if (onPressed != null)
-            BoxShadow(
-              color: backgroundColor.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: backgroundColor.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       child: ElevatedButton.icon(
@@ -232,7 +212,8 @@ class _LoginPageState extends State<LoginPage> {
         icon: isLoading ? const SizedBox.shrink() : Icon(icon, color: textColor, size: 22),
         label: isLoading
             ? const SizedBox(
-                height: 20, width: 20,
+                height: 20,
+                width: 20,
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
             : Text(
@@ -245,24 +226,6 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSecondaryButton({required String label, required VoidCallback onPressed}) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        side: BorderSide(color: Colors.grey.shade300),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.white,
-        elevation: 2,
-        shadowColor: Colors.black12,
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
       ),
     );
   }

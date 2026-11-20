@@ -23,10 +23,40 @@ void main() {
       expect(fields({'farmer'}), contains('address_detail'));
     });
 
-    test('no page has more than three fields', () {
-      for (final step in registrationSteps({'farmer', 'hub_collector', 'processor'})) {
-        expect(step.length, lessThanOrEqualTo(3));
-      }
+    test('about you, then address, then the role page only when a role has one', () {
+      final steps = registrationSteps({'farmer'});
+      expect(steps, hasLength(3));
+      expect(steps[0], containsAll(['first_name', 'birth_date', 'phone_number', 'line']));
+      expect(steps[1], containsAll(['province_id', 'subdistrict_id', 'zip_code']));
+      expect(steps[2], farmerOwnFields);
+      expect(registrationSteps({'hub_collector'})[2], ['id_card_number']);
+    });
+
+    test('the ID card is asked once even when the hub collector and processor are both picked', () {
+      final roleStep = registrationSteps({'hub_collector', 'processor', 'farmer'})[2];
+      expect(roleStep.where((f) => f == 'id_card_number'), hasLength(1));
+    });
+  });
+
+  group('rolesAsking', () {
+    test('names the picked roles a role-only field is for', () {
+      expect(rolesAsking('id_card_number', {'hub_collector', 'processor', 'farmer'}), ['hub_collector', 'processor']);
+      expect(rolesAsking('id_card_number', {'processor'}), ['processor']);
+      expect(rolesAsking('salary_income', {'farmer', 'processor'}), ['farmer']);
+      expect(rolesAsking('first_name', {'farmer'}), isEmpty);
+    });
+  });
+
+  group('signUpPrefill', () {
+    test('the phone number signed up with fills the profile phone', () {
+      expect(signUpPrefill('0812345678'), {'phone_number': '0812345678'});
+      expect(signUpPrefill(' 0812345678 '), {'phone_number': '0812345678'});
+    });
+
+    test('nothing for an email or a blank username', () {
+      expect(signUpPrefill('somchai@example.com'), isEmpty);
+      expect(signUpPrefill(''), isEmpty);
+      expect(signUpPrefill(null), isEmpty);
     });
   });
 

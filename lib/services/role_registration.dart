@@ -7,23 +7,47 @@
 
 import 'package:cocoa_supply/config/roles.dart';
 
-/// The pages of the form for [roles], at most three fields each.
+/// The farmer's own fields: household and farming.
+const List<String> farmerOwnFields = ['salary_income', 'family_member_count', 'agri_worker_count', 'agri_experience'];
+
+/// The pages of the form for [roles], in order:
+///
+/// 1. about you (name, birth date, phone, LINE), asked once for every role;
+/// 2. address, also once (the postcode fills itself from the subdistrict);
+/// 3. the picked roles' own fields, only when one of them has any.
 List<List<String>> registrationSteps(Set<String> roles) {
   final farmer = roles.contains('farmer');
   final hub = roles.contains('hub_collector');
   final processor = roles.contains('processor');
+  final ownFields = [if (hub || processor) 'id_card_number', if (farmer) ...farmerOwnFields];
   return [
-    ['first_name', 'last_name', 'nickname'],
-    ['birth_date', 'phone_number', 'line'],
-    ['province_id', 'district_id', 'subdistrict_id'],
-    [
-      'zip_code',
-      if (farmer || processor) 'address_detail',
-      if (hub || processor) 'id_card_number',
-    ],
-    if (farmer) ['salary_income', 'family_member_count'],
-    if (farmer) ['agri_worker_count', 'agri_experience'],
+    ['first_name', 'last_name', 'nickname', 'birth_date', 'phone_number', 'line'],
+    ['province_id', 'district_id', 'subdistrict_id', 'zip_code', if (farmer || processor) 'address_detail'],
+    if (ownFields.isNotEmpty) ownFields,
   ];
+}
+
+/// The picked roles that ask for [field], in the app's usual order: who a
+/// role-only field is for (the ID card is for the hub collector and the
+/// processor, the farm questions for the farmer).
+List<String> rolesAsking(String field, Set<String> roles) {
+  const askedBy = {
+    'id_card_number': {'hub_collector', 'processor'},
+    'salary_income': {'farmer'},
+    'family_member_count': {'farmer'},
+    'agri_worker_count': {'farmer'},
+    'agri_experience': {'farmer'},
+  };
+  final askers = askedBy[field] ?? const <String>{};
+  return selfServiceRoles.where((r) => roles.contains(r) && askers.contains(r)).toList();
+}
+
+/// The answers the role form starts with right after sign-up: the phone
+/// number the account was made with, so it isn't asked again. Nothing when
+/// [username] isn't a phone number (someone who signs in with an email).
+Map<String, String> signUpPrefill(String? username) {
+  final phone = username?.trim() ?? '';
+  return RegExp(r'^0[0-9]{9}$').hasMatch(phone) ? {'phone_number': phone} : const {};
 }
 
 const Set<String> _requiredForAll = {
@@ -45,8 +69,7 @@ const Map<String, Set<String>> _requiredByRole = {
 
 /// Whether [field] must be filled: it is required when any picked role needs it.
 bool isRegistrationFieldRequired(String field, Set<String> roles) =>
-    _requiredForAll.contains(field) ||
-    roles.any((role) => _requiredByRole[role]?.contains(field) ?? false);
+    _requiredForAll.contains(field) || roles.any((role) => _requiredByRole[role]?.contains(field) ?? false);
 
 /// Answers to start the form with when adding a role later: the shared
 /// fields of the first profile the person already has, so they don't type
@@ -72,19 +95,14 @@ Map<String, String> registrationPrefill(Map<String, dynamic> profiles) {
 /// The fields the person emptied while editing: filled when the form opened
 /// ([prefill]), blank in [form] now. A field [role] requires is left out, as
 /// are fields not in [form].
-Set<String> clearedFields(
-  Map<String, String> prefill,
-  Map<String, dynamic> form,
-  String role,
-) =>
-    {
-      for (final entry in prefill.entries)
-        if (entry.value.trim().isNotEmpty &&
-            form.containsKey(entry.key) &&
-            '${form[entry.key] ?? ''}'.trim().isEmpty &&
-            !isRegistrationFieldRequired(entry.key, {role}))
-          entry.key,
-    };
+Set<String> clearedFields(Map<String, String> prefill, Map<String, dynamic> form, String role) => {
+  for (final entry in prefill.entries)
+    if (entry.value.trim().isNotEmpty &&
+        form.containsKey(entry.key) &&
+        '${form[entry.key] ?? ''}'.trim().isEmpty &&
+        !isRegistrationFieldRequired(entry.key, {role}))
+      entry.key,
+};
 
 /// Fields about the person rather than one role's work (name, phone,
 /// address). Editing them in one role's profile can be applied to the
@@ -107,6 +125,6 @@ const Set<String> sharedProfileFields = {
 
 /// The shared fields of [form] only (see [sharedProfileFields]).
 Map<String, dynamic> sharedAnswers(Map<String, dynamic> form) => {
-      for (final entry in form.entries)
-        if (sharedProfileFields.contains(entry.key)) entry.key: entry.value,
-    };
+  for (final entry in form.entries)
+    if (sharedProfileFields.contains(entry.key)) entry.key: entry.value,
+};
