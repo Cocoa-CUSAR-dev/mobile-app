@@ -88,6 +88,19 @@ void main() {
       );
     });
 
+    test('strips a trailing slash from the override and the default', () {
+      expect(
+        resolveApiBaseUrl(ApiGroup.tasks, {
+          ApiGroup.tasks: 'https://tasks.example/',
+        }, fallback),
+        'https://tasks.example',
+      );
+      expect(
+        resolveApiBaseUrl(ApiGroup.tasks, {}, '$fallback/'),
+        fallback,
+      );
+    });
+
     test('sends only the overridden group to its own backend', () {
       const overrides = {ApiGroup.tasks: 'https://new.example'};
 
