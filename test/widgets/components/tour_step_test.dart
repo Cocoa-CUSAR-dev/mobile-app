@@ -117,7 +117,7 @@ void main() {
   testWidgets('finishing the last page ends the tour and sets the seen flag', (tester) async {
     await pumpPage(tester);
     TourController.instance.replay();
-    await show(tester, TourStage.plot);
+    await show(tester, TourStage.done);
 
     await tester.tap(find.text('ถัดไป'));
     await tester.pumpAndSettle();

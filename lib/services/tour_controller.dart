@@ -3,9 +3,24 @@ import 'package:flutter/widgets.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 /// The pages the guided tour walks through, in order (docs-and-plan#310).
-/// farmTab is the home page's ฟาร์ม tab, where the "เพิ่มข้อมูลฟาร์ม"
-/// button is; farm and plot are the two register pages.
-enum TourStage { signUp, role, home, farmTab, farm, plot }
+/// - farmTab: the home page's ฟาร์ม tab, where "เพิ่มข้อมูลฟาร์ม" is.
+/// - farmInfo / farmAddress / farmMap: the farm form's three pages.
+/// - plotAdd: the farm card's plots box on the ฟาร์ม tab, once a farm exists.
+/// - plotInfo / plotMap: the plot form's first page and its map page.
+/// - done: back on the ฟาร์ม tab after the first plot is saved.
+enum TourStage {
+  signUp,
+  role,
+  home,
+  farmTab,
+  farmInfo,
+  farmAddress,
+  farmMap,
+  plotAdd,
+  plotInfo,
+  plotMap,
+  done,
+}
 
 /// The widgets the tour points at. showcaseview 5 uses these only as ids
 /// (they aren't attached to the widgets), so pages and the scaffold around
@@ -26,6 +41,16 @@ abstract final class TourKeys {
 
   static final GlobalKey registerFarm = GlobalKey(debugLabel: 'tour:registerFarm');
 
+  static final GlobalKey farmInfo = GlobalKey(debugLabel: 'tour:farmInfo');
+  static final GlobalKey farmAddress = GlobalKey(debugLabel: 'tour:farmAddress');
+  static final GlobalKey farmMap = GlobalKey(debugLabel: 'tour:farmMap');
+
+  static final GlobalKey plotAdd = GlobalKey(debugLabel: 'tour:plotAdd');
+  static final GlobalKey plotInfo = GlobalKey(debugLabel: 'tour:plotInfo');
+  static final GlobalKey plotMap = GlobalKey(debugLabel: 'tour:plotMap');
+
+  static final GlobalKey done = GlobalKey(debugLabel: 'tour:done');
+
   /// The home page's steps, in order. It ends on the ฟาร์ม tab, which
   /// leads to the "เพิ่มข้อมูลฟาร์ม" button.
   static List<GlobalKey> get home => [homeDate, homeTasks, profile, farmTab];
@@ -39,6 +64,13 @@ abstract final class TourKeys {
         TourStage.role: [roleFarmer, roleNext],
         TourStage.home: home,
         TourStage.farmTab: [registerFarm],
+        TourStage.farmInfo: [farmInfo],
+        TourStage.farmAddress: [farmAddress],
+        TourStage.farmMap: [farmMap],
+        TourStage.plotAdd: [plotAdd],
+        TourStage.plotInfo: [plotInfo],
+        TourStage.plotMap: [plotMap],
+        TourStage.done: [done],
       };
 }
 
@@ -123,6 +155,11 @@ class TourController extends ChangeNotifier {
   /// Whether [stage]'s page should show its steps now.
   bool wants(TourStage stage) =>
       _active && stage.index >= _stage.index && !_shown.contains(stage);
+
+  /// Whether the tour has got as far as [stage]. For a page that shows more
+  /// than one stage (the ฟาร์ม tab): a later stage waits until the person
+  /// has actually been through the pages before it.
+  bool reached(TourStage stage) => _active && _stage.index >= stage.index;
 
   /// Shows [stage]'s steps, in the order of [keys], if the tour is running
   /// and hasn't reached a later page yet. Call it after the page's first

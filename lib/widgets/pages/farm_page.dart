@@ -42,8 +42,33 @@ class _FarmPageState extends State<FarmPage> {
     });
   }
 
+  // Guided tour (docs-and-plan#314): once the list shows a farm. After the
+  // farm form, the first farm's plots box ("add a plot"); after the plot
+  // form, the closing step. reached() keeps each one from showing early,
+  // while the person is still on an earlier page of the tour.
+  void _showFarmListTour() {
+    final tour = TourController.instance;
+    final (stage, key) = tour.reached(TourStage.farmInfo) && tour.wants(TourStage.plotAdd)
+        ? (TourStage.plotAdd, TourKeys.plotAdd)
+        : tour.reached(TourStage.plotInfo) && tour.wants(TourStage.done)
+            ? (TourStage.done, TourKeys.done)
+            : (null, null);
+    if (stage == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) tour.show(stage, [key!]);
+    });
+  }
+
   Future<void> _onRefresh() async {
     context.read<FarmBloc>().add(LoadFarms());
+  }
+
+  Future<void> _addPlot(String? farmId) async {
+    final result = await Navigator.of(context).pushNamed(
+      AppRoute.plotRegister,
+      arguments: {'farm_id': farmId},
+    );
+    if (result == true) _onRefresh();
   }
 
   void _navigateToRegister(BuildContext context) async {
@@ -51,6 +76,30 @@ class _FarmPageState extends State<FarmPage> {
     if (result == true) {
       _onRefresh();
     }
+  }
+
+  /// The first farm's plots box carries the tour's last two steps: adding the
+  /// first plot (tap the box), and the closing step once it's saved.
+  Widget _withTourSteps({required bool first, required VoidCallback onAddPlot, required Widget child}) {
+    if (!first) return child;
+    return TourStep(
+      stepKey: TourKeys.done,
+      title: 'เรียบร้อยแล้ว',
+      description: 'ลงทะเบียนฟาร์มและแปลงแรกเสร็จแล้ว งานที่ต้องบันทึกจะขึ้นที่หน้าหลัก '
+          'ดูคำแนะนำนี้อีกครั้งได้ที่ รูปโปรไฟล์ > "วิธีใช้แอป"',
+      isFirst: true,
+      isLast: true,
+      child: TourStep(
+        stepKey: TourKeys.plotAdd,
+        title: 'เพิ่มแปลงปลูก',
+        description: 'ฟาร์มของคุณพร้อมแล้ว ต่อไปเพิ่มแปลงที่ปลูกโกโก้ '
+            'ลองกดปุ่ม "ใส่ข้อมูล" ในกรอบนี้',
+        isFirst: true,
+        isLast: true,
+        onTap: onAddPlot,
+        child: child,
+      ),
+    );
   }
 
   @override
@@ -67,6 +116,7 @@ class _FarmPageState extends State<FarmPage> {
             if (farms.isEmpty) {
               return const EmptyStateView(message: 'ไม่พบข้อมูล');
             }
+            _showFarmListTour();
 
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 100), // เผื่อที่ให้ปุ่ม FAB
@@ -130,23 +180,19 @@ class _FarmPageState extends State<FarmPage> {
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                        child: DataRecordContainer<Plot>(
-                          title: 'แปลงปลูก',
-                          subtitle: 'ข้อมูลแปลงล่าสุด',
-                          items: farmPlots, // 🔥 ใช้ข้อมูลที่ดึงจาก farm
-                          borderRadius: const BorderRadius.all(Radius.circular(16)),
-                          cardColor: const Color(0xFFF8F6F5),
-                          itemBuilder: (context, item) =>
-                              Text(item.plotName ?? "", style: Theme.of(context).textTheme.bodyLarge),
-                          onAddData: () async {
-                            final result = await Navigator.of(context).pushNamed(
-                              AppRoute.plotRegister,
-                              arguments: {
-                                'farm_id': farm.farmId
-                              },
-                            );
-                            if (result == true) _onRefresh();
-                          },
+                        child: _withTourSteps(
+                          first: index == 0,
+                          onAddPlot: () => _addPlot(farm.farmId),
+                          child: DataRecordContainer<Plot>(
+                            title: 'แปลงปลูก',
+                            subtitle: 'ข้อมูลแปลงล่าสุด',
+                            items: farmPlots, // 🔥 ใช้ข้อมูลที่ดึงจาก farm
+                            borderRadius: const BorderRadius.all(Radius.circular(16)),
+                            cardColor: const Color(0xFFF8F6F5),
+                            itemBuilder: (context, item) =>
+                                Text(item.plotName ?? "", style: Theme.of(context).textTheme.bodyLarge),
+                            onAddData: () => _addPlot(farm.farmId),
+                          ),
                         ),
                       ),
                     ],
