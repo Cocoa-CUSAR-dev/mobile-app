@@ -123,11 +123,23 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         _controllers[key]?.text = value;
       }
     });
+    // The date pickers and the number +/- buttons change a controller without
+    // an onChanged, so "ถัดไป" would stay disabled until another field is typed in.
+    for (final controller in _controllers.values) {
+      controller.addListener(_onAnswerChanged);
+    }
+  }
+
+  void _onAnswerChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _controllers.forEach((_, c) => c.dispose());
+    _controllers.forEach((_, c) {
+      c.removeListener(_onAnswerChanged);
+      c.dispose();
+    });
     super.dispose();
   }
 
@@ -352,20 +364,24 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         ),
         Padding(
           padding: const EdgeInsets.all(24.0),
-          child: ElevatedButton(
-            onPressed: _pickedRoles.isEmpty
-                ? null
-                : () => setState(() {
-                      _choosingRoles = false;
-                      _currentStep = 0;
-                    }),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: Colors.grey.shade300,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          // Full width, like the form pages' buttons.
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _pickedRoles.isEmpty
+                  ? null
+                  : () => setState(() {
+                        _choosingRoles = false;
+                        _currentStep = 0;
+                      }),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: Colors.grey.shade300,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text('ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
             ),
-            child: Text('ถัดไป', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white)),
           ),
         ),
       ],

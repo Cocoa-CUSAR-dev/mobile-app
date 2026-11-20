@@ -136,6 +136,27 @@ void main() {
     expect(find.text('ที่อยู่'), findsOneWidget);
   });
 
+  testWidgets('"ถัดไป" turns on as soon as the birth date is picked, with nothing else typed', (tester) async {
+    // Everything else on the first page is prefilled (the phone comes from
+    // sign-up), so the date picker is the last thing the person touches.
+    await tester.pumpWidget(wrapPage(const RegisterRolePage(
+      prefill: {'first_name': 'สมชาย', 'last_name': 'โกโก้ดี', 'nickname': 'สม', 'phone_number': '0812345678'},
+    )));
+    await tester.pumpAndSettle();
+
+    await pickAndContinue(tester, ['เกษตรกร']);
+
+    ElevatedButton next() => tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ถัดไป'));
+    expect(next().onPressed, isNull);
+
+    final yearDown = find.byIcon(Icons.remove).last;
+    await tester.ensureVisible(yearDown);
+    await tester.tap(yearDown);
+    await tester.pump();
+
+    expect(next().onPressed, isNotNull);
+  });
+
   testWidgets('the phone number from sign-up is already filled in', (tester) async {
     await tester.pumpWidget(wrapPage(const RegisterRolePage(prefill: {'phone_number': '0812345678'})));
     await tester.pumpAndSettle();
