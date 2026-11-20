@@ -1,5 +1,6 @@
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/role_registration.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cocoa_supply/bloc/login/login_bloc.dart';
@@ -52,6 +53,13 @@ class _LoginPageState extends State<LoginPage> {
         LoginButtonPressed(username: _usernameController.text, password: _passwordController.text),
       );
     }
+  }
+
+  // Guided tour (docs-and-plan#312): a new farmer's tour starts here, unless
+  // this phone has seen it already. A normal login never starts it.
+  Future<void> _openSignUp() async {
+    await TourController.instance.startForNewUser();
+    if (mounted) Navigator.of(context).pushNamed(AppRoute.userRegister);
   }
 
   @override
@@ -173,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 Text('ยังไม่มีบัญชี?', style: Theme.of(context).textTheme.bodyLarge),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pushNamed(AppRoute.userRegister),
+                  onPressed: _openSignUp,
                   child: Text(
                     'สมัครใช้งาน',
                     style: Theme.of(
