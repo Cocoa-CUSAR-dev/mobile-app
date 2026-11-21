@@ -3,7 +3,36 @@ import 'package:flutter/widgets.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 /// The pages the guided tour walks through, in order (docs-and-plan#310).
-enum TourStage { signUp, role, home, farm, plot }
+/// farmTab is the home page's ฟาร์ม tab, where the "เพิ่มข้อมูลฟาร์ม"
+/// button is; farm and plot are the two register pages.
+enum TourStage { signUp, role, home, farmTab, farm, plot }
+
+/// The widgets the tour points at. showcaseview 5 uses these only as ids
+/// (they aren't attached to the widgets), so pages and the scaffold around
+/// them can share them.
+abstract final class TourKeys {
+  static final GlobalKey roleFarmer = GlobalKey(debugLabel: 'tour:roleFarmer');
+  static final GlobalKey roleNext = GlobalKey(debugLabel: 'tour:roleNext');
+
+  static final GlobalKey homeDate = GlobalKey(debugLabel: 'tour:homeDate');
+  static final GlobalKey homeTasks = GlobalKey(debugLabel: 'tour:homeTasks');
+  static final GlobalKey profile = GlobalKey(debugLabel: 'tour:profile');
+  static final GlobalKey farmTab = GlobalKey(debugLabel: 'tour:farmTab');
+
+  static final GlobalKey registerFarm = GlobalKey(debugLabel: 'tour:registerFarm');
+
+  /// The home page's steps, in order. It ends on the ฟาร์ม tab, which
+  /// leads to the "เพิ่มข้อมูลฟาร์ม" button.
+  static List<GlobalKey> get home => [homeDate, homeTasks, profile, farmTab];
+
+  /// Every page's steps, in tour order. The "1/7" counter on each step is
+  /// counted from this, so a page that adds steps adds them here too.
+  static Map<TourStage, List<GlobalKey>> get byStage => {
+        TourStage.role: [roleFarmer, roleNext],
+        TourStage.home: home,
+        TourStage.farmTab: [registerFarm],
+      };
+}
 
 /// Carries the guided tour across pages (docs-and-plan#311).
 ///
@@ -43,10 +72,24 @@ class TourController extends ChangeNotifier {
   late final ShowcaseView _view;
 
   bool _active = false;
+  TourStage _start = TourStage.signUp;
   TourStage _stage = TourStage.signUp;
   final Set<TourStage> _shown = {};
 
   bool get isActive => _active;
+
+  /// Where [key]'s step is in the whole tour, e.g. "3/7", counted from the
+  /// page the tour started on. Null when no tour is running or the step
+  /// isn't in [TourKeys.byStage].
+  String? progressOf(GlobalKey key) {
+    if (!_active) return null;
+    final steps = [
+      for (final stage in TourStage.values)
+        if (stage.index >= _start.index) ...?TourKeys.byStage[stage],
+    ];
+    final index = steps.indexOf(key);
+    return index < 0 ? null : '${index + 1}/${steps.length}';
+  }
 
   /// Starts the tour from sign-up, unless this phone has seen it already.
   Future<void> startForNewUser() async {
@@ -60,6 +103,7 @@ class TourController extends ChangeNotifier {
 
   void _begin(TourStage from) {
     _active = true;
+    _start = from;
     _stage = from;
     _shown.clear();
     notifyListeners();
@@ -71,12 +115,37 @@ class TourController extends ChangeNotifier {
 
   /// Shows [stage]'s steps, in the order of [keys], if the tour is running
   /// and hasn't reached a later page yet. Call it after the page's first
-  /// frame, once the highlighted widgets are laid out.
+  /// frame, once the highlighted widgets are laid out. Steps whose widget
+  /// isn't on screen are left out (e.g. the ฟาร์ม tab for someone who isn't
+  /// a farmer).
   void show(TourStage stage, List<GlobalKey> keys) {
-    if (!wants(stage) || keys.isEmpty) return;
+    if (!wants(stage)) return;
+    final onScreen = keys.where(_view.isTargetRendered).toList();
+    if (onScreen.isEmpty) return;
     _stage = stage;
     _shown.add(stage);
-    _view.startShowCase(keys);
+    _view.startShowCase(onScreen);
+  }
+
+  /// Moves to the next step, as "ถัดไป" does, then runs [action] (what the
+  /// tapped button does). Used by steps that continue when the highlighted
+  /// button itself is tapped.
+  ///
+  /// [action] waits until the step has closed: if it opened another page
+  /// first, the step's closing animation would pause with the covered page
+  /// and the tooltip would stay stuck on top of the new one.
+  void nextThen(VoidCallback action) {
+    var ran = false;
+    void done(int? index, GlobalKey key) {
+      if (ran) return;
+      ran = true;
+      // Not removed right here: showcaseview is looping over its callbacks.
+      Future.microtask(() => _view.removeOnCompleteCallback(done));
+      action();
+    }
+
+    _view.addOnCompleteCallback(done);
+    _view.next(force: true);
   }
 
   /// Skip: ends the whole tour, not just this page's steps.
