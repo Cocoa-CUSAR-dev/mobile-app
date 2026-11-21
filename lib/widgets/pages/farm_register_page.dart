@@ -102,6 +102,23 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
     }
   }
 
+  /// The postcode of [subdistrictId], filled in as the role form does. It
+  /// can still be changed.
+  Future<void> _fillZipCode(dynamic subdistrictId) async {
+    if (subdistrictId == null) return;
+    try {
+      final places = await context.read<DynamicBloc>().api.fetchConstants(
+        'location',
+        queryParams: {'subdistrict_id': '$subdistrictId'},
+      );
+      final zip = places.isEmpty ? null : places.first['zip_code']?.toString();
+      if (zip == null || zip.isEmpty || !mounted) return;
+      setState(() => _controllers['zip_code']!.text = zip);
+    } catch (_) {
+      // No postcode to offer: they type it.
+    }
+  }
+
   // --- Dropdown Data Fetcher ---
   Future<List<Map<String, dynamic>>> _getOptions(String key, {String? filterId, String? filterKey}) async {
     if (filterKey != null && filterId == null) return [];
@@ -178,12 +195,12 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
             type: AppSnackBarType.info,
           );
         }
-        // During the guided tour, land on the ฟาร์ม tab: the next step is
-        // adding the first plot to this farm.
+        // Land on the ฟาร์ม tab to show the new farm (and, in the guided
+        // tour, add its first plot) rather than back on the home tab.
         Navigator.of(context).pushNamedAndRemoveUntil(
           AppRoute.home,
           (route) => false,
-          arguments: TourController.instance.isActive ? {'openRole': 'farmer'} : null,
+          arguments: {'openRole': 'farmer'},
         );
       }
     } catch (e) {
@@ -263,7 +280,7 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
           stepKey: TourKeys.farmAddress,
           title: 'ที่อยู่ฟาร์ม',
           description: 'เลือกจังหวัดก่อน แล้วค่อยเลือกอำเภอและตำบล '
-              'รายการจะขึ้นตามจังหวัดที่เลือก',
+              'รหัสไปรษณีย์จะขึ้นเองเมื่อเลือกตำบล',
           isFirst: true,
           isLast: true,
           child: _farmAddressFields(),
@@ -340,7 +357,10 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
           isReq: true,
           filterId: _currentFormData['district_id']?.toString(),
           filterKey: 'district_id',
-          onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
+          onChanged: (val) {
+            setState(() => _currentFormData['subdistrict_id'] = val);
+            _fillZipCode(val);
+          },
         ),
         FormHelper.buildInput(
           label: 'รหัสไปรษณีย์',
