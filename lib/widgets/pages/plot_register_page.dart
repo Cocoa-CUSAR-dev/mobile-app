@@ -119,7 +119,7 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
     final nameStep = TourStep(
       stepKey: TourKeys.plotInfo,
       title: 'ข้อมูลแปลง',
-      description: 'ฟอร์มนี้ถามทีละข้อ ตอบแล้วกด "ถัดไป" ด้านล่าง '
+      description: 'ฟอร์มนี้ถามทีละข้อ ตอบแล้วกด "ต่อไป" ด้านล่าง '
           'ข้อที่เขียนว่า "หากระบุไม่ได้" เว้นไว้ได้',
       isFirst: true,
       isLast: true,

@@ -269,16 +269,8 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
           child: _farmAddressFields(),
         );
       case 2:
-        return TourStep(
-          stepKey: TourKeys.farmMap,
-          title: 'ปักหมุดฟาร์ม',
-          description: 'กดช่อง "ตำแหน่งฟาร์ม" เพื่อเปิดแผนที่ แตะ 1 จุดเพื่อปักหมุด '
-              'หรือแตะ 3 จุดขึ้นไปรอบฟาร์มเพื่อวัดพื้นที่ แล้วกด "บันทึก" '
-              'ปุ่มเป้าเล็งพาไปที่ที่คุณยืนอยู่',
-          isFirst: true,
-          isLast: true,
-          child: _farmMapFields(),
-        );
+        // The step highlights the map field only, not the photo below it.
+        return _farmMapFields();
       default:
         return const SizedBox.shrink();
     }
@@ -364,16 +356,25 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
   Widget _farmMapFields() {
     return Column(
       children: [
-        FormHelper.buildGIS(
-          label: 'ตำแหน่งฟาร์ม',
-          points: (_currentFormData['gis'] as List?)?.map((p) => LatLng(p['lat'], p['lng'])).toList() ?? [],
-          areaM2: (_currentFormData['gis_area_m2'] ?? 0.0) as double,
-          onChanged: (newData) => setState(() {
-            _currentFormData['gis'] = newData.points.isEmpty 
-                ? null 
-                : newData.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
-            _currentFormData['gis_area_m2'] = newData.areaM2;
-          }),
+        TourStep(
+          stepKey: TourKeys.farmMap,
+          title: 'ปักหมุดฟาร์ม',
+          description: 'กดช่อง "ตำแหน่งฟาร์ม" เพื่อเปิดแผนที่ แตะ 1 จุดเพื่อปักหมุด '
+              'หรือแตะ 3 จุดขึ้นไปรอบฟาร์มเพื่อวัดพื้นที่ แล้วกด "บันทึก" '
+              'ปุ่มเป้าเล็งพาไปที่ที่คุณยืนอยู่',
+          isFirst: true,
+          isLast: true,
+          child: FormHelper.buildGIS(
+            label: 'ตำแหน่งฟาร์ม',
+            points: (_currentFormData['gis'] as List?)?.map((p) => LatLng(p['lat'], p['lng'])).toList() ?? [],
+            areaM2: (_currentFormData['gis_area_m2'] ?? 0.0) as double,
+            onChanged: (newData) => setState(() {
+              _currentFormData['gis'] = newData.points.isEmpty
+                  ? null
+                  : newData.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
+              _currentFormData['gis_area_m2'] = newData.areaM2;
+            }),
+          ),
         ),
         const SizedBox(height: 16),
         FormHelper.buildUpload(

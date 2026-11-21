@@ -248,13 +248,22 @@ void main() {
       expect(TourController.instance.isActive, isTrue);
     });
 
-    testWidgets('a farm list before the farm form shows the farm-tab step, not the plot step', (tester) async {
+    testWidgets('replaying with a farm already: straight to adding a plot, not another farm', (tester) async {
       TourController.instance.replay();
       await tester.pumpWidget(wrapPage(const FarmPage(), client: oneFarm));
       await tester.pumpAndSettle();
 
-      expect(find.text('5/12 · ลงทะเบียนฟาร์ม'), findsOneWidget);
-      expect(find.text('9/12 · เพิ่มแปลงปลูก'), findsNothing);
+      expect(find.text('9/12 · เพิ่มแปลงปลูก'), findsOneWidget);
+      expect(find.text('5/12 · ลงทะเบียนฟาร์ม'), findsNothing);
+    });
+
+    testWidgets('the farm list shows no step before the home steps are done', (tester) async {
+      await TourController.instance.startForNewUser(); // still on sign-up
+      await tester.pumpWidget(wrapPage(const FarmPage(), client: oneFarm));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('เพิ่มแปลงปลูก ·'), findsNothing);
+      expect(find.textContaining('· เพิ่มแปลงปลูก'), findsNothing);
     });
 
     testWidgets('after the farm form: tap the plots box to add a plot, then the plot form explains itself', (tester) async {

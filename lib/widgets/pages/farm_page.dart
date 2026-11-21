@@ -24,35 +24,36 @@ class _FarmPageState extends State<FarmPage> {
   void initState() {
     super.initState();
     _onRefresh();
-    // Guided tour (docs-and-plan#313): the home steps end on this tab.
-    TourController.instance.addListener(_showTourIfWanted);
-    _showTourIfWanted();
+    // Guided tour: the home steps end on this tab. Rebuild when a tour starts
+    // or moves on, so the farm list below can show its step.
+    TourController.instance.addListener(_onTourChanged);
   }
 
   @override
   void dispose() {
-    TourController.instance.removeListener(_showTourIfWanted);
+    TourController.instance.removeListener(_onTourChanged);
     super.dispose();
   }
 
-  void _showTourIfWanted() {
-    if (!TourController.instance.wants(TourStage.farmTab)) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) TourController.instance.show(TourStage.farmTab, [TourKeys.registerFarm]);
-    });
+  void _onTourChanged() {
+    if (mounted) setState(() {});
   }
 
-  // Guided tour (docs-and-plan#314): once the list shows a farm. After the
-  // farm form, the first farm's plots box ("add a plot"); after the plot
-  // form, the closing step. reached() keeps each one from showing early,
-  // while the person is still on an earlier page of the tour.
-  void _showFarmListTour() {
+  // Guided tour (docs-and-plan#313, #314), once the farm list has loaded:
+  // - No farm yet: "เพิ่มข้อมูลฟาร์ม", which leads to the farm form.
+  // - A farm (just registered, or one the person already had when replaying
+  //   from วิธีใช้แอป): the first farm's plots box, "add a plot".
+  // - Back from the plot form: the closing step.
+  // reached() keeps each one from showing before the home steps are done.
+  void _showFarmListTour({required bool hasFarm}) {
     final tour = TourController.instance;
-    final (stage, key) = tour.reached(TourStage.farmInfo) && tour.wants(TourStage.plotAdd)
-        ? (TourStage.plotAdd, TourKeys.plotAdd)
+    final (stage, key) = !hasFarm
+        ? (tour.wants(TourStage.farmTab) ? (TourStage.farmTab, TourKeys.registerFarm) : (null, null))
         : tour.reached(TourStage.plotInfo) && tour.wants(TourStage.done)
             ? (TourStage.done, TourKeys.done)
-            : (null, null);
+            : tour.reached(TourStage.home) && tour.wants(TourStage.plotAdd)
+                ? (TourStage.plotAdd, TourKeys.plotAdd)
+                : (null, null);
     if (stage == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) tour.show(stage, [key!]);
@@ -113,10 +114,10 @@ class _FarmPageState extends State<FarmPage> {
           } else if (state is FarmsLoaded) {
             final farms = state.farms;
             
+            _showFarmListTour(hasFarm: farms.isNotEmpty);
             if (farms.isEmpty) {
               return const EmptyStateView(message: 'ไม่พบข้อมูล');
             }
-            _showFarmListTour();
 
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 100), // เผื่อที่ให้ปุ่ม FAB
