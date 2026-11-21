@@ -440,7 +440,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
                     ),
                   ],
                   const SizedBox(height: 24),
-                  _buildCurrentStepFields(),
+                  _withTourStep(_buildCurrentStepFields()),
                   if (isLastStep && _editing && _otherOwnedRoles.isNotEmpty)
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
@@ -459,6 +459,46 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
         ],
       ),
     );
+  }
+
+  // Guided tour (docs-and-plan#313): one step per form page and one on the
+  // review. Each explains its page and closes with เข้าใจแล้ว before it is
+  // filled in, as the date and address pickers open over the page.
+  static const _tourPages = [
+    (TourStage.roleInfo, 'ข้อมูลส่วนตัว',
+        'กรอกชื่อ นามสกุล ชื่อเล่น และวันเกิด (กด + หรือ − เพื่อเปลี่ยนวัน เดือน ปี) '
+            'เบอร์โทรเติมให้แล้ว กรอกครบแล้วกด "ถัดไป"'),
+    (TourStage.roleAddress, 'ที่อยู่ของคุณ',
+        'เลือกจังหวัด อำเภอ แล้วตำบล รหัสไปรษณีย์จะขึ้นเอง ใส่บ้านเลขที่ถ้ามี'),
+    (TourStage.roleDetails, 'ข้อมูลตามบทบาท',
+        'คำถามของบทบาทที่เลือก กด + หรือ − เพื่อใส่ตัวเลข '
+            'จำนวนสมาชิกครอบครัวให้นับตัวคุณด้วย'),
+  ];
+
+  GlobalKey _tourKey(TourStage stage) => TourKeys.byStage[stage]!.single;
+
+  Widget _withTourStep(Widget fields) {
+    final (stage, title, description) = _tourPages[_currentStep];
+    _showTourFor(stage);
+    return TourStep(
+      stepKey: _tourKey(stage),
+      title: title,
+      description: description,
+      isFirst: true,
+      isLast: true,
+      child: fields,
+    );
+  }
+
+  void _showTourFor(TourStage stage) {
+    final tour = TourController.instance;
+    if (!tour.wants(stage)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Roles with no questions of their own have no third page.
+      if (_totalSteps < 3) tour.skipStages(const [TourStage.roleDetails]);
+      tour.show(stage, [_tourKey(stage)]);
+    });
   }
 
   /// About you, address, then the roles' own page (see registrationSteps).
@@ -864,6 +904,7 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
       });
 
   Widget _buildReview() {
+    _showTourFor(TourStage.roleReview);
     final textTheme = Theme.of(context).textTheme;
     final submitLabel = _failedRoles.isNotEmpty
         ? 'ลองอีกครั้ง'
@@ -880,16 +921,29 @@ class _RegisterRolePageState extends State<RegisterRolePage> {
               children: [
                 _buildStepIndicator(_pageCount - 1),
                 const SizedBox(height: 32),
-                Text(
-                  'ตรวจสอบข้อมูล',
-                  textAlign: TextAlign.center,
-                  style: textTheme.headlineSmall?.copyWith(color: AppColors.primary),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'ถ้ามีข้อมูลผิด แตะ "แก้ไข" เพื่อกลับไปแก้',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                TourStep(
+                  stepKey: TourKeys.roleReview,
+                  title: 'ตรวจข้อมูลก่อนสมัคร',
+                  description: 'ดูว่าข้อมูลถูกไหม ผิดตรงไหนกด "แก้ไข" ที่กล่องนั้น '
+                      'ถูกแล้วกดปุ่มด้านล่างเพื่อสมัคร',
+                  isFirst: true,
+                  isLast: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'ตรวจสอบข้อมูล',
+                        textAlign: TextAlign.center,
+                        style: textTheme.headlineSmall?.copyWith(color: AppColors.primary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ถ้ามีข้อมูลผิด แตะ "แก้ไข" เพื่อกลับไปแก้',
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 _reviewCard(

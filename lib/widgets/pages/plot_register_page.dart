@@ -5,7 +5,9 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:cocoa_supply/bloc/dynamic/dynamic.dart';
 import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/widgets/components/date_input.dart';
 import 'package:cocoa_supply/widgets/components/number_input.dart';
@@ -111,8 +113,30 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
   @override
   Widget build(BuildContext context) {
     // รายการคำถาม (ข้าม farm_id เพราะเซตค่าไว้แล้ว)
+    // Guided tour (docs-and-plan#314): a step on the first page and on the
+    // map page. Like the farm form's, they explain and close with เข้าใจแล้ว
+    // before the page is filled in, so they never sit on top of a picker.
+    final nameStep = TourStep(
+      stepKey: TourKeys.plotInfo,
+      title: 'ข้อมูลแปลง',
+      description: 'ฟอร์มนี้ถามทีละข้อ ตอบแล้วกด "ต่อไป" ด้านล่าง '
+          'ข้อที่เขียนว่า "หากระบุไม่ได้" เว้นไว้ได้',
+      isFirst: true,
+      isLast: true,
+      child: _input('plot_name', 'ชื่อแปลง', isReq: true),
+    );
+    final mapStep = TourStep(
+      stepKey: TourKeys.plotMap,
+      title: 'ปักหมุดแปลง',
+      description: 'กดช่องนี้เพื่อเปิดแผนที่ แตะ 1 จุดเพื่อปักหมุด '
+          'หรือแตะ 3 จุดขึ้นไปรอบแปลงเพื่อวัดพื้นที่ แล้วกด "บันทึก"',
+      isFirst: true,
+      isLast: true,
+      child: _gis('gis', 'ตำแหน่งแปลงปลูก (GIS)'),
+    );
+
     final List<Widget> allFields = [
-      _input('plot_name', 'ชื่อแปลง', isReq: true),
+      nameStep,
       _input('land_ownership', 'ชื่อเจ้าของกรรมสิทธิ์', isReq: true),
       _number(
         'cocoa_planted_area',
@@ -132,9 +156,17 @@ class _PlotRegisterPageState extends State<PlotRegisterPage> {
         'วันที่เริ่มปลูก (หากระบุไม่ได้ให้กรอกเป็นวันที่ 1 มกราคมของปีที่ท่านปลูก)',
         isReq: true,
       ),
-      _gis('gis', 'ตำแหน่งแปลงปลูก (GIS)'),
+      mapStep,
       _upload('upload', 'แนบภาพประกอบแปลง'),
     ];
+
+    final tourStage = {0: TourStage.plotInfo, allFields.indexOf(mapStep): TourStage.plotMap}[_currentStep];
+    if (tourStage != null && TourController.instance.wants(tourStage)) {
+      final key = tourStage == TourStage.plotInfo ? TourKeys.plotInfo : TourKeys.plotMap;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) TourController.instance.show(tourStage, [key]);
+      });
+    }
 
     int totalSteps = allFields.length;
     bool isLastStep = (_currentStep + 1) >= totalSteps;

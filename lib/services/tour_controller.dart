@@ -1,11 +1,32 @@
 import 'package:cocoa_supply/services/tour_service.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 /// The pages the guided tour walks through, in order (docs-and-plan#310).
-/// farmTab is the home page's ฟาร์ม tab, where the "เพิ่มข้อมูลฟาร์ม"
-/// button is; farm and plot are the two register pages.
-enum TourStage { signUp, role, home, farmTab, farm, plot }
+/// - roleInfo .. roleReview: the role form's pages (about you, address, the
+///   role's own questions, review).
+/// - farmTab: the home page's ฟาร์ม tab, where "เพิ่มข้อมูลฟาร์ม" is.
+/// - farmInfo / farmAddress / farmMap: the farm form's three pages.
+/// - plotAdd: the farm card's plots box on the ฟาร์ม tab, once a farm exists.
+/// - plotInfo / plotMap: the plot form's first page and its map page.
+/// - done: back on the ฟาร์ม tab after the first plot is saved.
+enum TourStage {
+  signUp,
+  role,
+  roleInfo,
+  roleAddress,
+  roleDetails,
+  roleReview,
+  home,
+  farmTab,
+  farmInfo,
+  farmAddress,
+  farmMap,
+  plotAdd,
+  plotInfo,
+  plotMap,
+  done,
+}
 
 /// The widgets the tour points at. showcaseview 5 uses these only as ids
 /// (they aren't attached to the widgets), so pages and the scaffold around
@@ -19,12 +40,27 @@ abstract final class TourKeys {
   static final GlobalKey roleFarmer = GlobalKey(debugLabel: 'tour:roleFarmer');
   static final GlobalKey roleNext = GlobalKey(debugLabel: 'tour:roleNext');
 
+  static final GlobalKey roleInfo = GlobalKey(debugLabel: 'tour:roleInfo');
+  static final GlobalKey roleAddress = GlobalKey(debugLabel: 'tour:roleAddress');
+  static final GlobalKey roleDetails = GlobalKey(debugLabel: 'tour:roleDetails');
+  static final GlobalKey roleReview = GlobalKey(debugLabel: 'tour:roleReview');
+
   static final GlobalKey homeDate = GlobalKey(debugLabel: 'tour:homeDate');
   static final GlobalKey homeTasks = GlobalKey(debugLabel: 'tour:homeTasks');
   static final GlobalKey profile = GlobalKey(debugLabel: 'tour:profile');
   static final GlobalKey farmTab = GlobalKey(debugLabel: 'tour:farmTab');
 
   static final GlobalKey registerFarm = GlobalKey(debugLabel: 'tour:registerFarm');
+
+  static final GlobalKey farmInfo = GlobalKey(debugLabel: 'tour:farmInfo');
+  static final GlobalKey farmAddress = GlobalKey(debugLabel: 'tour:farmAddress');
+  static final GlobalKey farmMap = GlobalKey(debugLabel: 'tour:farmMap');
+
+  static final GlobalKey plotAdd = GlobalKey(debugLabel: 'tour:plotAdd');
+  static final GlobalKey plotInfo = GlobalKey(debugLabel: 'tour:plotInfo');
+  static final GlobalKey plotMap = GlobalKey(debugLabel: 'tour:plotMap');
+
+  static final GlobalKey done = GlobalKey(debugLabel: 'tour:done');
 
   /// The home page's steps, in order. It ends on the ฟาร์ม tab, which
   /// leads to the "เพิ่มข้อมูลฟาร์ม" button.
@@ -37,8 +73,19 @@ abstract final class TourKeys {
   static Map<TourStage, List<GlobalKey>> get byStage => {
         TourStage.signUp: signUp,
         TourStage.role: [roleFarmer, roleNext],
+        TourStage.roleInfo: [roleInfo],
+        TourStage.roleAddress: [roleAddress],
+        TourStage.roleDetails: [roleDetails],
+        TourStage.roleReview: [roleReview],
         TourStage.home: home,
         TourStage.farmTab: [registerFarm],
+        TourStage.farmInfo: [farmInfo],
+        TourStage.farmAddress: [farmAddress],
+        TourStage.farmMap: [farmMap],
+        TourStage.plotAdd: [plotAdd],
+        TourStage.plotInfo: [plotInfo],
+        TourStage.plotMap: [plotMap],
+        TourStage.done: [done],
       };
 }
 
@@ -53,6 +100,8 @@ abstract final class TourKeys {
 /// - Finishing the last page's steps sets the flag too.
 /// - The tour only starts from [startForNewUser] (the sign-up button) or
 ///   [replay] (the profile sheet), so someone who just logs in never sees it.
+/// - Its progress is saved on the phone, so closing the app mid-tour picks
+///   it up again on the page the person was on ([restore]).
 class TourController extends ChangeNotifier {
   TourController._(this._seen) {
     _view = ShowcaseView.register(
@@ -79,6 +128,10 @@ class TourController extends ChangeNotifier {
   /// The showcaseview scope every [TourStep] uses.
   static const String scope = 'cocoa_tour';
 
+  /// MaterialApp's scaffoldMessengerKey, so skipping can say where the tour
+  /// can be replayed from whatever page it was on.
+  static final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
+
   final TourService _seen;
   late final ShowcaseView _view;
 
@@ -86,6 +139,9 @@ class TourController extends ChangeNotifier {
   TourStage _start = TourStage.signUp;
   TourStage _stage = TourStage.signUp;
   final Set<TourStage> _shown = {};
+  // Stages this tour won't show, e.g. the farm form for someone replaying
+  // the tour who already has a farm. Left out of the step counter.
+  final Set<TourStage> _skipped = {};
 
   bool get isActive => _active;
 
@@ -96,11 +152,50 @@ class TourController extends ChangeNotifier {
     if (!_active) return null;
     final steps = [
       for (final stage in TourStage.values)
-        if (stage.index >= _start.index) ...?TourKeys.byStage[stage],
+        if (stage.index >= _start.index && !_skipped.contains(stage)) ...?TourKeys.byStage[stage],
     ];
     final index = steps.indexOf(key);
     return index < 0 ? null : '${index + 1}/${steps.length}';
   }
+
+  /// Leaves [stages] out of this tour (and of the counter).
+  void skipStages(Iterable<TourStage> stages) {
+    if (!_active || _skipped.containsAll(stages)) return;
+    _skipped.addAll(stages);
+    _save();
+    notifyListeners();
+  }
+
+  /// Picks up a tour that was running when the app was closed. The page the
+  /// person was on shows its steps again; earlier pages don't.
+  Future<void> restore() async {
+    final saved = await _seen.loadProgress();
+    if (saved == null) return;
+    try {
+      TourStage stage(Object? name) => TourStage.values.byName(name as String);
+      _start = stage(saved['start']);
+      _stage = stage(saved['stage']);
+      _shown
+        ..clear()
+        ..addAll((saved['shown'] as List).map(stage))
+        ..remove(_stage);
+      _skipped
+        ..clear()
+        ..addAll((saved['skipped'] as List? ?? const []).map(stage));
+      _active = true;
+      notifyListeners();
+    } catch (_) {
+      // A saved tour from an older version of the app: drop it.
+      await _seen.clearProgress();
+    }
+  }
+
+  void _save() => _seen.saveProgress({
+        'start': _start.name,
+        'stage': _stage.name,
+        'shown': [for (final s in _shown) s.name],
+        'skipped': [for (final s in _skipped) s.name],
+      });
 
   /// Starts the tour from sign-up, unless this phone has seen it already.
   Future<void> startForNewUser() async {
@@ -117,12 +212,19 @@ class TourController extends ChangeNotifier {
     _start = from;
     _stage = from;
     _shown.clear();
+    _skipped.clear();
+    _save();
     notifyListeners();
   }
 
   /// Whether [stage]'s page should show its steps now.
   bool wants(TourStage stage) =>
       _active && stage.index >= _stage.index && !_shown.contains(stage);
+
+  /// Whether the tour has got as far as [stage]. For a page that shows more
+  /// than one stage (the ฟาร์ม tab): a later stage waits until the person
+  /// has actually been through the pages before it.
+  bool reached(TourStage stage) => _active && _stage.index >= stage.index;
 
   /// Shows [stage]'s steps, in the order of [keys], if the tour is running
   /// and hasn't reached a later page yet. Call it after the page's first
@@ -135,6 +237,7 @@ class TourController extends ChangeNotifier {
     if (onScreen.isEmpty) return;
     _stage = stage;
     _shown.add(stage);
+    _save();
     _view.startShowCase(onScreen);
   }
 
@@ -159,9 +262,16 @@ class TourController extends ChangeNotifier {
     _view.next(force: true);
   }
 
-  /// Skip: ends the whole tour, not just this page's steps.
+  /// Skip: ends the whole tour, not just this page's steps, and says where
+  /// to replay it, so one stray tap doesn't lose it for good.
   Future<void> skip() async {
     if (!_active) return;
+    messengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text('ปิดคำแนะนำแล้ว ดูอีกครั้งได้ที่ปุ่ม ? มุมขวาบนของหน้าหลัก'),
+        duration: Duration(seconds: 5),
+      ),
+    );
     await _end();
   }
 
@@ -174,6 +284,7 @@ class TourController extends ChangeNotifier {
   Future<void> _end() async {
     _active = false;
     notifyListeners();
+    await _seen.clearProgress();
     await _seen.markSeen();
   }
 }

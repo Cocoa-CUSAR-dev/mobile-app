@@ -28,6 +28,7 @@ class TourStep extends StatelessWidget {
     this.isLast = false,
     this.onTap,
     this.fillIn = false,
+    this.padding = const EdgeInsets.all(6),
     this.shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
@@ -46,6 +47,10 @@ class TourStep extends StatelessWidget {
   final bool isLast;
 
   final ShapeBorder shape;
+
+  /// Space between the widget and the highlight's edge. A small target
+  /// (e.g. a tab icon) gets more, so it's easy to see what to tap.
+  final EdgeInsets padding;
 
   /// What tapping the highlighted widget does; see the class comment.
   final VoidCallback? onTap;
@@ -78,7 +83,7 @@ class TourStep extends StatelessWidget {
       tooltipPadding: const EdgeInsets.all(16),
       tooltipBorderRadius: BorderRadius.circular(16),
       targetShapeBorder: shape,
-      targetPadding: const EdgeInsets.all(6),
+      targetPadding: padding,
       // Taps outside the tooltip don't end the tour by accident.
       disableBarrierInteraction: true,
       disableMovingAnimation: true,

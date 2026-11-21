@@ -8,7 +8,9 @@ import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
 import 'package:cocoa_supply/services/dynamic_api_service.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:cocoa_supply/widgets/components/upload_input.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
 import 'package:cocoa_supply/widgets/components/form_helper.dart'; // ตรวจสอบชื่อไฟล์ให้ถูกต้อง
@@ -100,6 +102,23 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
     }
   }
 
+  /// The postcode of [subdistrictId], filled in as the role form does. It
+  /// can still be changed.
+  Future<void> _fillZipCode(dynamic subdistrictId) async {
+    if (subdistrictId == null) return;
+    try {
+      final places = await context.read<DynamicBloc>().api.fetchConstants(
+        'location',
+        queryParams: {'subdistrict_id': '$subdistrictId'},
+      );
+      final zip = places.isEmpty ? null : places.first['zip_code']?.toString();
+      if (zip == null || zip.isEmpty || !mounted) return;
+      setState(() => _controllers['zip_code']!.text = zip);
+    } catch (_) {
+      // No postcode to offer: they type it.
+    }
+  }
+
   // --- Dropdown Data Fetcher ---
   Future<List<Map<String, dynamic>>> _getOptions(String key, {String? filterId, String? filterKey}) async {
     if (filterKey != null && filterId == null) return [];
@@ -176,7 +195,13 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
             type: AppSnackBarType.info,
           );
         }
-        Navigator.of(context).pushNamedAndRemoveUntil(AppRoute.home, (route) => false);
+        // Land on the ฟาร์ม tab to show the new farm (and, in the guided
+        // tour, add its first plot) rather than back on the home tab.
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoute.home,
+          (route) => false,
+          arguments: {'openRole': 'farmer'},
+        );
       }
     } catch (e) {
       if (mounted) AppSnackBar.show(context, 'Error: $e', type: AppSnackBarType.error);
@@ -185,9 +210,25 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
     }
   }
 
+  // Guided tour (docs-and-plan#314): one step per form page. Each explains
+  // its page and closes with เข้าใจแล้ว before anything is filled in: the
+  // date, dropdown and map pickers open over the page, and a step left open
+  // would sit on top of them.
+  static const _tourStages = [TourStage.farmInfo, TourStage.farmAddress, TourStage.farmMap];
+  static final _tourKeys = [TourKeys.farmInfo, TourKeys.farmAddress, TourKeys.farmMap];
+
+  void _showTourForPage() {
+    final stage = _tourStages[_currentStep];
+    if (!TourController.instance.wants(stage)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TourController.instance.show(stage, [_tourKeys[_currentStep]]);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     bool canProceed = _isCurrentStepValid();
+    _showTourForPage();
 
     return SimpleScaffold(
       title: '',
@@ -225,103 +266,144 @@ class _FarmRegisterPageState extends State<FarmRegisterPage> {
   Widget _buildCurrentStepFields() {
     switch (_currentStep) {
       case 0:
-        return Column(
-          children: [
-            FormHelper.buildInput(
-              label: 'ชื่อฟาร์ม',
-              controller: _controllers['farm_name']!,
-              hintText: 'กรุณากรอกชื่อฟาร์ม',
-              isReq: true,
-              onChanged: () => setState(() {}),
-            ),
-            FormHelper.buildDate(
-              label: 'วันที่ก่อตั้ง',
-              controller: _controllers['found_date']!,
-              isReq: true,
-            ),
-            FormHelper.buildInput(
-              label: 'ชื่อผู้ติดต่อ',
-              controller: _controllers['contact_name']!,
-              hintText: 'กรุณากรอกชื่อผู้ติดต่อ',
-              isReq: true,
-              onChanged: () => setState(() {}),
-            ),
-            FormHelper.buildInput(
-              label: 'เบอร์โทรศัพท์',
-              controller: _controllers['phone_number']!,
-              hintText: 'กรุณากรอกเบอร์โทรศัพท์',
-              isReq: true,
-              onChanged: () => setState(() {}),
-            ),
-          ],
+        return TourStep(
+          stepKey: TourKeys.farmInfo,
+          title: 'ข้อมูลฟาร์ม',
+          description: 'ตั้งชื่อฟาร์ม ใส่วันที่เริ่มทำฟาร์ม และชื่อกับเบอร์ของคนที่ติดต่อได้ '
+              'กรอกครบแล้วกด "ถัดไป" ด้านล่าง',
+          isFirst: true,
+          isLast: true,
+          child: _farmInfoFields(),
         );
       case 1:
-        return Column(
-          children: [
-            _buildFilteredDropdown('province_id', 'จังหวัด', isReq: true, 
-              onChanged: (val) => setState(() {
-                _currentFormData['province_id'] = val;
-                _currentFormData['district_id'] = null;
-                _currentFormData['subdistrict_id'] = null;
-              })
-            ),
-            _buildFilteredDropdown(
-              'district_id',
-              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
-                  ? 'เขต'
-                  : 'อำเภอ',
-              isReq: true,
-              filterId: _currentFormData['province_id']?.toString(),
-              filterKey: 'province_id',
-              onChanged: (val) => setState(() {
-                _currentFormData['district_id'] = val;
-                _currentFormData['subdistrict_id'] = null;
-              })
-            ),
-            _buildFilteredDropdown(
-              'subdistrict_id',
-              DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
-                  ? 'แขวง'
-                  : 'ตำบล',
-              isReq: true,
-              filterId: _currentFormData['district_id']?.toString(),
-              filterKey: 'district_id',
-              onChanged: (val) => setState(() => _currentFormData['subdistrict_id'] = val),
-            ),
-            FormHelper.buildInput(
-              label: 'รหัสไปรษณีย์',
-              controller: _controllers['zip_code']!,
-              hintText: 'กรุณากรอกรหัสไปรษณีย์',
-              isReq: true,
-              onChanged: () => setState(() {}),
-            ),
-          ],
+        return TourStep(
+          stepKey: TourKeys.farmAddress,
+          title: 'ที่อยู่ฟาร์ม',
+          description: 'เลือกจังหวัดก่อน แล้วค่อยเลือกอำเภอและตำบล '
+              'รหัสไปรษณีย์จะขึ้นเองเมื่อเลือกตำบล',
+          isFirst: true,
+          isLast: true,
+          child: _farmAddressFields(),
         );
       case 2:
-        return Column(
-          children: [
-            FormHelper.buildGIS(
-              label: 'ตำแหน่งฟาร์ม',
-              points: (_currentFormData['gis'] as List?)?.map((p) => LatLng(p['lat'], p['lng'])).toList() ?? [],
-              areaM2: (_currentFormData['gis_area_m2'] ?? 0.0) as double,
-              onChanged: (newData) => setState(() {
-                _currentFormData['gis'] = newData.points.isEmpty 
-                    ? null 
-                    : newData.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
-                _currentFormData['gis_area_m2'] = newData.areaM2;
-              }),
-            ),
-            const SizedBox(height: 16),
-            FormHelper.buildUpload(
-              label: 'รูปฟาร์ม (JPG, PNG หรือ WEBP ไม่เกิน 5 MB)',
-              controller: _fileControllers['upload']!,
-              pickFiles: _pickFarmPhoto,
-            ),
-          ],
-        );
+        // The step highlights the map field only, not the photo below it.
+        return _farmMapFields();
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _farmInfoFields() {
+    return Column(
+      children: [
+        FormHelper.buildInput(
+          label: 'ชื่อฟาร์ม',
+          controller: _controllers['farm_name']!,
+          hintText: 'กรุณากรอกชื่อฟาร์ม',
+          isReq: true,
+          onChanged: () => setState(() {}),
+        ),
+        FormHelper.buildDate(
+          label: 'วันที่ก่อตั้ง',
+          controller: _controllers['found_date']!,
+          isReq: true,
+        ),
+        FormHelper.buildInput(
+          label: 'ชื่อผู้ติดต่อ',
+          controller: _controllers['contact_name']!,
+          hintText: 'กรุณากรอกชื่อผู้ติดต่อ',
+          isReq: true,
+          onChanged: () => setState(() {}),
+        ),
+        FormHelper.buildInput(
+          label: 'เบอร์โทรศัพท์',
+          controller: _controllers['phone_number']!,
+          hintText: 'กรุณากรอกเบอร์โทรศัพท์',
+          isReq: true,
+          onChanged: () => setState(() {}),
+        ),
+      ],
+    );
+  }
+
+  Widget _farmAddressFields() {
+    return Column(
+      children: [
+        _buildFilteredDropdown('province_id', 'จังหวัด', isReq: true, 
+          onChanged: (val) => setState(() {
+            _currentFormData['province_id'] = val;
+            _currentFormData['district_id'] = null;
+            _currentFormData['subdistrict_id'] = null;
+          })
+        ),
+        _buildFilteredDropdown(
+          'district_id',
+          DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+              ? 'เขต'
+              : 'อำเภอ',
+          isReq: true,
+          filterId: _currentFormData['province_id']?.toString(),
+          filterKey: 'province_id',
+          onChanged: (val) => setState(() {
+            _currentFormData['district_id'] = val;
+            _currentFormData['subdistrict_id'] = null;
+          })
+        ),
+        _buildFilteredDropdown(
+          'subdistrict_id',
+          DynamicApiService.isBangkokProvinceId(_currentFormData['province_id']?.toString())
+              ? 'แขวง'
+              : 'ตำบล',
+          isReq: true,
+          filterId: _currentFormData['district_id']?.toString(),
+          filterKey: 'district_id',
+          onChanged: (val) {
+            setState(() => _currentFormData['subdistrict_id'] = val);
+            _fillZipCode(val);
+          },
+        ),
+        FormHelper.buildInput(
+          label: 'รหัสไปรษณีย์',
+          controller: _controllers['zip_code']!,
+          hintText: 'กรุณากรอกรหัสไปรษณีย์',
+          isReq: true,
+          onChanged: () => setState(() {}),
+        ),
+      ],
+    );
+  }
+
+  Widget _farmMapFields() {
+    return Column(
+      children: [
+        TourStep(
+          stepKey: TourKeys.farmMap,
+          title: 'ปักหมุดฟาร์ม',
+          description: 'กดช่อง "ตำแหน่งฟาร์ม" เพื่อเปิดแผนที่ แตะ 1 จุดเพื่อปักหมุด '
+              'หรือแตะ 3 จุดขึ้นไปรอบฟาร์มเพื่อวัดพื้นที่ แล้วกด "บันทึก" '
+              'ปุ่มเป้าเล็งพาไปที่ที่คุณยืนอยู่',
+          isFirst: true,
+          isLast: true,
+          child: FormHelper.buildGIS(
+            label: 'ตำแหน่งฟาร์ม',
+            points: (_currentFormData['gis'] as List?)?.map((p) => LatLng(p['lat'], p['lng'])).toList() ?? [],
+            areaM2: (_currentFormData['gis_area_m2'] ?? 0.0) as double,
+            onChanged: (newData) => setState(() {
+              _currentFormData['gis'] = newData.points.isEmpty
+                  ? null
+                  : newData.points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList();
+              _currentFormData['gis_area_m2'] = newData.areaM2;
+            }),
+          ),
+        ),
+        const SizedBox(height: 16),
+        FormHelper.buildUpload(
+          label: 'รูปฟาร์ม (JPG, PNG หรือ WEBP ไม่เกิน 5 MB)',
+          controller: _fileControllers['upload']!,
+          pickFiles: _pickFarmPhoto,
+        ),
+      ],
+    );
   }
 
   // Helper สำหรับ Dropdown ที่ต้อง Re-fetch ตาม Filter
