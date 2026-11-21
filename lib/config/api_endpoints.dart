@@ -44,6 +44,9 @@ abstract final class ApiEndpoints {
   static const String authLogout = '/api/v1/auth/logout';
   // Link a LINE account to an existing account, then sign in.
   static const String authLineLink = '/api/v1/auth/line/link';
+  // Sign in with a LINE ID token alone: works when that LINE account is
+  // already linked, 403 when it is not.
+  static const String authLineLogin = '/api/v1/auth/line/login';
 
   /// Who I am: my account, my roles and a profile for each role.
   static const String me = '/api/v1/me';
