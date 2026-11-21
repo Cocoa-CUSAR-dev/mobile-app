@@ -123,6 +123,10 @@ class _RootScaffoldState extends State<RootScaffold> {
   // first.
   void _replayTour() {
     Navigator.pop(context); // the profile sheet
+    _startTour();
+  }
+
+  void _startTour() {
     if (widget.currentIndex != 0) {
       widget.onItemSelected(0);
       _pageController.jumpToPage(0);
@@ -259,10 +263,12 @@ class _RootScaffoldState extends State<RootScaffold> {
       navItems.add(BottomNavigationBarItem(
         icon: TourStep(
           stepKey: TourKeys.farmTab,
-          title: 'ฟาร์มและแปลงของคุณ',
+          title: 'แท็บฟาร์ม',
           description: 'ฟาร์มและแปลงปลูกทั้งหมดอยู่ที่แท็บนี้ '
               'ลองกดที่ "ฟาร์ม" ด้านล่างเลย',
           isLast: true,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
           onTap: () {
             final farmTab = _tabOfRole('farmer', roles);
             widget.onItemSelected(farmTab);
@@ -298,11 +304,18 @@ class _RootScaffoldState extends State<RootScaffold> {
         toolbarHeight: 64,
         backgroundColor: AppColors.primary,
         actions: [
+          // The guided tour's replay, in plain sight (it is also in the
+          // profile sheet). Skipping the tour points here.
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white, size: 30),
+            tooltip: 'วิธีใช้แอป',
+            onPressed: _startTour,
+          ),
           TourStep(
             stepKey: TourKeys.profile,
             title: 'โปรไฟล์ของคุณ',
-            description: 'กดตรงนี้เพื่อดูข้อมูลของคุณ เพิ่มบทบาท '
-                'หรือกด "วิธีใช้แอป" เพื่อดูคำแนะนำนี้อีกครั้ง',
+            description: 'กดตรงนี้เพื่อดูข้อมูลของคุณหรือเพิ่มบทบาท '
+                'ปุ่ม ? ข้างๆ ใช้ดูคำแนะนำนี้อีกครั้ง',
             shape: const CircleBorder(),
             child: IconButton(
               icon: const Icon(Icons.account_circle, color: Colors.white, size: 42.0),

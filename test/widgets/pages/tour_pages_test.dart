@@ -54,24 +54,24 @@ void main() {
       await openSignUp(tester);
       final fields = find.byType(TextField);
 
-      expect(find.text('1/18 · เบอร์โทรศัพท์'), findsOneWidget);
+      expect(find.text('1/22 · เบอร์โทรศัพท์'), findsOneWidget);
       await tester.enterText(fields.at(0), '0812345678');
       await tester.pump();
       expect(find.text('0812345678'), findsOneWidget);
-      expect(find.text('1/18 · เบอร์โทรศัพท์'), findsOneWidget); // still on this step
+      expect(find.text('1/22 · เบอร์โทรศัพท์'), findsOneWidget); // still on this step
       await next(tester, 'ถัดไป');
 
-      expect(find.text('2/18 · ตั้งรหัสผ่าน'), findsOneWidget);
+      expect(find.text('2/22 · ตั้งรหัสผ่าน'), findsOneWidget);
       await tester.enterText(fields.at(1), 'abc123');
       await tester.enterText(fields.at(2), 'abc123');
       await tester.pump();
       expect(find.text('รหัสผ่านตรงกัน'), findsOneWidget);
       await next(tester, 'ถัดไป');
 
-      expect(find.text('3/18 · อีเมล (ไม่บังคับ)'), findsOneWidget);
+      expect(find.text('3/22 · อีเมล (ไม่บังคับ)'), findsOneWidget);
       await next(tester, 'ถัดไป');
 
-      expect(find.text('4/18 · ไปเลือกบทบาท'), findsOneWidget);
+      expect(find.text('4/22 · ไปเลือกบทบาท'), findsOneWidget);
       expect(find.text('เข้าใจแล้ว'), findsNothing); // press the real button
     });
 
@@ -107,18 +107,35 @@ void main() {
     });
   });
 
+  group('role form pages', () {
+    testWidgets('each page of the form explains itself, then gets out of the way', (tester) async {
+      await TourController.instance.startForNewUser();
+      await tester.pumpWidget(wrapPage(const RegisterRolePage()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เกษตรกร'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ถัดไป'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('7/22 · ข้อมูลส่วนตัว'), findsOneWidget);
+      await next(tester, 'เข้าใจแล้ว');
+      expect(find.textContaining('· ข้อมูลส่วนตัว'), findsNothing);
+      expect(TourController.instance.wants(TourStage.roleAddress), isTrue);
+    });
+  });
+
   group('role page', () {
     testWidgets('after sign-up the farmer taps เกษตรกร, then ถัดไป, for real', (tester) async {
       await TourController.instance.startForNewUser();
       await tester.pumpWidget(wrapPage(const RegisterRolePage()));
       await tester.pumpAndSettle();
 
-      expect(find.text('5/18 · เลือกบทบาทของคุณ'), findsOneWidget);
+      expect(find.text('5/22 · เลือกบทบาทของคุณ'), findsOneWidget);
       expect(find.text('ถัดไป'), findsOneWidget); // only the page's own button
       await tester.tap(find.text('เกษตรกร'));
       await tester.pumpAndSettle();
 
-      expect(find.text('6/18 · ไปต่อ'), findsOneWidget);
+      expect(find.text('6/22 · ไปต่อ'), findsOneWidget);
       await tester.tap(find.text('ถัดไป'));
       await tester.pumpAndSettle();
 
@@ -189,13 +206,13 @@ void main() {
       await next(tester, 'ถัดไป');
       expect(find.text('3/12 · โปรไฟล์ของคุณ'), findsOneWidget);
       await next(tester, 'ถัดไป');
-      expect(find.text('4/12 · ฟาร์มและแปลงของคุณ'), findsOneWidget);
+      expect(find.text('4/12 · แท็บฟาร์ม'), findsOneWidget);
       expect(find.text('เข้าใจแล้ว'), findsNothing); // tap the tab itself
 
       await tester.tap(find.byIcon(Icons.park));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ฟาร์มและแปลงของคุณ'), findsNothing);
+      expect(find.textContaining('· แท็บฟาร์ม'), findsNothing);
       expect(find.text('farm body'), findsOneWidget);
       expect(TourController.instance.wants(TourStage.farmTab), isTrue);
     });
@@ -253,8 +270,10 @@ void main() {
       await tester.pumpWidget(wrapPage(const FarmPage(), client: oneFarm));
       await tester.pumpAndSettle();
 
-      expect(find.text('9/12 · เพิ่มแปลงปลูก'), findsOneWidget);
-      expect(find.text('5/12 · ลงทะเบียนฟาร์ม'), findsNothing);
+      // The farm form's 4 steps are left out of this tour: 4 home steps,
+      // then this one.
+      expect(find.text('5/8 · เพิ่มแปลงปลูก'), findsOneWidget);
+      expect(find.textContaining('ลงทะเบียนฟาร์ม'), findsNothing);
     });
 
     testWidgets('the farm list shows no step before the home steps are done', (tester) async {

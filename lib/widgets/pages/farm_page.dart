@@ -55,8 +55,15 @@ class _FarmPageState extends State<FarmPage> {
                 ? (TourStage.plotAdd, TourKeys.plotAdd)
                 : (null, null);
     if (stage == null) return;
+    // Replaying with a farm already: the farm form is left out of this tour,
+    // so the counter doesn't jump from 4/12 to 9/12.
+    final skipFarmForm = stage == TourStage.plotAdd && !tour.reached(TourStage.farmInfo);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) tour.show(stage, [key!]);
+      if (!mounted) return;
+      if (skipFarmForm) {
+        tour.skipStages(const [TourStage.farmTab, TourStage.farmInfo, TourStage.farmAddress, TourStage.farmMap]);
+      }
+      tour.show(stage, [key!]);
     });
   }
 
