@@ -14,6 +14,8 @@ void main() {
       expect(ApiEndpoints.authRegister, '/api/v1/auth/register');
       expect(ApiEndpoints.authRefresh, '/api/v1/auth/refresh');
       expect(ApiEndpoints.authLogout, '/api/v1/auth/logout');
+      expect(ApiEndpoints.authForgotPassword, '/api/v1/auth/forgot-password');
+      expect(ApiEndpoints.authForgotPasswordConfirm, '/api/v1/auth/forgot-password/confirm');
       expect(ApiEndpoints.authLineLink, '/api/v1/auth/line/link');
       expect(ApiEndpoints.me, '/api/v1/me');
       expect(ApiEndpoints.tasks, '/api/v1/tasks');

@@ -42,6 +42,9 @@ abstract final class ApiEndpoints {
   static const String authRegister = '/api/v1/auth/register';
   static const String authRefresh = '/api/v1/auth/refresh';
   static const String authLogout = '/api/v1/auth/logout';
+  // Forgot password: ask for a 6-digit code, then send it with a new password.
+  static const String authForgotPassword = '/api/v1/auth/forgot-password';
+  static const String authForgotPasswordConfirm = '/api/v1/auth/forgot-password/confirm';
   // Link a LINE account to an existing account, then sign in.
   static const String authLineLink = '/api/v1/auth/line/link';
   // Sign in with a LINE ID token alone: works when that LINE account is

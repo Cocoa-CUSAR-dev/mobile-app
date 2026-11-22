@@ -69,6 +69,19 @@ void main() {
     expect(find.byIcon(Icons.visibility_off), findsNothing);
   });
 
+  testWidgets('"ลืมรหัสผ่าน?" under the form opens forgot-password with the login typed so far', (tester) async {
+    await _setTallViewport(tester);
+    await tester.pumpWidget(wrapPage(const LoginPage()));
+    await tester.pump();
+    await tester.enterText(find.byType(TextFormField).first, '0812345678');
+
+    await tester.tap(find.text('ลืมรหัสผ่าน?'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ลืมรหัสผ่าน'), findsOneWidget);
+    expect(find.text('0812345678'), findsOneWidget);
+  });
+
   testWidgets('M-REG-01 — "สมัครใช้งาน" under the form opens sign-up', (tester) async {
     await _setTallViewport(tester);
     await tester.pumpWidget(wrapPage(const LoginPage()));
