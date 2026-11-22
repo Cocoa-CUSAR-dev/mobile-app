@@ -99,6 +99,28 @@ void main() {
       expect(TourController.instance.isActive, isFalse);
     });
 
+    testWidgets('going back from sign-up stops the tour, so logging in shows none', (tester) async {
+      await openSignUp(tester);
+      expect(TourController.instance.isActive, isTrue);
+
+      // Back to the login page (the phone's back button).
+      Navigator.of(tester.element(find.text('สร้างบัญชี'))).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('เบอร์มือถือ 10 หลัก'), findsNothing);
+      expect(TourController.instance.isActive, isFalse);
+      expect(TourController.instance.wants(TourStage.home), isFalse);
+      // Not "seen": signing up later still gets the tour.
+      expect(await TourService().hasSeen(), isFalse);
+    });
+
+    testWidgets('leaving sign-up after the account is made keeps the tour going', (tester) async {
+      await TourController.instance.startForNewUser();
+      TourController.instance.leftSignUp(signedUp: true);
+      expect(TourController.instance.isActive, isTrue);
+      expect(TourController.instance.wants(TourStage.role), isTrue);
+    });
+
     testWidgets('logging in never starts the tour', (tester) async {
       await tester.pumpWidget(wrapPage(const LoginPage()));
       await tester.pumpAndSettle();

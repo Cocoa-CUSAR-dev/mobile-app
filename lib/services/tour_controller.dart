@@ -262,6 +262,25 @@ class TourController extends ChangeNotifier {
     _view.next(force: true);
   }
 
+  /// Stops the tour without marking it seen, so it can start again next
+  /// time: the person left sign-up without signing up, or logged out. Its
+  /// saved progress goes too, so a restart doesn't bring it back.
+  void cancel() {
+    if (!_active) return;
+    // Before dismiss(): its onDismiss would otherwise count this as ข้าม.
+    _active = false;
+    if (_view.isShowcaseRunning) _view.dismiss();
+    _seen.clearProgress();
+    notifyListeners();
+  }
+
+  /// The sign-up page closed. A tour that "สมัครใช้งาน" started stops unless
+  /// the account was made, so going back and logging in to an existing
+  /// account doesn't carry a new-user tour onto its home page.
+  void leftSignUp({required bool signedUp}) {
+    if (!signedUp && _start == TourStage.signUp && _stage == TourStage.signUp) cancel();
+  }
+
   /// Skip: ends the whole tour, not just this page's steps, and says where
   /// to replay it, so one stray tap doesn't lose it for good.
   Future<void> skip() async {
