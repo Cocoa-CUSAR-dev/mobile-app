@@ -58,6 +58,9 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
   String get _password => _controllers['password']!.text;
 
+  /// The account was made; leaving the page now carries the tour on.
+  bool _signedUp = false;
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +73,10 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
   @override
   void dispose() {
+    // After this frame: the tree is locked while the page is torn down, and
+    // stopping the tour rebuilds the widgets that show it.
+    final signedUp = _signedUp;
+    Future.microtask(() => TourController.instance.leftSignUp(signedUp: signedUp));
     _controllers.forEach((_, c) => c.dispose());
     _confirmController.dispose();
     super.dispose();
@@ -104,6 +111,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       // The hub signs the new account in: its answer is a token pair, which
       // postData keeps. So no second login -- straight on to picking a role.
       await _registerService.postData(payload);
+      _signedUp = true;
 
       if (mounted) {
         AppSnackBar.show(context, 'สร้างบัญชีเรียบร้อย', type: AppSnackBarType.success);
