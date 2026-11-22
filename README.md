@@ -60,6 +60,45 @@ final String baseUrl = 'http://192.168.10.188:8080';
 
 Change it to point at your Go backend. Moving this to env/flavor-based config is `APP-1`, an early Phase I fix — until then you must edit the source per environment.
 
+## LINE: the account-link page (LIFF)
+
+The LINE rich menu's "เชื่อมบัญชี LINE" button opens
+`https://liff.line.me/2010930353-4bm8N7wN`. The LIFF ID is in
+`lib/config/liff_config.dart` (override with `--dart-define=LIFF_ID=...`).
+
+| Where | Value |
+|---|---|
+| LIFF Endpoint URL (LINE Developers Console) | `https://cocoa-cusar-dev.github.io/mobile-app/liff-link` |
+| App route | `/liff-link` (`LiffLinkPage`, `lib/widgets/pages/liff_login_page.dart`) |
+| Success route | `/liffLoginSuccess` (closes the LIFF window) |
+
+What the page does (`lib/bloc/login/liff_login_bloc.dart`):
+
+1. `liff.init()`, once per page.
+2. If the person is already signed in with LINE, it tries `POST /api/v1/auth/line/login`
+   with the LINE ID token. Answered with a token pair: this LINE account is
+   already linked, so it goes straight to the success page. Any other answer
+   (403 = not linked yet) shows the landing page, "ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่".
+3. "มีบัญชีผู้ใช้แล้ว" starts LINE login if needed and shows the form
+   (`POST /api/v1/auth/line/link`); "ยังไม่มีบัญชีผู้ใช้" goes to sign-up and links
+   afterwards.
+
+Things worth knowing:
+
+- **`/liff-link` answers 200.** GitHub Pages has no file for that path, so
+  `deploy-web-test.yml` publishes a copy of `index.html` as `liff-link.html`
+  (GitHub Pages serves `foo.html` at `/foo`). Without it every launch from LINE,
+  and the return from LINE's login with its `code`, first got a 404 and a script
+  redirect from `web/404.html`. Other deep links still use `404.html`. If the
+  Endpoint URL or `--base-href` ever changes, change it in the console, here and
+  in that workflow step.
+- **LIFF runs `init` once per page** (`liffInit` shares the one in flight, and
+  the bloc handles init and login events one at a time). Two inits at once
+  write two PKCE verifiers and LINE then refuses the code of the first with
+  `code_verifier does not match`.
+- That error text comes from LINE, not from our backend. The error panel's
+  "ลองใหม่อีกครั้ง" starts over.
+
 ## Known issues tracked for Phase I
 
 - `APP-1` — backend URL hardcoded to a LAN IP (above).
