@@ -11,6 +11,11 @@ enum TourStage { signUp, role, home, farmTab, farm, plot }
 /// (they aren't attached to the widgets), so pages and the scaffold around
 /// them can share them.
 abstract final class TourKeys {
+  static final GlobalKey signUpPhone = GlobalKey(debugLabel: 'tour:signUpPhone');
+  static final GlobalKey signUpPassword = GlobalKey(debugLabel: 'tour:signUpPassword');
+  static final GlobalKey signUpEmail = GlobalKey(debugLabel: 'tour:signUpEmail');
+  static final GlobalKey signUpSubmit = GlobalKey(debugLabel: 'tour:signUpSubmit');
+
   static final GlobalKey roleFarmer = GlobalKey(debugLabel: 'tour:roleFarmer');
   static final GlobalKey roleNext = GlobalKey(debugLabel: 'tour:roleNext');
 
@@ -27,7 +32,10 @@ abstract final class TourKeys {
 
   /// Every page's steps, in tour order. The "1/7" counter on each step is
   /// counted from this, so a page that adds steps adds them here too.
+  static List<GlobalKey> get signUp => [signUpPhone, signUpPassword, signUpEmail, signUpSubmit];
+
   static Map<TourStage, List<GlobalKey>> get byStage => {
+        TourStage.signUp: signUp,
         TourStage.role: [roleFarmer, roleNext],
         TourStage.home: home,
         TourStage.farmTab: [registerFarm],
@@ -51,6 +59,9 @@ class TourController extends ChangeNotifier {
       scope: scope,
       onFinish: _onPageFinished,
       onDismiss: (_) => skip(),
+      // Scrolls a long page (e.g. sign-up on a small phone) to each step's
+      // widget, so the tooltip never points off-screen.
+      enableAutoScroll: true,
     );
   }
 
@@ -146,6 +157,23 @@ class TourController extends ChangeNotifier {
 
     _view.addOnCompleteCallback(done);
     _view.next(force: true);
+  }
+
+  /// Stops the tour without marking it seen, so it can start again next
+  /// time: the person left sign-up without signing up, or logged out.
+  void cancel() {
+    if (!_active) return;
+    // Before dismiss(): its onDismiss would otherwise count this as ข้าม.
+    _active = false;
+    if (_view.isShowcaseRunning) _view.dismiss();
+    notifyListeners();
+  }
+
+  /// The sign-up page closed. A tour that "สมัครใช้งาน" started stops unless
+  /// the account was made, so going back and logging in to an existing
+  /// account doesn't carry a new-user tour onto its home page.
+  void leftSignUp({required bool signedUp}) {
+    if (!signedUp && _start == TourStage.signUp && _stage == TourStage.signUp) cancel();
   }
 
   /// Skip: ends the whole tour, not just this page's steps.

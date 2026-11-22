@@ -4,7 +4,9 @@ import 'package:cocoa_supply/config/api_endpoints.dart';
 import 'package:cocoa_supply/services/email_validation.dart';
 import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/services/service_provider.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
 import 'package:cocoa_supply/widgets/components/simple_scaffold.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:cocoa_supply/widgets/components/form_input.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
@@ -56,8 +58,25 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
   String get _password => _controllers['password']!.text;
 
+  /// The account was made; leaving the page now carries the tour on.
+  bool _signedUp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Guided tour (docs-and-plan#312): started by the login page's
+    // "สมัครใช้งาน".
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) TourController.instance.show(TourStage.signUp, TourKeys.signUp);
+    });
+  }
+
   @override
   void dispose() {
+    // After this frame: the tree is locked while the page is torn down, and
+    // stopping the tour rebuilds the widgets that show it.
+    final signedUp = _signedUp;
+    Future.microtask(() => TourController.instance.leftSignUp(signedUp: signedUp));
     _controllers.forEach((_, c) => c.dispose());
     _confirmController.dispose();
     super.dispose();
@@ -92,6 +111,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       // The hub signs the new account in: its answer is a token pair, which
       // postData keeps. So no second login -- straight on to picking a role.
       await _registerService.postData(payload);
+      _signedUp = true;
 
       if (mounted) {
         AppSnackBar.show(context, 'สร้างบัญชีเรียบร้อย', type: AppSnackBarType.success);
@@ -174,63 +194,105 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 style: textTheme.bodyLarge?.copyWith(color: Colors.black54),
               ),
               const SizedBox(height: 24),
-              FormInput(
-                label: 'เบอร์โทรศัพท์',
-                hintText: 'เช่น 08XXXXXXXX',
-                controller: _controllers['username']!,
-                isRequired: true,
-                keyboardType: TextInputType.phone,
-                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
-                validator: _validatePhone,
+              TourStep(
+                stepKey: TourKeys.signUpPhone,
+                title: 'เบอร์โทรศัพท์',
+                description: 'กรอกเบอร์มือถือ 10 หลักในช่องนี้ได้เลย '
+                    '(ใช้เข้าสู่ระบบครั้งต่อไป) แล้วกด "ถัดไป"',
+                isFirst: true,
+                fillIn: true,
+                child: FormInput(
+                  label: 'เบอร์โทรศัพท์',
+                  hintText: 'เช่น 08XXXXXXXX',
+                  controller: _controllers['username']!,
+                  isRequired: true,
+                  keyboardType: TextInputType.phone,
+                  prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
+                  validator: _validatePhone,
+                ),
               ),
-              FormInput(
-                label: 'รหัสผ่าน',
-                hintText: 'ตั้งรหัสผ่านของคุณ',
-                controller: _controllers['password']!,
-                isPassword: !_showPassword,
-                isRequired: true,
-                prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
-                suffixIcon: _eye(_showPassword, () => setState(() => _showPassword = !_showPassword)),
-                onChanged: (_) => setState(() {}),
-                validator: _validatePassword,
+              TourStep(
+                stepKey: TourKeys.signUpPassword,
+                title: 'ตั้งรหัสผ่าน',
+                description: 'ตั้งรหัสผ่านอย่างน้อย 6 ตัว แล้วพิมพ์ซ้ำในช่องล่าง '
+                    'ถ้าถูกต้องจะขึ้นเครื่องหมายสีเขียว แล้วกด "ถัดไป"',
+                fillIn: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FormInput(
+                      label: 'รหัสผ่าน',
+                      hintText: 'ตั้งรหัสผ่านของคุณ',
+                      controller: _controllers['password']!,
+                      isPassword: !_showPassword,
+                      isRequired: true,
+                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                      suffixIcon: _eye(_showPassword, () => setState(() => _showPassword = !_showPassword)),
+                      onChanged: (_) => setState(() {}),
+                      validator: _validatePassword,
+                    ),
+                    _rule('อย่างน้อย $minPasswordLength ตัว', _password.length >= minPasswordLength),
+                    FormInput(
+                      label: 'ยืนยันรหัสผ่าน',
+                      hintText: 'กรอกรหัสผ่านอีกครั้ง',
+                      controller: _confirmController,
+                      isPassword: !_showConfirm,
+                      isRequired: true,
+                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                      suffixIcon: _eye(_showConfirm, () => setState(() => _showConfirm = !_showConfirm)),
+                      onChanged: (_) => setState(() {}),
+                      validator: _validateConfirm,
+                    ),
+                    if (confirm.isNotEmpty)
+                      confirm == _password
+                          ? _rule('รหัสผ่านตรงกัน', true)
+                          : _rule('รหัสผ่านไม่ตรงกัน', false, broken: true),
+                  ],
+                ),
               ),
-              _rule('อย่างน้อย $minPasswordLength ตัว', _password.length >= minPasswordLength),
-              FormInput(
-                label: 'ยืนยันรหัสผ่าน',
-                hintText: 'กรอกรหัสผ่านอีกครั้ง',
-                controller: _confirmController,
-                isPassword: !_showConfirm,
-                isRequired: true,
-                prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
-                suffixIcon: _eye(_showConfirm, () => setState(() => _showConfirm = !_showConfirm)),
-                onChanged: (_) => setState(() {}),
-                validator: _validateConfirm,
-              ),
-              if (confirm.isNotEmpty)
-                confirm == _password ? _rule('รหัสผ่านตรงกัน', true) : _rule('รหัสผ่านไม่ตรงกัน', false, broken: true),
-              FormInput(
-                label: 'อีเมล (ไม่บังคับ)',
-                hintText: 'ใช้เข้าสู่ระบบแทนเบอร์โทรได้',
-                controller: _controllers['email']!,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: const Icon(Icons.mail_outline, color: AppColors.primary),
-                validator: emailError,
+              TourStep(
+                stepKey: TourKeys.signUpEmail,
+                title: 'อีเมล (ไม่บังคับ)',
+                description: 'ถ้ามีอีเมล กรอกไว้ใช้เข้าสู่ระบบแทนเบอร์โทรได้ '
+                    'ไม่มีก็กด "ถัดไป" ได้เลย',
+                fillIn: true,
+                child: FormInput(
+                  label: 'อีเมล (ไม่บังคับ)',
+                  hintText: 'ใช้เข้าสู่ระบบแทนเบอร์โทรได้',
+                  controller: _controllers['email']!,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: const Icon(Icons.mail_outline, color: AppColors.primary),
+                  validator: emailError,
+                ),
               ),
               const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleRegister,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              // The fields were filled in during the steps above, so this one
+              // presses the real button. If a field is still wrong, the form
+              // shows why and the tour waits on the role page.
+              TourStep(
+                stepKey: TourKeys.signUpSubmit,
+                title: 'ไปเลือกบทบาท',
+                description: 'กรอกครบแล้ว ลองกดปุ่มนี้เพื่อสร้างบัญชี '
+                    'แล้วไปเลือกว่าคุณทำงานอะไร',
+                isLast: true,
+                onTap: () {
+                  if (!_isLoading) _handleRegister();
+                },
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleRegister,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text('ถัดไป: เลือกบทบาท', style: textTheme.bodyLarge?.copyWith(color: Colors.white)),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : Text('ถัดไป: เลือกบทบาท', style: textTheme.bodyLarge?.copyWith(color: Colors.white)),
               ),
               const SizedBox(height: 16),
               Wrap(

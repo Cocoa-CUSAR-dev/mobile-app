@@ -8,10 +8,12 @@ import 'package:cocoa_supply/bloc/home/home_event.dart';
 import 'package:cocoa_supply/bloc/home/home_state.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
 import 'package:cocoa_supply/services/tour_controller.dart';
+import 'package:cocoa_supply/services/tour_service.dart';
 import 'package:cocoa_supply/widgets/components/root_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:cocoa_supply/widgets/pages/farm_page.dart';
 import 'package:cocoa_supply/widgets/pages/home_page.dart';
+import 'package:cocoa_supply/widgets/pages/login_page.dart';
 import 'package:cocoa_supply/widgets/pages/register_role_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,18 +39,106 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  group('sign-up (docs-and-plan#312)', () {
+    Future<void> openSignUp(WidgetTester tester) async {
+      await tester.pumpWidget(wrapPage(const LoginPage()));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('สมัครใช้งาน'));
+      await tester.tap(find.text('สมัครใช้งาน'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('สมัครใช้งาน starts the tour, and each field is filled in during its step', (tester) async {
+      await openSignUp(tester);
+      final fields = find.byType(TextField);
+
+      expect(find.text('1/11 · เบอร์โทรศัพท์'), findsOneWidget);
+      await tester.enterText(fields.at(0), '0812345678');
+      await tester.pump();
+      expect(find.text('0812345678'), findsOneWidget);
+      expect(find.text('1/11 · เบอร์โทรศัพท์'), findsOneWidget); // still on this step
+      await next(tester, 'ถัดไป');
+
+      expect(find.text('2/11 · ตั้งรหัสผ่าน'), findsOneWidget);
+      await tester.enterText(fields.at(1), 'abc123');
+      await tester.enterText(fields.at(2), 'abc123');
+      await tester.pump();
+      expect(find.text('รหัสผ่านตรงกัน'), findsOneWidget);
+      await next(tester, 'ถัดไป');
+
+      expect(find.text('3/11 · อีเมล (ไม่บังคับ)'), findsOneWidget);
+      await next(tester, 'ถัดไป');
+
+      expect(find.text('4/11 · ไปเลือกบทบาท'), findsOneWidget);
+      expect(find.text('เข้าใจแล้ว'), findsNothing); // press the real button
+    });
+
+    testWidgets('the last step presses the real button; a wrong field still shows why', (tester) async {
+      await openSignUp(tester);
+      for (var i = 0; i < 3; i++) {
+        await next(tester, 'ถัดไป');
+      }
+
+      await tester.tap(find.text('ถัดไป: เลือกบทบาท'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('ไปเลือกบทบาท ·'), findsNothing);
+      expect(find.text('กรุณาระบุเบอร์โทรศัพท์'), findsOneWidget); // nothing was typed
+      // The tour waits for the role page, once the account is made.
+      expect(TourController.instance.wants(TourStage.role), isTrue);
+    });
+
+    testWidgets('a phone that has seen the tour signs up without it', (tester) async {
+      await TourService().markSeen();
+      await openSignUp(tester);
+
+      expect(find.text('สร้างบัญชี'), findsOneWidget);
+      expect(find.textContaining('เบอร์มือถือ 10 หลัก'), findsNothing);
+      expect(TourController.instance.isActive, isFalse);
+    });
+
+    testWidgets('going back from sign-up stops the tour, so logging in shows none', (tester) async {
+      await openSignUp(tester);
+      expect(TourController.instance.isActive, isTrue);
+
+      // Back to the login page (the phone's back button).
+      Navigator.of(tester.element(find.text('สร้างบัญชี'))).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('เบอร์มือถือ 10 หลัก'), findsNothing);
+      expect(TourController.instance.isActive, isFalse);
+      expect(TourController.instance.wants(TourStage.home), isFalse);
+      // Not "seen": signing up later still gets the tour.
+      expect(await TourService().hasSeen(), isFalse);
+    });
+
+    testWidgets('leaving sign-up after the account is made keeps the tour going', (tester) async {
+      await TourController.instance.startForNewUser();
+      TourController.instance.leftSignUp(signedUp: true);
+      expect(TourController.instance.isActive, isTrue);
+      expect(TourController.instance.wants(TourStage.role), isTrue);
+    });
+
+    testWidgets('logging in never starts the tour', (tester) async {
+      await tester.pumpWidget(wrapPage(const LoginPage()));
+      await tester.pumpAndSettle();
+
+      expect(TourController.instance.isActive, isFalse);
+    });
+  });
+
   group('role page', () {
     testWidgets('after sign-up the farmer taps เกษตรกร, then ถัดไป, for real', (tester) async {
       await TourController.instance.startForNewUser();
       await tester.pumpWidget(wrapPage(const RegisterRolePage()));
       await tester.pumpAndSettle();
 
-      expect(find.text('1/7 · เลือกบทบาทของคุณ'), findsOneWidget);
+      expect(find.text('5/11 · เลือกบทบาทของคุณ'), findsOneWidget);
       expect(find.text('ถัดไป'), findsOneWidget); // only the page's own button
       await tester.tap(find.text('เกษตรกร'));
       await tester.pumpAndSettle();
 
-      expect(find.text('2/7 · ไปต่อ'), findsOneWidget);
+      expect(find.text('6/11 · ไปต่อ'), findsOneWidget);
       await tester.tap(find.text('ถัดไป'));
       await tester.pumpAndSettle();
 

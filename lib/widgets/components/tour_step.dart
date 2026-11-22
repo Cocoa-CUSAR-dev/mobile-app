@@ -15,6 +15,9 @@ import 'package:showcaseview/showcaseview.dart';
 /// widget itself, which does what that widget does (open a tab or a page)
 /// and moves the tour on. Use it for steps that lead somewhere, so farmers
 /// press the real button once; keep "ถัดไป" for steps that only explain.
+///
+/// With [fillIn], the highlighted field still takes taps and typing, so the
+/// person fills it in while the step explains it, then presses "ถัดไป".
 class TourStep extends StatelessWidget {
   const TourStep({
     required GlobalKey stepKey,
@@ -24,6 +27,7 @@ class TourStep extends StatelessWidget {
     this.isFirst = false,
     this.isLast = false,
     this.onTap,
+    this.fillIn = false,
     this.shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
@@ -45,6 +49,10 @@ class TourStep extends StatelessWidget {
 
   /// What tapping the highlighted widget does; see the class comment.
   final VoidCallback? onTap;
+
+  /// Whether the highlighted field can be filled in during the step; see the
+  /// class comment.
+  final bool fillIn;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +86,8 @@ class TourStep extends StatelessWidget {
       // ข้าม), so move on first and then do what the widget does.
       onTargetClick: onTap == null ? null : () => TourController.instance.nextThen(onTap!),
       disposeOnTap: onTap == null ? null : false,
+      // Lets taps through to the field under the highlight.
+      disableDefaultTargetGestures: fillIn,
       // No closing animation to wait for before a step's button opens
       // another page.
       disableScaleAnimation: true,
