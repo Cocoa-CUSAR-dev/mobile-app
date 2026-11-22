@@ -49,7 +49,10 @@ void main() {
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: _Page(first, second)));
+    await tester.pumpWidget(MaterialApp(
+      scaffoldMessengerKey: TourController.messengerKey,
+      home: _Page(first, second),
+    ));
   }
 
   Future<void> show(WidgetTester tester, TourStage stage) async {
@@ -96,6 +99,51 @@ void main() {
     expect(TourController.instance.isActive, isFalse);
     expect(TourController.instance.wants(TourStage.role), isFalse);
     expect(await TourService().hasSeen(), isTrue);
+    // It says where to replay it, so a stray tap doesn't lose it for good.
+    expect(find.textContaining('ดูอีกครั้งได้ที่ปุ่ม ?'), findsOneWidget);
+  });
+
+  group('closing the app mid-tour (restore)', () {
+    test('picks the tour up on the page the person was on', () async {
+      await TourController.instance.startForNewUser();
+      TourController.debugReset(); // as if the app restarted
+      expect(TourController.instance.isActive, isFalse);
+
+      await TourController.instance.restore();
+      expect(TourController.instance.isActive, isTrue);
+      expect(TourController.instance.wants(TourStage.signUp), isTrue);
+    });
+
+    testWidgets('a page already done stays done; the current one shows again', (tester) async {
+      await pumpPage(tester);
+      TourController.instance.replay();
+      await show(tester, TourStage.home); // home's steps showing
+      TourController.debugReset();
+
+      await TourController.instance.restore();
+      expect(TourController.instance.wants(TourStage.home), isTrue);
+      expect(TourController.instance.reached(TourStage.home), isTrue);
+      expect(TourController.instance.wants(TourStage.signUp), isFalse);
+    });
+
+    test('a finished or skipped tour is not restored', () async {
+      await TourController.instance.startForNewUser();
+      await TourController.instance.skip();
+      TourController.debugReset();
+
+      await TourController.instance.restore();
+      expect(TourController.instance.isActive, isFalse);
+    });
+
+    test('a step counter leaves out skipped stages, and that survives a restart', () async {
+      TourController.instance.replay();
+      TourController.instance.skipStages(const [TourStage.farmTab, TourStage.farmInfo, TourStage.farmAddress, TourStage.farmMap]);
+      expect(TourController.instance.progressOf(TourKeys.plotAdd), '5/8');
+
+      TourController.debugReset();
+      await TourController.instance.restore();
+      expect(TourController.instance.progressOf(TourKeys.plotAdd), '5/8');
+    });
   });
 
   testWidgets('finishing an earlier page keeps the tour going for the next page', (tester) async {
@@ -117,7 +165,7 @@ void main() {
   testWidgets('finishing the last page ends the tour and sets the seen flag', (tester) async {
     await pumpPage(tester);
     TourController.instance.replay();
-    await show(tester, TourStage.plot);
+    await show(tester, TourStage.done);
 
     await tester.tap(find.text('ถัดไป'));
     await tester.pumpAndSettle();
@@ -179,5 +227,20 @@ void main() {
     await pumpPage(tester);
     await show(tester, TourStage.home);
     expect(find.text('ขั้นแรก'), findsNothing);
+  });
+
+  testWidgets('cancel (logout, or leaving sign-up) stops the tour without marking it seen or keeping it', (tester) async {
+    await pumpPage(tester);
+    await TourController.instance.startForNewUser();
+    await show(tester, TourStage.signUp);
+    expect(await TourService().loadProgress(), isNotNull);
+
+    TourController.instance.cancel();
+    await tester.pumpAndSettle();
+
+    expect(find.text('ขั้นแรก'), findsNothing);
+    expect(TourController.instance.isActive, isFalse);
+    expect(await TourService().hasSeen(), isFalse);
+    expect(await TourService().loadProgress(), isNull);
   });
 }

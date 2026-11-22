@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/widgets/components/app_snackbar.dart';
@@ -192,17 +193,50 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
   }
 
   // ฟังก์ชันขยับกล้องไปตำแหน่งปัจจุบันแบบรัดกุม
-  void _goToCurrentLocation() async {
+  //
+  // Asks the phone for its position (up to 10 s for the GPS to settle)
+  // rather than the map's own location layer, which often wasn't ready
+  // yet and left a farmer in Chiang Mai looking at Bangkok. If there's no
+  // position, show all of Thailand and say so, instead of a street map of
+  // somewhere unrelated.
+  Future<void> _goToCurrentLocation() async {
     if (_controller == null) return;
+    final here = await _currentPosition();
+    if (!mounted || _controller == null) return;
+    if (here != null) {
+      _controller!.animateCamera(CameraUpdate.newLatLngZoom(here, 16));
+      return;
+    }
+    _controller!.animateCamera(CameraUpdate.newLatLngZoom(_thailand, 5));
+    AppSnackBar.show(
+      context,
+      'หาตำแหน่งปัจจุบันไม่ได้ เลื่อนแผนที่ไปที่ฟาร์มของคุณ หรือเปิด GPS แล้วกดปุ่มเป้าเล็ง',
+      type: AppSnackBarType.info,
+    );
+  }
+
+  static const LatLng _thailand = LatLng(13.0, 101.0);
+
+  Future<LatLng?> _currentPosition() async {
     try {
-      final userLocation = await _controller!.requestMyLocationLatLng();
-      _controller!.animateCamera(
-        CameraUpdate.newLatLngZoom(userLocation!, 16),
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
       );
+      return LatLng(position.latitude, position.longitude);
     } catch (e) {
-      // หากยังหาพิกัดไม่ได้ในทันที (เช่น GPS ยังไม่พร้อม)
-      print("Waiting for GPS...");
-      print(e.toString());
+      // GPS off, timed out, or no location service (e.g. a desktop browser).
+      debugPrint('No current position: $e');
+      return null;
     }
   }
 
@@ -242,10 +276,7 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
                 _drawOnMap();
                 _controller!.animateCamera(CameraUpdate.newLatLngZoom(_points.last, 14));
               } else {
-                // หน่วงเวลาเล็กน้อยเพื่อให้ระบบ MyLocation พร้อมทำงาน
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  _goToCurrentLocation();
-                });
+                _goToCurrentLocation();
               }
             },
             // onSymbolDragEnd: (symbol) {
@@ -255,10 +286,8 @@ class _MapPolygonPickerState extends State<MapPolygonPicker> {
             //     _updateState();
             //   });
             // },
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(13.7367, 100.5330), // จุฬาลงกรณ์มหาวิทยาลัย
-              zoom: 14,
-            ),
+            // All of Thailand until the current position is known.
+            initialCameraPosition: const CameraPosition(target: _thailand, zoom: 5),
             myLocationEnabled: true,
             myLocationRenderMode: MyLocationRenderMode.compass,
             onMapClick: (_, latlng) {

@@ -24,21 +24,46 @@ class _FarmPageState extends State<FarmPage> {
   void initState() {
     super.initState();
     _onRefresh();
-    // Guided tour (docs-and-plan#313): the home steps end on this tab.
-    TourController.instance.addListener(_showTourIfWanted);
-    _showTourIfWanted();
+    // Guided tour: the home steps end on this tab. Rebuild when a tour starts
+    // or moves on, so the farm list below can show its step.
+    TourController.instance.addListener(_onTourChanged);
   }
 
   @override
   void dispose() {
-    TourController.instance.removeListener(_showTourIfWanted);
+    TourController.instance.removeListener(_onTourChanged);
     super.dispose();
   }
 
-  void _showTourIfWanted() {
-    if (!TourController.instance.wants(TourStage.farmTab)) return;
+  void _onTourChanged() {
+    if (mounted) setState(() {});
+  }
+
+  // Guided tour (docs-and-plan#313, #314), once the farm list has loaded:
+  // - No farm yet: "เพิ่มข้อมูลฟาร์ม", which leads to the farm form.
+  // - A farm (just registered, or one the person already had when replaying
+  //   from วิธีใช้แอป): the first farm's plots box, "add a plot".
+  // - Back from the plot form: the closing step.
+  // reached() keeps each one from showing before the home steps are done.
+  void _showFarmListTour({required bool hasFarm}) {
+    final tour = TourController.instance;
+    final (stage, key) = !hasFarm
+        ? (tour.wants(TourStage.farmTab) ? (TourStage.farmTab, TourKeys.registerFarm) : (null, null))
+        : tour.reached(TourStage.plotInfo) && tour.wants(TourStage.done)
+            ? (TourStage.done, TourKeys.done)
+            : tour.reached(TourStage.home) && tour.wants(TourStage.plotAdd)
+                ? (TourStage.plotAdd, TourKeys.plotAdd)
+                : (null, null);
+    if (stage == null) return;
+    // Replaying with a farm already: the farm form is left out of this tour,
+    // so the counter doesn't jump from 4/12 to 9/12.
+    final skipFarmForm = stage == TourStage.plotAdd && !tour.reached(TourStage.farmInfo);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) TourController.instance.show(TourStage.farmTab, [TourKeys.registerFarm]);
+      if (!mounted) return;
+      if (skipFarmForm) {
+        tour.skipStages(const [TourStage.farmTab, TourStage.farmInfo, TourStage.farmAddress, TourStage.farmMap]);
+      }
+      tour.show(stage, [key!]);
     });
   }
 
@@ -46,11 +71,43 @@ class _FarmPageState extends State<FarmPage> {
     context.read<FarmBloc>().add(LoadFarms());
   }
 
+  Future<void> _addPlot(String? farmId) async {
+    final result = await Navigator.of(context).pushNamed(
+      AppRoute.plotRegister,
+      arguments: {'farm_id': farmId},
+    );
+    if (result == true) _onRefresh();
+  }
+
   void _navigateToRegister(BuildContext context) async {
     final result = await Navigator.of(context).pushNamed(AppRoute.farmRegister);
     if (result == true) {
       _onRefresh();
     }
+  }
+
+  /// The first farm's plots box carries the tour's last two steps: adding the
+  /// first plot (tap the box), and the closing step once it's saved.
+  Widget _withTourSteps({required bool first, required VoidCallback onAddPlot, required Widget child}) {
+    if (!first) return child;
+    return TourStep(
+      stepKey: TourKeys.done,
+      title: 'เรียบร้อยแล้ว',
+      description: 'ลงทะเบียนฟาร์มและแปลงแรกเสร็จแล้ว งานที่ต้องบันทึกจะขึ้นที่หน้าหลัก '
+          'ดูคำแนะนำนี้อีกครั้งได้ที่ รูปโปรไฟล์ > "วิธีใช้แอป"',
+      isFirst: true,
+      isLast: true,
+      child: TourStep(
+        stepKey: TourKeys.plotAdd,
+        title: 'เพิ่มแปลงปลูก',
+        description: 'ฟาร์มของคุณพร้อมแล้ว ต่อไปเพิ่มแปลงที่ปลูกโกโก้ '
+            'ลองกดปุ่ม "ใส่ข้อมูล" ในกรอบนี้',
+        isFirst: true,
+        isLast: true,
+        onTap: onAddPlot,
+        child: child,
+      ),
+    );
   }
 
   @override
@@ -64,6 +121,7 @@ class _FarmPageState extends State<FarmPage> {
           } else if (state is FarmsLoaded) {
             final farms = state.farms;
             
+            _showFarmListTour(hasFarm: farms.isNotEmpty);
             if (farms.isEmpty) {
               return const EmptyStateView(message: 'ไม่พบข้อมูล');
             }
@@ -130,23 +188,19 @@ class _FarmPageState extends State<FarmPage> {
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                        child: DataRecordContainer<Plot>(
-                          title: 'แปลงปลูก',
-                          subtitle: 'ข้อมูลแปลงล่าสุด',
-                          items: farmPlots, // 🔥 ใช้ข้อมูลที่ดึงจาก farm
-                          borderRadius: const BorderRadius.all(Radius.circular(16)),
-                          cardColor: const Color(0xFFF8F6F5),
-                          itemBuilder: (context, item) =>
-                              Text(item.plotName ?? "", style: Theme.of(context).textTheme.bodyLarge),
-                          onAddData: () async {
-                            final result = await Navigator.of(context).pushNamed(
-                              AppRoute.plotRegister,
-                              arguments: {
-                                'farm_id': farm.farmId
-                              },
-                            );
-                            if (result == true) _onRefresh();
-                          },
+                        child: _withTourSteps(
+                          first: index == 0,
+                          onAddPlot: () => _addPlot(farm.farmId),
+                          child: DataRecordContainer<Plot>(
+                            title: 'แปลงปลูก',
+                            subtitle: 'ข้อมูลแปลงล่าสุด',
+                            items: farmPlots, // 🔥 ใช้ข้อมูลที่ดึงจาก farm
+                            borderRadius: const BorderRadius.all(Radius.circular(16)),
+                            cardColor: const Color(0xFFF8F6F5),
+                            itemBuilder: (context, item) =>
+                                Text(item.plotName ?? "", style: Theme.of(context).textTheme.bodyLarge),
+                            onAddData: () => _addPlot(farm.farmId),
+                          ),
                         ),
                       ),
                     ],

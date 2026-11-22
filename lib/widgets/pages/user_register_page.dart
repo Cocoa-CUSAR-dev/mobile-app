@@ -100,7 +100,14 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
   Future<void> _handleRegister() async {
     if (!_triedSubmit) setState(() => _triedSubmit = true);
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      // The tour's last sign-up step pressed this button and has closed;
+      // say what to do so a new farmer isn't left wondering.
+      if (TourController.instance.isActive) {
+        AppSnackBar.show(context, 'แก้ช่องที่มีตัวอักษรสีแดง แล้วกดปุ่มนี้อีกครั้ง', type: AppSnackBarType.info);
+      }
+      return;
+    }
 
     setState(() => _isLoading = true);
 

@@ -124,6 +124,16 @@ class _HomeTabContentState extends State<HomeTabContent> {
     }
   }
 
+  Widget _taskCard(BuildContext context, TaskItem task) => _TaskCard(
+        title: task.title,
+        detail: task.description,
+        status: task.status,
+        statusText: task.statusText,
+        statusColor: task.statusColor,
+        dueDate: task.closeAt,
+        onTap: () => _navigateToDetail(context, task),
+      );
+
   // จัดการการเปลี่ยนหน้าและรับผลลัพธ์กลับมา
   Future<void> _navigateToDetail(BuildContext context, TaskItem task) async {
     final result = await Navigator.of(context).pushNamed(
@@ -225,39 +235,38 @@ class _HomeTabContentState extends State<HomeTabContent> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                // The tour step covers the heading and the first item under
+                // it (a task, or "nothing to do"), not the whole list, so the
+                // highlight stays on screen however many tasks there are.
                 TourStep(
                   stepKey: TourKeys.homeTasks,
                   title: 'สิ่งที่ต้องทำ',
                   description: 'งานที่ต้องบันทึกของวันที่เลือกจะขึ้นตรงนี้ '
                       'กดที่งานเพื่อกรอกข้อมูล',
-                  child: Text(
-                    "สิ่งที่ต้องทำ",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        "สิ่งที่ต้องทำ",
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
+                      ),
+                      const SizedBox(height: 12),
+                      if (state.dailyTasks.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 24),
+                          child: EmptyStateView(
+                            icon: Icons.check_circle_outline,
+                            message: "ไม่มีสิ่งที่ต้องทำวันนี้",
+                          ),
+                        )
+                      else
+                        _taskCard(context, state.dailyTasks.first),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
 
-                // รายการ Task Cards
-                if (state.dailyTasks.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 24),
-                    child: EmptyStateView(
-                      icon: Icons.check_circle_outline,
-                      message: "ไม่มีสิ่งที่ต้องทำวันนี้",
-                    ),
-                  )
-                else
-                  ...state.dailyTasks.map(
-                    (task) => _TaskCard(
-                      title: task.title,
-                      detail: task.description,
-                      status: task.status,
-                      statusText: task.statusText,
-                      statusColor: task.statusColor,
-                      dueDate: task.closeAt,
-                      onTap: () => _navigateToDetail(context, task),
-                    ),
-                  ),
+                // รายการ Task Cards (the first one is inside the tour step above)
+                ...state.dailyTasks.skip(1).map((task) => _taskCard(context, task)),
 
                 const SizedBox(height: 40),
               ],
