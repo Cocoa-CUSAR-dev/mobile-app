@@ -85,7 +85,9 @@ class _LoginPageState extends State<LoginPage> {
           BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
               if (state is LoginSuccess) {
-                if (state.next_page == "HOME") {
+                if (state.next_page == "RESET_PASSWORD") {
+                  Navigator.of(context).pushReplacementNamed(AppRoute.changePassword);
+                } else if (state.next_page == "HOME") {
                   Navigator.of(context).pushReplacementNamed(AppRoute.home);
                 } else {
                   // No role yet: the role form starts with the phone number

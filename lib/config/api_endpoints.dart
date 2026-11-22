@@ -42,6 +42,9 @@ abstract final class ApiEndpoints {
   static const String authRegister = '/api/v1/auth/register';
   static const String authRefresh = '/api/v1/auth/refresh';
   static const String authLogout = '/api/v1/auth/logout';
+  // Change my password (signed in): the first thing to do after an admin
+  // handed over a temporary one. The answer is a new token pair.
+  static const String authResetPassword = '/api/v1/auth/reset-password';
   // Forgot password: ask for a 6-digit code, then send it with a new password.
   static const String authForgotPassword = '/api/v1/auth/forgot-password';
   static const String authForgotPasswordConfirm = '/api/v1/auth/forgot-password/confirm';

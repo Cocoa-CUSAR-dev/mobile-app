@@ -46,7 +46,11 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           // holds. No role yet means no profile: that person registers one first.
           final Object? user = response["user"];
           final Object? roles = user is Map ? user["roles"] : null;
-          if (roles is List && roles.isNotEmpty){
+          // An admin handed over a temporary password: pick your own first.
+          final bool mustReset = user is Map && user["must_reset_password"] == true;
+          if (mustReset) {
+            emit(LoginSuccess(next_page: 'RESET_PASSWORD'));
+          } else if (roles is List && roles.isNotEmpty){
             // ถ้าผ่านปุ๊บ Request ถัดไปที่ใช้ ServiceProvider ตัวอื่นจะแนบ Cookie ให้เองทันที!
             emit(LoginSuccess(next_page: 'HOME')); //มีโปรไฟล์แล้ว
           }else{

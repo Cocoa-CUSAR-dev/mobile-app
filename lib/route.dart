@@ -1,3 +1,4 @@
+import 'package:cocoa_supply/widgets/pages/change_password_page.dart';
 import 'package:cocoa_supply/widgets/pages/forgot_password_page.dart';
 import 'package:cocoa_supply/widgets/pages/liff_login_page.dart';
 import 'package:cocoa_supply/widgets/pages/liff_login_success_page.dart';
@@ -19,6 +20,7 @@ class AppRoute {
   static const String login = '/';
   static const String home = '/home';
   static const String forgotPassword = '/forgotPassword';
+  static const String changePassword = '/changePassword';
   static const String liffLink = '/liff-link';
   static const String liffLoginSuccess = '/liffLoginSuccess';
   static const String farmRegister = '/farmRegister';
@@ -41,6 +43,8 @@ class AppRoute {
     switch (path) {
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
+      case changePassword:
+        return MaterialPageRoute(builder: (_) => const ChangePasswordPage());
       case forgotPassword:
         return MaterialPageRoute(
           builder: (_) => ForgotPasswordPage(initialLogin: args?['login'] as String? ?? ''),
