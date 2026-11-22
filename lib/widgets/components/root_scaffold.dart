@@ -137,6 +137,9 @@ class _RootScaffoldState extends State<RootScaffold> {
   Future<void> _handleLogout() async {
     // ปิด Bottom Sheet ก่อนถ้าเปิดอยู่
     Navigator.pop(context); 
+    // A tour belongs to whoever is signed in: the next person on this phone
+    // starts fresh, after a restart too.
+    TourController.instance.cancel();
     await _authService.logout();
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil(

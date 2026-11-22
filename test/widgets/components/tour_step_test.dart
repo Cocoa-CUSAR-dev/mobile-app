@@ -228,4 +228,19 @@ void main() {
     await show(tester, TourStage.home);
     expect(find.text('ขั้นแรก'), findsNothing);
   });
+
+  testWidgets('cancel (logout, or leaving sign-up) stops the tour without marking it seen or keeping it', (tester) async {
+    await pumpPage(tester);
+    await TourController.instance.startForNewUser();
+    await show(tester, TourStage.signUp);
+    expect(await TourService().loadProgress(), isNotNull);
+
+    TourController.instance.cancel();
+    await tester.pumpAndSettle();
+
+    expect(find.text('ขั้นแรก'), findsNothing);
+    expect(TourController.instance.isActive, isFalse);
+    expect(await TourService().hasSeen(), isFalse);
+    expect(await TourService().loadProgress(), isNull);
+  });
 }
