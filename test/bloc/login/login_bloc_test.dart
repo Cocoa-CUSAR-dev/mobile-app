@@ -63,6 +63,21 @@ void main() {
     );
 
     blocTest<LoginBloc, LoginState>(
+      'a temporary password from an admin goes to RESET_PASSWORD, even with a profile',
+      build: () {
+        final pair = tokenPairJson(roles: ['farmer']);
+        (pair['user'] as Map<String, dynamic>)['must_reset_password'] = true;
+        final client = MockClient((request) async => jsonResponse(pair, 200));
+        return LoginBloc(client: client);
+      },
+      act: (bloc) => bloc.add(const LoginButtonPressed(username: '0812345678', password: 'temp-pass-1')),
+      expect: () => [
+        isA<LoginLoading>(),
+        isA<LoginSuccess>().having((s) => s.next_page, 'next_page', 'RESET_PASSWORD'),
+      ],
+    );
+
+    blocTest<LoginBloc, LoginState>(
       'a rejected login emits LoginFailure',
       build: () {
         final client = MockClient((request) async => jsonResponse({'detail': 'invalid credentials'}, 401));

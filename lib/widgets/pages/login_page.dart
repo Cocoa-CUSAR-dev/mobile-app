@@ -62,6 +62,10 @@ class _LoginPageState extends State<LoginPage> {
     if (mounted) Navigator.of(context).pushNamed(AppRoute.userRegister);
   }
 
+  void _openForgotPassword() {
+    Navigator.of(context).pushNamed(AppRoute.forgotPassword, arguments: {'login': _usernameController.text.trim()});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +85,9 @@ class _LoginPageState extends State<LoginPage> {
           BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
               if (state is LoginSuccess) {
-                if (state.next_page == "HOME") {
+                if (state.next_page == "RESET_PASSWORD") {
+                  Navigator.of(context).pushReplacementNamed(AppRoute.changePassword);
+                } else if (state.next_page == "HOME") {
                   Navigator.of(context).pushReplacementNamed(AppRoute.home);
                 } else {
                   // No role yet: the role form starts with the phone number
@@ -174,7 +180,14 @@ class _LoginPageState extends State<LoginPage> {
                 );
               },
             ),
-            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: _openForgotPassword,
+                child: Text('ลืมรหัสผ่าน?', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: primaryColor)),
+              ),
+            ),
+            const SizedBox(height: 8),
             Wrap(
               alignment: WrapAlignment.center,
               crossAxisAlignment: WrapCrossAlignment.center,
