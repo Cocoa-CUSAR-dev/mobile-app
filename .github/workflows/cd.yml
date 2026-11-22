@@ -17,7 +17,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          # Pinned to an exact version: '3.x' once picked up a release that broke the build overnight (docs-and-plan#325).
+          flutter-version: '3.50.0'
           channel: 'stable'
 
       - name: Get dependencies
@@ -45,7 +46,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          # Pinned to an exact version: '3.x' once picked up a release that broke the build overnight (docs-and-plan#325).
+          flutter-version: '3.50.0'
           channel: 'stable'
 
       - name: Get dependencies
@@ -70,7 +72,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          # Pinned to an exact version: '3.x' once picked up a release that broke the build overnight (docs-and-plan#325).
+          flutter-version: '3.50.0'
           channel: 'stable'
 
       - name: Get dependencies

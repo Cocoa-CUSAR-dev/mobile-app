@@ -5,6 +5,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:cocoa_supply/bloc/bloc.dart';
 import 'package:cocoa_supply/config/sentry_config.dart';
 import 'package:cocoa_supply/route.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cocoa_supply/services/url_strategy.dart';
 import 'package:cocoa_supply/theme/app_theme.dart';
@@ -38,7 +39,12 @@ Future<void> main() async {
       // needed right now.
       options.tracesSampleRate = 0.0;
     },
-    appRunner: () => runApp(const MyApp()),
+    appRunner: () async {
+      // A guided tour that was running when the app was closed carries on.
+      WidgetsFlutterBinding.ensureInitialized();
+      await TourController.instance.restore();
+      runApp(const MyApp());
+    },
   );
 }
 
@@ -51,6 +57,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Cacao Farmer App',
         debugShowCheckedModeBanner: false,
+        scaffoldMessengerKey: TourController.messengerKey,
         theme: AppTheme.light,
         initialRoute: AppRoute.login,
         onGenerateRoute: AppRoute.onGenerateRoute,

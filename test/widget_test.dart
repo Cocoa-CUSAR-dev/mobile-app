@@ -29,14 +29,15 @@ void main() {
     expect(find.text('ยินดีต้อนรับเข้าสู่แอปพลิเคชัน'), findsOneWidget);
   });
 
-  testWidgets('Login selection area shows primary and secondary actions',
+  testWidgets('the app opens on the login form, with sign-up one tap away',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
     await tester.pump();
 
-    // M-LOG-03 / W-AUTH-02: account selection must be visible.
-    expect(find.text('ท่านมีบัญชีผู้ใช้อยู่แล้วหรือไม่'), findsOneWidget);
-    expect(find.text('มีบัญชีผู้ใช้แล้ว'), findsOneWidget);
-    expect(find.text('ยังไม่มีบัญชีผู้ใช้'), findsOneWidget);
+    // M-LOG-03 / W-AUTH-02: the login form, then a link to sign up
+    // (docs-and-plan#320 dropped the "do you have an account" step).
+    expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
+    expect(find.text('ลงชื่อเข้าใช้งาน'), findsOneWidget);
+    expect(find.text('สมัครใช้งาน'), findsOneWidget);
   });
 }

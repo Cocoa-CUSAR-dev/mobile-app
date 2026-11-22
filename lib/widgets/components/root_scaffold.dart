@@ -3,6 +3,8 @@ import 'package:cocoa_supply/models/profile_model.dart';
 import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/route.dart';
 import 'package:cocoa_supply/services/profile_service.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
+import 'package:cocoa_supply/widgets/components/tour_step.dart';
 import 'package:flutter/material.dart';
 import 'package:cocoa_supply/theme/app_colors.dart';
 import 'package:cocoa_supply/theme/app_text_theme.dart';
@@ -117,9 +119,27 @@ class _RootScaffoldState extends State<RootScaffold> {
     }
   }
 
+  // The home tab shows the tour's home steps (HomeTabContent), so go there
+  // first.
+  void _replayTour() {
+    Navigator.pop(context); // the profile sheet
+    _startTour();
+  }
+
+  void _startTour() {
+    if (widget.currentIndex != 0) {
+      widget.onItemSelected(0);
+      _pageController.jumpToPage(0);
+    }
+    TourController.instance.replay();
+  }
+
   Future<void> _handleLogout() async {
     // ปิด Bottom Sheet ก่อนถ้าเปิดอยู่
     Navigator.pop(context); 
+    // A tour belongs to whoever is signed in: the next person on this phone
+    // starts fresh, after a restart too.
+    TourController.instance.cancel();
     await _authService.logout();
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -243,7 +263,24 @@ class _RootScaffoldState extends State<RootScaffold> {
     ];
 
     if (roles.contains('farmer')) {
-      navItems.add(const BottomNavigationBarItem(icon: Icon(Icons.park), label: 'ฟาร์ม'));
+      navItems.add(BottomNavigationBarItem(
+        icon: TourStep(
+          stepKey: TourKeys.farmTab,
+          title: 'แท็บฟาร์ม',
+          description: 'ฟาร์มและแปลงปลูกทั้งหมดอยู่ที่แท็บนี้ '
+              'ลองกดที่ "ฟาร์ม" ด้านล่างเลย',
+          isLast: true,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          onTap: () {
+            final farmTab = _tabOfRole('farmer', roles);
+            widget.onItemSelected(farmTab);
+            _pageController.jumpToPage(farmTab);
+          },
+          child: const Icon(Icons.park),
+        ),
+        label: 'ฟาร์ม',
+      ));
       if (widget.children.length > 1) filteredPages.add(widget.children[1]);
     }
     if (roles.contains('processor')) {
@@ -270,9 +307,23 @@ class _RootScaffoldState extends State<RootScaffold> {
         toolbarHeight: 64,
         backgroundColor: AppColors.primary,
         actions: [
+          // The guided tour's replay, in plain sight (it is also in the
+          // profile sheet). Skipping the tour points here.
           IconButton(
-            icon: const Icon(Icons.account_circle, color: Colors.white, size: 42.0),
-            onPressed: _showProfileBottomSheet, // เปลี่ยนเป็นเปิด Pop-up
+            icon: const Icon(Icons.help_outline, color: Colors.white, size: 30),
+            tooltip: 'วิธีใช้แอป',
+            onPressed: _startTour,
+          ),
+          TourStep(
+            stepKey: TourKeys.profile,
+            title: 'โปรไฟล์ของคุณ',
+            description: 'กดตรงนี้เพื่อดูข้อมูลของคุณหรือเพิ่มบทบาท '
+                'ปุ่ม ? ข้างๆ ใช้ดูคำแนะนำนี้อีกครั้ง',
+            shape: const CircleBorder(),
+            child: IconButton(
+              icon: const Icon(Icons.account_circle, color: Colors.white, size: 42.0),
+              onPressed: _showProfileBottomSheet, // เปลี่ยนเป็นเปิด Pop-up
+            ),
           ),
         ],
       ),
@@ -367,6 +418,20 @@ class _RootScaffoldState extends State<RootScaffold> {
               ),
               const SizedBox(height: 12),
             ],
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: _replayTour,
+                icon: const Icon(Icons.help_outline, color: AppColors.primary, size: 20),
+                label: Text("วิธีใช้แอป", style: AppTextTheme.scale.titleSmall?.copyWith(color: AppColors.primary)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               height: 52,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cocoa_supply/services/role_registration.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_bloc.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_event.dart';
 import 'package:cocoa_supply/bloc/login/liff_login_state.dart';
@@ -127,7 +128,11 @@ class _LiffLinkPageState extends State<LiffLinkPage> {
                         Navigator.of(context).pushNamedAndRemoveUntil(
                           AppRoute.roleRegister,
                           (route) => false,
-                          arguments: {'fromLiff': true},
+                          arguments: {
+                            'fromLiff': true,
+                            // The phone number they signed in with.
+                            'prefill': signUpPrefill(_usernameController.text),
+                          },
                         );
                       }
                     });

@@ -14,6 +14,8 @@
 // that threshold, instead of an unconditional BottomNavigationBar.
 
 import 'package:cocoa_supply/services/profile_service.dart';
+import 'package:cocoa_supply/services/tour_controller.dart';
+import 'package:cocoa_supply/services/tour_service.dart';
 import 'package:cocoa_supply/widgets/components/root_scaffold.dart';
 import 'package:cocoa_supply/widgets/components/tree_dot_loading.dart';
 import 'package:flutter/material.dart';
@@ -199,5 +201,52 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('hub body'), findsOneWidget);
     expect(selected, [2]);
+  });
+
+  group('guided tour (docs-and-plan#311)', () {
+    Future<void> pumpFarmerHome(WidgetTester tester) async {
+      final client = MockClient((request) async => jsonResponse({
+        'first_name': 'สมชาย',
+        'last_name': 'โกโก้ดี',
+        'roles': ['farmer'],
+      }, 200));
+      await tester.pumpWidget(MaterialApp(
+        home: RootScaffold(
+          title: 'หน้าหลัก',
+          currentIndex: 0,
+          onItemSelected: (_) {},
+          authService: AuthService(client: client),
+          children: const [Text('home body'), Text('farm body')],
+        ),
+      ));
+      await _pumpUntilSpinnerGone(tester);
+      await tester.pumpAndSettle();
+    }
+
+    setUp(() => TourController.debugReset());
+
+    testWidgets('someone who just logs in never sees the tour', (tester) async {
+      await pumpFarmerHome(tester);
+
+      expect(find.text('โปรไฟล์ของคุณ'), findsNothing);
+      expect(TourController.instance.isActive, isFalse);
+    });
+
+    // The home steps themselves are shown by HomeTabContent; see
+    // test/widgets/pages/tour_pages_test.dart.
+    testWidgets('วิธีใช้แอป in the profile sheet replays the tour from the home page', (tester) async {
+      await TourService().markSeen(); // an existing user
+      await pumpFarmerHome(tester);
+
+      await tester.tap(find.byIcon(Icons.account_circle).first);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('วิธีใช้แอป'));
+      await tester.tap(find.text('วิธีใช้แอป'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('วิธีใช้แอป'), findsNothing); // the sheet closed
+      expect(TourController.instance.isActive, isTrue);
+      expect(TourController.instance.wants(TourStage.home), isTrue);
+    });
   });
 }

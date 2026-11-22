@@ -36,6 +36,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          # Same version as ci.yml and cd.yml.
+          flutter-version: '3.50.0'
           channel: stable
 
       - name: Install dependencies
@@ -60,6 +62,18 @@ jobs:
             --base-href /mobile-app/ \
             --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }} \
             --dart-define=SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+
+      # The LIFF Endpoint URL (LINE Developers Console) is
+      # https://<org>.github.io/mobile-app/liff-link. Without a file for that
+      # path GitHub Pages answers 404 and web/404.html redirects to the app, so
+      # every LINE launch, and the return from LINE's login with its `code`,
+      # goes through that 404 and a script redirect first. A copy of the app's
+      # index.html named liff-link.html makes the same address answer 200
+      # straight away (GitHub Pages serves foo.html at /foo). The path does not
+      # change, so the Endpoint URL stays as it is. Other deep links still use
+      # 404.html.
+      - name: Serve /liff-link without the 404 redirect
+        run: cp build/web/index.html build/web/liff-link.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
